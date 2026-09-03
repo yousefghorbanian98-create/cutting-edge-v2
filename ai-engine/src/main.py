@@ -67,27 +67,30 @@ def chat(req: ChatReq):
         return {"reply": f"خطا در ارتباط با AI: {e}", "model": "error"}
 
 # ══════════════════════════════════════════
-# BEAT SYNC (Real librosa analysis)
+# BEAT SYNC (Fixed: extracts audio from MP4 first)
 # ══════════════════════════════════════════
 @app.post("/editor/beat-sync")
 async def beat_sync(file: UploadFile = File(...)):
     from .editor_ai.beat_sync import BeatSyncEngine
     path = save_upload(file)
     engine = BeatSyncEngine()
+
+    # analyze_audio now handles MP4 → WAV extraction internally
     beats = engine.analyze_audio(path)
     bpm = engine.tempo_bpm
 
-    # Generate clip cuts from beats (group every 4 beats)
     clips = []
-    for i in range(0, len(beats) - 4, 4):
+    for i in range(0, len(beats) - 3, 4):
         start = beats[i].time
         end = beats[min(i + 4, len(beats) - 1)].time
+        if end <= start:
+            continue
         energy = sum(b.strength for b in beats[i:i+4]) / 4
         clips.append({
             "id": f"beat-{i}",
             "start": round(start, 2),
             "end": round(end, 2),
-            "energyLevel": round(min(energy, 1.0), 2),
+            "energyLevel": round(min(max(energy, 0.1), 1.0), 2),
             "emotionTag": "intense" if energy > 0.6 else "calm"
         })
 
@@ -95,11 +98,11 @@ async def beat_sync(file: UploadFile = File(...)):
         "status": "success",
         "bpm": round(bpm, 1),
         "total_beats": len(beats),
-        "clips": clips[:20]  # max 20 clips for timeline
+        "clips": clips[:20]
     }
 
 # ══════════════════════════════════════════
-# VIRAL CUT (Real frame analysis)
+# VIRAL CUT (Fixed: handles short videos)
 # ══════════════════════════════════════════
 @app.post("/editor/viral-cut")
 async def viral_cut(
@@ -110,32 +113,29 @@ async def viral_cut(
     from .analyzer.video_analyzer import VideoAnalyzer
     path = save_upload(file)
 
-    # Real analysis
     analyzer = VideoAnalyzer()
     analysis = analyzer.analyze(path, sample_rate=10)
     energies = [f.motion_intensity for f in analysis.frames]
+    fps = analysis.fps if analysis.fps > 0 else 30.0
 
     finder = ViralCutFinder()
-    start_frame, end_frame = finder.find_best_segment(energies, analysis.fps, target_duration)
+    start_frame, end_frame = finder.find_best_segment(energies, fps, target_duration)
 
-    start_sec = round(start_frame / analysis.fps, 2) if analysis.fps > 0 else 0
-    end_sec = round(end_frame / analysis.fps, 2) if analysis.fps > 0 else target_duration
+    start_sec = round(start_frame / fps, 2)
+    end_sec = round(end_frame / fps, 2)
     actual_dur = round(end_sec - start_sec, 2)
 
-    # Virality score
-    avg_energy = sum(energies[start_frame:end_frame]) / max(end_frame - start_frame, 1)
-    hook_energy = sum(energies[:min(10, len(energies))]) / max(min(10, len(energies)), 1)
-    virality = min(98, int(50 + avg_energy * 30 + hook_energy * 20))
+    virality = finder.calculate_virality_score(energies, start_frame, end_frame, fps)
 
     return {
         "status": "success",
         "start": start_sec,
         "end": end_sec,
         "duration": actual_dur,
-        "virality_score": virality,
-        "avg_energy": round(avg_energy, 2),
-        "hook_energy": round(hook_energy, 2),
-        "message": f"بهترین بخش {actual_dur} ثانیه‌ای شناسایی شد! انرژی قلاب: {int(hook_energy*100)}%"
+        "virality_score": virality["score"],
+        "hook_energy": virality["hook"],
+        "sustain_energy": virality["sustain"],
+        "message": f"بهترین بخش {actual_dur}s | قلاب: {int(virality['hook']*100)}% | انرژی: {int(virality['sustain']*100)}%"
     }
 
 # ══════════════════════════════════════════
