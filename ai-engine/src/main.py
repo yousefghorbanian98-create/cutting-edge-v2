@@ -1,48 +1,57 @@
-"""Cutting Edge AI Core — FastAPI Server with Reheal Loop (Full API)"""
-from fastapi import FastAPI, UploadFile, File
+"""Cutting Edge AI Core v2 — FULLY WIRED to real AI modules"""
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
-import os, requests, psutil
+import os, tempfile, shutil, requests, psutil
 
 app = FastAPI(title="Cutting Edge AI Core v2")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+TEMP_DIR = tempfile.mkdtemp(prefix="ce_")
+
+# ── Helpers ──
+def save_upload(file: UploadFile) -> str:
+    path = os.path.join(TEMP_DIR, file.filename or "input.mp4")
+    with open(path, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+    return path
 
 # ── Models ──
 class ChatReq(BaseModel):
     message: str
     language: str = "fa"
 
-class EnhanceReq(BaseModel):
-    video_path: str
-    intensity: float = 0.6
-    preset: str = "natural_gym"
-
 class VoiceReq(BaseModel):
     text: str
 
-class ViralReq(BaseModel):
-    video_path: str
-    target_duration: int = 30
-
-# ── Endpoints ──
+# ══════════════════════════════════════════
+# HEALTH
+# ══════════════════════════════════════════
 @app.get("/health")
 def health():
     ram = psutil.virtual_memory().percent
     cpu = psutil.cpu_percent(interval=0.1)
+    gpu_mem = 0
+    try:
+        import GPUtil
+        g = GPUtil.getGPUs()
+        if g: gpu_mem = g[0].memoryUsed
+    except: pass
     return {
-        "status": "healthy" if ram < 88 else "warning",
-        "ram": ram,
-        "cpu": cpu,
-        "ai": bool(API_KEY),
-        "reheal": True
+        "status": "healthy" if ram < 88 and gpu_mem < 3500 else "warning",
+        "ram": ram, "cpu": cpu, "gpu_mem": gpu_mem,
+        "ai": bool(API_KEY), "reheal": True
     }
 
+# ══════════════════════════════════════════
+# AI CHAT (OpenRouter Free)
+# ══════════════════════════════════════════
 @app.post("/ai/chat")
 def chat(req: ChatReq):
     if not API_KEY:
-        return {"error": "کلید OpenRouter در فایل .env تنظیم نشده است."}
-    sys_p = "تو دستیار هوشمند ویرایش ویدیو هستی. به فارسی پاسخ بده. کوتاه و عملی." if req.language == "fa" else "You are a video editing assistant. Be concise."
+        return {"reply": "کلید OpenRouter تنظیم نشده. در فایل ai-engine/.env مقدار OPENROUTER_API_KEY را وارد کنید.", "model": "offline"}
+    sys_p = "تو دستیار هوشمند ویرایش ویدیوی ورزشی هستی. به فارسی پاسخ بده. کوتاه، عملی و تخصصی." if req.language == "fa" else "You are a workout video editing assistant. Be concise."
     try:
         r = requests.post(
             "https://openrouter.ai/api/v1/chat/completions",
@@ -51,51 +60,132 @@ def chat(req: ChatReq):
                 "model": "meta-llama/llama-3.1-8b-instruct:free",
                 "messages": [{"role": "system", "content": sys_p}, {"role": "user", "content": req.message}],
                 "max_tokens": 500
-            },
-            timeout=15
+            }, timeout=15
         )
         return {"reply": r.json()["choices"][0]["message"]["content"], "model": "llama-3.1-8b-free", "cost": "$0"}
     except Exception as e:
-        return {"error": str(e)}
+        return {"reply": f"خطا در ارتباط با AI: {e}", "model": "error"}
 
-@app.post("/muscle/enhance")
-def enhance(req: EnhanceReq):
-    from .muscle.muscle_enhancer import MuscleEnhancer, EnhancementSettings, PRESETS
-    e = MuscleEnhancer()
-    s = PRESETS.get(req.preset, EnhancementSettings(intensity=req.intensity))
-    out = req.video_path.replace(".mp4", "_enhanced.mp4") if req.video_path.endswith(".mp4") else "output_enhanced.mp4"
-    # e.enhance_video(req.video_path, out, s)
-    return {"status": "done", "output": out, "message": f"عضلات با شدت {int(req.intensity * 100)}% و پریست {req.preset} تقویت شدند."}
-
+# ══════════════════════════════════════════
+# BEAT SYNC (Real librosa analysis)
+# ══════════════════════════════════════════
 @app.post("/editor/beat-sync")
-def beat_sync():
+async def beat_sync(file: UploadFile = File(...)):
     from .editor_ai.beat_sync import BeatSyncEngine
+    path = save_upload(file)
     engine = BeatSyncEngine()
-    # Dummy sync points for immediate UI timeline feedback
-    cuts = [(i * 2.5, (i + 1) * 2.5) for i in range(8)]
+    beats = engine.analyze_audio(path)
+    bpm = engine.tempo_bpm
+
+    # Generate clip cuts from beats (group every 4 beats)
+    clips = []
+    for i in range(0, len(beats) - 4, 4):
+        start = beats[i].time
+        end = beats[min(i + 4, len(beats) - 1)].time
+        energy = sum(b.strength for b in beats[i:i+4]) / 4
+        clips.append({
+            "id": f"beat-{i}",
+            "start": round(start, 2),
+            "end": round(end, 2),
+            "energyLevel": round(min(energy, 1.0), 2),
+            "emotionTag": "intense" if energy > 0.6 else "calm"
+        })
+
     return {
         "status": "success",
-        "bpm": 128.0,
-        "cuts": cuts,
-        "clips": [
-            {"id": f"clip-{i}", "start": c[0], "end": c[1], "energyLevel": 0.5 + (i % 4) * 0.12, "emotionTag": "intense" if i % 2 == 0 else "calm"}
-            for i, c in enumerate(cuts)
-        ]
+        "bpm": round(bpm, 1),
+        "total_beats": len(beats),
+        "clips": clips[:20]  # max 20 clips for timeline
     }
 
+# ══════════════════════════════════════════
+# VIRAL CUT (Real frame analysis)
+# ══════════════════════════════════════════
 @app.post("/editor/viral-cut")
-def viral_cut(req: ViralReq):
+async def viral_cut(
+    file: UploadFile = File(...),
+    target_duration: int = Form(30)
+):
     from .editor_ai.viral_cut import ViralCutFinder
+    from .analyzer.video_analyzer import VideoAnalyzer
+    path = save_upload(file)
+
+    # Real analysis
+    analyzer = VideoAnalyzer()
+    analysis = analyzer.analyze(path, sample_rate=10)
+    energies = [f.motion_intensity for f in analysis.frames]
+
     finder = ViralCutFinder()
+    start_frame, end_frame = finder.find_best_segment(energies, analysis.fps, target_duration)
+
+    start_sec = round(start_frame / analysis.fps, 2) if analysis.fps > 0 else 0
+    end_sec = round(end_frame / analysis.fps, 2) if analysis.fps > 0 else target_duration
+    actual_dur = round(end_sec - start_sec, 2)
+
+    # Virality score
+    avg_energy = sum(energies[start_frame:end_frame]) / max(end_frame - start_frame, 1)
+    hook_energy = sum(energies[:min(10, len(energies))]) / max(min(10, len(energies)), 1)
+    virality = min(98, int(50 + avg_energy * 30 + hook_energy * 20))
+
     return {
         "status": "success",
-        "start": 12.5,
-        "end": 42.5,
-        "duration": 30.0,
-        "virality_score": 92,
-        "message": "بهترین بخش ۳۰ ثانیه‌ای با بالاترین انرژی و قلاب حرکتی شناسایی شد!"
+        "start": start_sec,
+        "end": end_sec,
+        "duration": actual_dur,
+        "virality_score": virality,
+        "avg_energy": round(avg_energy, 2),
+        "hook_energy": round(hook_energy, 2),
+        "message": f"بهترین بخش {actual_dur} ثانیه‌ای شناسایی شد! انرژی قلاب: {int(hook_energy*100)}%"
     }
 
+# ══════════════════════════════════════════
+# MOOD DNA (Real frame-by-frame extraction)
+# ══════════════════════════════════════════
+@app.post("/mood-dna")
+async def mood_dna(file: UploadFile = File(...)):
+    from .style_match.mood_dna import MoodDNAExtractor
+    from dataclasses import asdict
+    path = save_upload(file)
+    extractor = MoodDNAExtractor()
+    dna = extractor.extract(path)
+    return asdict(dna)
+
+# ══════════════════════════════════════════
+# MUSCLE ENHANCE (Real OpenCV processing)
+# ══════════════════════════════════════════
+@app.post("/muscle/enhance")
+async def muscle_enhance(
+    file: UploadFile = File(...),
+    intensity: float = Form(0.6),
+    preset: str = Form("natural_gym")
+):
+    from .muscle.muscle_enhancer import MuscleEnhancer, EnhancementSettings, PRESETS
+    path = save_upload(file)
+    out_name = f"enhanced_{file.filename or 'output.mp4'}"
+    out_path = os.path.join(TEMP_DIR, out_name)
+
+    settings = PRESETS.get(preset, EnhancementSettings(intensity=intensity))
+    enhancer = MuscleEnhancer()
+    enhancer.enhance_video(path, out_path, settings)
+
+    return {
+        "status": "done",
+        "output_filename": out_name,
+        "preset": preset,
+        "intensity": intensity,
+        "message": f"عضلات با پریست {preset} و شدت {int(intensity*100)}% تقویت شدند."
+    }
+
+@app.get("/muscle/download/{filename}")
+def download_enhanced(filename: str):
+    path = os.path.join(TEMP_DIR, filename)
+    if os.path.exists(path):
+        return FileResponse(path, media_type="video/mp4", filename=filename)
+    return {"error": "File not found"}
+
+# ══════════════════════════════════════════
+# VOICE COMMAND
+# ══════════════════════════════════════════
 @app.post("/editor/voice-command")
 def voice_command(req: VoiceReq):
     from .editor_ai.voice_editor import VoiceEditor
@@ -103,21 +193,27 @@ def voice_command(req: VoiceReq):
     action = parser.parse_command(req.text)
     return {"status": "success", "parsed": action}
 
-@app.get("/mood-dna/{video_path:path}")
-def mood_dna(video_path: str):
+# ══════════════════════════════════════════
+# STYLE MATCH (Compare two videos)
+# ══════════════════════════════════════════
+@app.post("/style-match/compare")
+async def style_compare(
+    reference: UploadFile = File(...),
+    source: UploadFile = File(...)
+):
     from .style_match.mood_dna import MoodDNAExtractor
     from dataclasses import asdict
-    try:
-        dna = MoodDNAExtractor().extract(video_path)
-        return asdict(dna)
-    except Exception:
-        return {
-            "avg_energy": 0.78,
-            "color_mood": "dark-moody",
-            "cut_rhythm_avg": 2.2,
-            "dominant_palette": ["#0a0a12", "#6366f1", "#f97316", "#ffffff", "#18181b"],
-            "style_tags": ["gym", "cinematic", "high-energy"]
-        }
+    ref_path = save_upload(reference)
+    src_path = save_upload(source)
+    extractor = MoodDNAExtractor()
+    ref_dna = extractor.extract(ref_path)
+    src_dna = extractor.extract(src_path)
+    score = extractor.calculate_match(ref_dna, src_dna)
+    return {
+        "reference": asdict(ref_dna),
+        "source": asdict(src_dna),
+        "match_score": score
+    }
 
 if __name__ == "__main__":
     import uvicorn
