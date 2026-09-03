@@ -1,0 +1,15 @@
+faster-whisper
+mediapipe>=0.10.0
+opencv-python
+scenedetect[opencv]
+moviepy>=2.0.0
+librosa
+numpy
+scipy
+psutil
+gputil
+edge-tts
+fastapi
+uvicorn
+requests
+pydantic

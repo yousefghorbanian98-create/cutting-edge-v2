@@ -1,0 +1,7 @@
+{
+  "productName": "Cutting Edge",
+  "version": "2.0.0",
+  "identifier": "com.cuttingedge.app",
+  "build": { "frontendDist": "../out" },
+  "app": { "windows": [{ "title": "Cutting Edge v2.0", "width": 1400, "height": 900, "theme": "Dark" }] }
+}
