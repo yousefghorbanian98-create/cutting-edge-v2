@@ -26,11 +26,12 @@ LEDGER_HEADER = """# 04 — Ledger (دفترچه‌ی وضعیت)
 > **ماشین‌خوان است.** هر ردیف یک مرحله از `steps.json`. فقط ستون‌های `status`, `iter`, `verified_on`, `evidence`, `notes` را ویرایش کنید.
 > `python scripts/verify_ledger.py` این فایل را در CI بررسی می‌کند.
 >
-> **status ∈ {TODO, RED, AMBER, GREEN, BLOCKED}**
+> **status ∈ {TODO, RED, REVIEW, AMBER, GREEN, BLOCKED}**
 > - `TODO` شروع نشده
 > - `RED` در حال کار، تست واقعی قرمز
+> - `REVIEW` کد و تست Builder سبز؛ منتظر verdict بازبین تازه (`evidence/S-xxx/REVIEW.md`)
 > - `AMBER` کد کامل، منتظر تأیید کاربر (U1/U2/U3) یا تست خارجی
-> - `GREEN` تست واقعی سبز + شواهد ثبت‌شده (`verified_on` الزامی)
+> - `GREEN` تست واقعی سبز + REVIEW approved + شواهد ثبت‌شده (`verified_on` الزامی)
 > - `BLOCKED` وابستگی خارجی؛ دلیل در notes
 >
 > **verified_on** لیستی با کاما از: `ci-ubuntu`, `ci-windows`, `local-linux`, `user-gpu` (ماشین کاربر با GTX 1650).

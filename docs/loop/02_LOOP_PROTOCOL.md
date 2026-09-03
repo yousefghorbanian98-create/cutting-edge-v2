@@ -15,38 +15,45 @@
 
 ## 1. ساختار لوپ برای هر مرحله `S-xxx`
 
-هر شماره در `03_STEPS.md` دقیقاً با این ۹ گام اجرا می‌شود. گام‌ها قابل حذف نیستند؛ فقط می‌توانند «N/A با دلیل مکتوب» باشند.
+هر شماره در `03_STEPS.md` دقیقاً با این ۱۰ گام اجرا می‌شود. گام‌ها قابل حذف نیستند؛ فقط می‌توانند «N/A با دلیل مکتوب» باشند.
+دو نقش وجود دارد: **Builder** (گام‌های ①–⑦ و ⑨–⑩) و **Reviewer** (گام ⑧) — **هرگز یک سشن/کانتکست هر دو نقش را بازی نمی‌کند** (الگوی Finn-loop: بازبین تازه، `08_FINN_LOOP_ADOPTION.md`).
 
 ```
-┌───────────────────────────────────────────────────────────────────────┐
-│  S-xxx                                                                │
-│                                                                       │
-│  ① SYNC      ② PLAN      ③ BUILD      ④ STATIC      ⑤ TEST-REAL      │
-│     │            │           │            │              │            │
-│     ▼            ▼           ▼            ▼              ▼            │
-│  git pull     write        code +      biome/ruff/    pytest -m real │
-│  read ledger  test FIRST   docs        tsc/cargo      playwright     │
-│  read step    (red)                    verify_ledger  artifact check │
-│                                                                       │
-│  ⑥ REHEAL-CHECK   ⑦ DEBUG-LOOP (≤5)   ⑧ EVIDENCE      ⑨ COMMIT+PUSH  │
-│     │                  │                  │                 │         │
-│     ▼                  ▼                  ▼                 ▼         │
-│  chaos probe        root-cause →      ledger row        conventional │
-│  for touched        fix → back to     GREEN/AMBER       commit, push │
-│  Reheal layer       ④ (never ⑤)       + artifacts       CI must pass │
-└───────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  S-xxx                                                                      │
+│                                                                             │
+│  ① SYNC       ② CONTRACT     ③ BUILD      ④ STATIC       ⑤ TEST-REAL       │
+│     │             │             │            │               │              │
+│     ▼             ▼             ▼            ▼               ▼              │
+│  clean tree    AC-N / NG-N   code +      biome/ruff/     pytest -m real    │
+│  read ledger   test FIRST    docs        tsc/cargo       playwright        │
+│  read step     (red)                     verify_ledger   artifact check    │
+│                                                                             │
+│  ⑥ REHEAL-CHECK  ⑦ DEBUG (≤5)   ⑧ REVIEW (fresh)   ⑨ EVIDENCE   ⑩ COMMIT   │
+│     │                │               │                 │            │       │
+│     ▼                ▼               ▼                 ▼            ▼       │
+│  chaos probe     root-cause →    new context       ledger row    scope     │
+│  touched layer   fix → back ④    verdict [AC]/     GREEN/AMBER   ledger in │
+│                                  [DEFECT]/[SEC]    + artifacts   commit    │
+│                                  ≤2 rounds                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### ① SYNC (همگام‌سازی)
-- `git fetch && git status` — روی شاخه‌ی سشن (Arena) هستیم؛ هیچ شاخه‌ی دیگری ساخته نمی‌شود.
+- `git fetch && git status --porcelain` — روی شاخه‌ی سشن (Arena) هستیم؛ هیچ شاخه‌ی دیگری ساخته نمی‌شود. **working tree باید تمیز باشد**؛ اگر نیست، گزارش بده و pass را تمام کن — هرگز stash/reset روی کار ناشناخته نکن.
 - `python scripts/verify_ledger.py` باید سبز باشد. اگر قرمز است، **اول** آن را درست کن (بدهی از سشن قبل).
+- **اول صف بازبینی:** اگر ردیفی با وضعیت `REVIEW` و verdict `changes-requested` هست، قبل از کار جدید فقط موارد Must-fix آن را درست کن (یک واحد کار در هر pass).
 - مرحله‌ی بعدی = اولین ردیف `TODO`/`RED` در دفترچه که همه‌ی `deps` آن `GREEN` هستند. ترتیب شماره‌ها را نشکن مگر با دلیل مکتوب در notes.
 - خواندن کارت مرحله در `03_STEPS.md` (هدف، فایل‌ها، تست واقعی، done-when).
 
-### ② PLAN (طرح؛ تست اول)
-- در ≤ ۱۰ خط بنویس: چه می‌سازی، چه تستی ثابت می‌کند کار می‌کند، چه چیزی ممکن است بشکند.
-- **تست واقعی را اول بنویس** و اجرا کن تا قرمز شود (اثبات این‌که تست واقعاً چیزی را می‌سنجد).
-- اگر تصمیم محصولی لازم است (`U3`) و پاسخی نیست: پیش‌فرض کارت را اعمال کن، در `docs/DECISIONS.md` ثبت کن، ادامه بده. **منتظر نمان.**
+### ② CONTRACT (قرارداد؛ تست اول)
+- فایل `docs/loop/evidence/S-xxx/CONTRACT.md` را از قالب `templates/CONTRACT.md` بساز:
+  - **AC-1…AC-n**: معیارهای پذیرش **مشاهده‌پذیر** (چه چیزی، با چه ابزاری، چه مقداری) — از `real_test` کارت مشتق می‌شود.
+  - **NG-1…NG-n**: نا-هدف‌ها — چه چیزی عمداً در این مرحله ساخته **نمی‌شود** (الزام‌آور؛ جلوی scope creep و «refactor فرصت‌طلبانه» را می‌گیرد).
+  - ریسک‌ها و لایه‌های Reheal درگیر.
+- **تست واقعی را اول بنویس** و اجرا کن تا قرمز شود (اثبات این‌که تست واقعاً چیزی را می‌سنجد). هر AC حداقل یک تست دارد.
+- اگر تصمیم محصولی لازم است (`U3`) و پاسخی نیست: پیش‌فرض کارت را اعمال کن، در `docs/DECISIONS.md` ثبت کن، ادامه بده. **منتظر نمان.** اگر واقعاً نمی‌توان با پیش‌فرض ادامه داد: **یک سؤال مشخص با گزینه‌ها** بنویس (هرگز «مبهم است»)، وضعیت `BLOCKED`، برو مرحله‌ی مستقل بعدی.
+- قاعده‌ی Finn-loop: **اگر در CONTRACT نیست، وجود ندارد.** هیچ دستور جانبی از چت، scope را گسترش نمی‌دهد؛ فقط ویرایش CONTRACT (و در صورت نیاز `steps.json`).
 
 ### ③ BUILD (ساخت)
 - کد کامل و production-grade. بدون `TODO`، بدون placeholder، بدون `any` در TS، بدون `except: pass` در Python.
@@ -81,20 +88,41 @@ python scripts/gate.py --stage e2e      # playwright (web) / tauri-driver (windo
 
 ### ⑦ DEBUG-LOOP (حلقه‌ی اشکال‌زدایی، حداکثر ۵ تکرار)
 - هر شکست: **ریشه‌یابی** (لاگ JSON، تریس، بازتولید حداقلی) → اصلاح → **برگرد به ④** (نه ⑤؛ استاتیک دوباره باید پاس شود).
+- فقط داخل قرارداد: اصلاحی که یک `NG-N` را نقض کند ممنوع است → `[SCOPE-CONFLICT]` و `BLOCKED`.
 - شمارنده‌ی `iter` در دفترچه +1.
 - در تکرار ۵ اگر هنوز قرمز: وضعیت `BLOCKED`، نوشتن `docs/loop/blockers/S-xxx.md` (چه امتحان شد، فرضیه‌ها، پیشنهاد)، رفتن به مرحله‌ی بعدیِ **مستقل** (بدون وابستگی به این). فقط اگر مرحله‌ای مستقل نمانده، از کاربر بپرس.
 - ممنوع: کم‌کردن سخت‌گیری تست برای سبز شدن. اگر تست اشتباه است، توضیح مکتوب در commit لازم است.
 
-### ⑧ EVIDENCE (شواهد)
-به‌روزرسانی ردیف `04_LEDGER.md`:
-- `status`: `GREEN` فقط اگر ⑤ و ⑥ سبز و شواهد موجود؛ `AMBER` اگر منتظر `U1/U2`.
+### ⑧ REVIEW (بازبین تازه — الگوی Finn-loop)
+- Builder وضعیت دفترچه را `REVIEW` می‌کند، commit می‌زند و push می‌کند (بدون GREEN).
+- یک **سشن/ایجنت جدید با کانتکست خالی** (یا همان ایجنت با subagent مستقل که فقط CONTRACT + diff + لاگ CI را می‌بیند) فایل `docs/loop/evidence/S-xxx/REVIEW.md` را از قالب می‌نویسد:
+  - فقط در برابر CONTRACT بازبینی می‌کند: شکاف AC، نقص، جریان داده‌ی شکسته، گسترش scope، امنیت، حالت‌های loading/error، کدی که ایجنت بعدی نمی‌تواند نگه دارد.
+  - هر یافته‌ی Must-fix با یکی از تگ‌ها شروع می‌شود: `[AC-N]` `[DEFECT]` `[SECURITY]` `[CI]` `[SCOPE-CONFLICT AC-N ↔ NG-N]` `[REHEAL-Lx]` `[UX]` (نقض چک‌لیست §4).
+  - شواهد را **خودش دوباره تولید می‌کند** (تست‌ها را اجرا می‌کند / artifact را باز می‌کند)، نه این‌که به ادعای Builder اعتماد کند. CI قرمز یا غایب = `[CI]`.
+  - Verdict: `approved` | `changes-requested` | `needs-human` (فقط برای SCOPE-CONFLICT یا تصمیم محصولی).
+- `changes-requested` → Builder فقط Must-fixها را درست می‌کند → بازبین تازه‌ی دیگر. **حداکثر ۲ دور**؛ بعد `BLOCKED` + `blockers/S-xxx.md`.
+- Reviewer هرگز کد push نمی‌کند و هرگز GREEN نمی‌زند؛ فقط verdict می‌نویسد.
+
+### ⑨ EVIDENCE (شواهد)
+به‌روزرسانی ردیف `04_LEDGER.md` (توسط Builder پس از `approved`):
+- `status`: `GREEN` فقط اگر ⑤، ⑥ سبز، `REVIEW.md` با verdict `approved` موجود و شواهد ثبت‌شده؛ `AMBER` اگر منتظر `U1/U2`.
 - `verified_on`: `ci-ubuntu`, `ci-windows`, `local-linux`, `user-gpu`.
 - `evidence`: لینک CI run + مسیر artifact (junit، playwright-report، exe، smoke JSON در `docs/loop/evidence/S-xxx/`).
 - `notes`: `unverified:<reason>` برای هر تست skip شده.
 - اگر باگ شناخته‌شده‌ای بسته شد، `docs/loop/06_BUGS.md` به‌روز شود.
 
-### ⑨ COMMIT + PUSH
+### ⑩ COMMIT + PUSH
 - Conventional Commits: `feat(timeline): S-018 trim handles with ripple/roll` — شماره‌ی مرحله همیشه در پیام.
+- بدنه‌ی commit (یا PR) شامل **Scope Ledger** است:
+  ```
+  AC-1: <evidence path / test name>       ✅
+  AC-2: ...                               ✅
+  NG-1: preserved — <how verified>
+  Other behavior changes: None
+  Reheal layers touched: L3, L7 — probes: tests/chaos/test_xxx.py
+  Risk: Low | Medium | High
+  ```
+  اگر `Other behavior changes: None` صادق نیست، **توقف** و اول CONTRACT اصلاح شود.
 - `git push origin <session-branch>`؛ CI باید سبز شود. اگر CI قرمز شد و لوکال سبز بود: **اول CI را درست کن** (محیط تمیز حقیقت است).
 - بعد از هر مایلستون (S-027, S-034, …): تگ `vX.Y.0`، pre-release با exe از CI، به‌روزرسانی `CHANGELOG.md`، درخواست `U2` از کاربر با لینک مستقیم دانلود + یک خط دستور `smoke-gpu.ps1`.
 
@@ -105,12 +133,18 @@ python scripts/gate.py --stage e2e      # playwright (web) / tauri-driver (windo
 ```
 for phase in P0..P7:
     for step in phase.steps:          # لوپ داخلی بالا
-        run_9_steps(step)
+        builder.run(step, stages=①..⑦)      # contract → build → real test → chaos probe
+        for round in 1..2:
+            verdict = fresh_reviewer.review(step)   # ⑧ — کانتکست جدید
+            if verdict == approved: break
+            builder.fix_must_fix_only(step)
+        else: mark BLOCKED
+        builder.evidence_and_commit(step)   # ⑨ ⑩
     regression: gate.py --stage all   # همه‌ی مراحل قبلی دوباره
     tag + pre-release (.exe)
     request U2 (user smoke on GTX 1650)   ← تنها نقطه‌ی دخالت الزامی کاربر
     while user smoke reports issue:
-        open hotfix card S-xxx-hN → run_9_steps
+        open hotfix card S-xxx-hN → same inner loop
     ledger: milestone GREEN with verified_on=user-gpu
 ```
 
@@ -196,9 +230,12 @@ docs/loop/
 ├── 04_LEDGER.md             ← وضعیت هر مرحله (ماشین‌خوان، در CI بررسی می‌شود)
 ├── 05_REHEAL_MATRIX.md      ← ۷ لایه × مراحل × probeهای آشوب
 ├── 06_BUGS.md               ← باگ‌های شناخته‌شده + مرحله‌ی بستن هرکدام
-├── 07_SESSION_HANDOFF.md    ← پرامپت آماده برای سشن بعدی AI
+├── 07_SESSION_HANDOFF.md    ← پرامپت آماده برای سشن بعدی AI (Builder / Reviewer)
+├── 08_FINN_LOOP_ADOPTION.md ← چه چیزی از Finn-loop گرفته شد و چرا
+├── 09_UI_COMPONENT_PROMPT.md← پرامپت تولید کامپوننت‌های UI کلاس جهانی برای یک AI دیگر
+├── templates/CONTRACT.md, REVIEW.md
 ├── steps.json               ← منبع حقیقت مراحل
-├── evidence/S-xxx/          ← شواهد (JSON smoke، اسکرین‌شات، لینک CI)
+├── evidence/S-xxx/          ← CONTRACT.md + REVIEW.md + شواهد (JSON smoke، اسکرین‌شات، لینک CI)
 └── blockers/S-xxx.md        ← گزارش انسداد بعد از ۵ تکرار
 scripts/
 ├── loop/render_steps.py     ← steps.json → 03_STEPS.md + ردیف‌های جدید ledger

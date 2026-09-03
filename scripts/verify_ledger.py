@@ -3,12 +3,15 @@
 
 Rules enforced (exit 1 on any violation):
   1. Every step id in steps.json has exactly one ledger row (and no unknown rows).
-  2. status ∈ {TODO, RED, AMBER, GREEN, BLOCKED}.
-  3. GREEN requires non-empty `verified_on` AND non-empty `evidence`.
+  2. status ∈ {TODO, RED, REVIEW, AMBER, GREEN, BLOCKED}.
+  3. GREEN requires non-empty `verified_on` AND non-empty `evidence` AND
+     docs/loop/evidence/S-xxx/CONTRACT.md AND REVIEW.md whose verdict line says `approved`
+     (fresh-reviewer gate, see 08_FINN_LOOP_ADOPTION.md).
   4. GREEN for a step with user == U2 requires `user-gpu` in verified_on.
   5. A step may not be GREEN while any dependency is not GREEN.
   6. BLOCKED requires a note.
   7. iter is a non-negative integer.
+  7b. Watchdog (warnings, non-fatal): RED with iter >= 3, REVIEW with iter >= 2.
   8. 03_STEPS.md is not stale (delegates to render_steps.py --check).
 
 Used by: scripts/gate.py --stage static, CI static job, and the loop protocol (docs/loop/02_LOOP_PROTOCOL.md).
@@ -23,7 +26,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 LOOP = ROOT / "docs" / "loop"
-VALID = {"TODO", "RED", "AMBER", "GREEN", "BLOCKED"}
+VALID = {"TODO", "RED", "REVIEW", "AMBER", "GREEN", "BLOCKED"}
 ROW = re.compile(r"^\|\s*(S-\d{3})\s*\|(.*?)\|\s*(\w+)\s*\|\s*(\d*)\s*\|(.*?)\|(.*?)\|(.*?)\|\s*$")
 
 
@@ -65,6 +68,14 @@ def main() -> int:
                 errors.append(f"{p}: GREEN without verified_on")
             if not r["evidence"]:
                 errors.append(f"{p}: GREEN without evidence")
+            ev_dir = LOOP / "evidence" / sid
+            if not (ev_dir / "CONTRACT.md").exists():
+                errors.append(f"{p}: GREEN without evidence/{sid}/CONTRACT.md")
+            rv = ev_dir / "REVIEW.md"
+            if not rv.exists():
+                errors.append(f"{p}: GREEN without evidence/{sid}/REVIEW.md (fresh reviewer)")
+            elif not re.search(r"^\s*approved\b", rv.read_text(encoding="utf-8").split("## 3. Verdict")[-1], re.M):
+                errors.append(f"{p}: GREEN but REVIEW.md verdict is not 'approved'")
             if s.get("user") == "U2" and "user-gpu" not in r["verified"]:
                 errors.append(f"{p}: milestone/U2 step GREEN without user-gpu verification")
             for d in s["deps"]:
@@ -77,6 +88,16 @@ def main() -> int:
                          capture_output=True, text=True)
     if chk.returncode != 0:
         errors.append("render_steps --check failed: " + (chk.stderr.strip() or chk.stdout.strip()))
+
+    warnings = []
+    for sid, r in rows.items():
+        it = int(r["iter"]) if r["iter"].isdigit() else 0
+        if r["status"] == "RED" and it >= 3:
+            warnings.append(f"{sid}: RED after {it} iterations — consider BLOCKED + blockers/{sid}.md")
+        if r["status"] == "REVIEW" and it >= 2:
+            warnings.append(f"{sid}: 2 review rounds reached — next changes-requested means BLOCKED")
+    for w in warnings:
+        print("WATCHDOG: " + w)
 
     if errors:
         print("LEDGER VERIFY FAILED")
