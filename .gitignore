@@ -1,0 +1,12 @@
+node_modules/
+.next/
+out/
+dist/
+build/
+target/
+__pycache__/
+*.pyc
+.env
+.cutting-edge/
+*.mp4
+*.srt
