@@ -1,0 +1,1460 @@
+# 03 — Numbered Steps (تولیدشده‌ی خودکار — ویرایش نکنید)
+
+> منبع: `docs/loop/steps.json` — 98 مرحله در 8 فاز. برای تغییر، JSON را ویرایش و `python scripts/loop/render_steps.py` را اجرا کنید.
+
+## کدهای دخالت کاربر
+
+- **none** — بدون دخالت کاربر — ایجنت به‌تنهایی انجام و تأیید می‌کند
+- **U1** — کلید OpenRouter (یک‌بار، در Settings برنامه یا ai-engine/.env)
+- **U2** — تست دودی روی ویندوز واقعی / GTX 1650 با اسکریپت scripts/smoke-gpu.ps1 (فقط در پایان هر مایلستون)
+- **U3** — تصمیم محصولی — اگر تا مهلت پاسخ نیاید، مقدار پیش‌فرض اعمال می‌شود
+
+## نقشه‌ی کلی
+
+| فاز | نسخه | هدف | مراحل |
+|-----|------|-----|-------|
+| P0 Foundation Repair | 0.2.1 | ریپو را واقعاً قابل build/test/ship کردن؛ بدون این فاز هیچ gate‌ای قابل اجرا نیست | S-001 → S-012 (12) |
+| P1 Timeline Real | 0.3.0 | تایم‌لاین واقعی چندتِرَکه با برش/کشیدن/undo و پخش سکانس | S-013 → S-027 (15) |
+| P2 Export Pipeline | 0.4.0 | خروجی واقعی FFmpeg با پیشرفت لحظه‌ای، لغو و پریست‌های شبکه‌های اجتماعی | S-028 → S-034 (7) |
+| P3 AI Full Integration | 0.5.0 | هر ۱۶ قابلیت با UI واقعی، تست واقعی روی مدیا و زنجیره‌ی fallback | S-035 → S-057 (23) |
+| P4 Tauri Desktop | 0.6.0 | اپ دسکتاپ ویندوز با sidecar پایتون، نصب‌کننده‌ی NSIS و آپدیتر | S-058 → S-067 (10) |
+| P5 Project & Stability | 0.7.0 | پروژه‌ی ذخیره‌شدنی، صف کار، هر ۷ لایه‌ی Reheal فعال و تست آشوب | S-068 → S-078 (11) |
+| P6 Testing & Polish | 0.8.0 | پوشش تست، کارایی روی GTX 1650، دسترس‌پذیری، i18n، امنیت | S-079 → S-090 (12) |
+| P7 Release | 1.0.0 | انتشار عمومی: نصب‌کننده‌ی امضاشده‌ی چک‌سام‌دار، مستندات، دمو، پشتیبانی | S-091 → S-098 (8) |
+
+
+---
+
+## P0 — Foundation Repair → v0.2.1
+
+_ریپو را واقعاً قابل build/test/ship کردن؛ بدون این فاز هیچ gate‌ای قابل اجرا نیست_
+
+### S-001 — Repo hygiene: remove generator scripts, add LICENSE/.editorconfig/docs tree
+
+**هدف:** حذف build_cutting_edge.py و extend_cutting_edge_part2.py (۱۷۰۰ خط اسکریپت تولیدکننده که نباید در ریپو باشد)، افزودن LICENSE (پیش‌فرض MIT)، .editorconfig، CODE_OF_CONDUCT کوتاه، ساختار docs/
+
+**فایل‌ها:** `build_cutting_edge.py`, `extend_cutting_edge_part2.py`, `LICENSE`, `.editorconfig`, `docs/`
+
+**تست واقعی (نه فقط عدد):** git ls-files shows no *.py at repo root; `python scripts/verify_ledger.py` passes
+
+**Done when:** Tree matches docs/loop/02_LOOP_PROTOCOL.md §file-layout; CI green
+
+**دخالت کاربر:** `U3` — پیش‌فرض در سکوت: _License = MIT_
+
+**وابستگی‌ها:** —
+
+### S-002 — Backend boot fix: package imports, dotenv, dev scripts
+
+**هدف:** main.py از import نسبی استفاده می‌کند ولی با `python main.py` اجرا می‌شود → کرش. تبدیل به پکیج `ai_engine` با اجرای `uvicorn ai_engine.main:app`، افزودن python-dotenv + .env.example، اسکریپت‌های dev برای PowerShell و bash، پین‌کردن نسخه‌ها در requirements.txt و افزودن pyproject.toml
+
+**فایل‌ها:** `ai-engine/pyproject.toml`, `ai-engine/src/main.py`, `ai-engine/.env.example`, `ai-engine/requirements.txt`, `scripts/dev-backend.ps1`, `scripts/dev-backend.sh`
+
+**تست واقعی (نه فقط عدد):** Start server via script on a random port; curl /health returns JSON with ram/cpu/gpu_mem within 2s; server survives 60s idle
+
+**Done when:** Both scripts start the server on Windows and Linux; /health 200; no ImportError
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-001
+
+### S-003 — Security fix: upload/download path traversal, size & type limits, CORS
+
+**هدف:** save_upload از file.filename خام استفاده می‌کند و /muscle/download/{filename} بدون پاک‌سازی → path traversal. ذخیره با UUID، whitelist پسوندها، حداکثر حجم (پیش‌فرض 2GB)، CORS محدود به tauri://localhost و http://localhost:3000، بایند فقط به 127.0.0.1
+
+**فایل‌ها:** `ai-engine/src/main.py`, `ai-engine/src/core/storage.py`, `tests/test_security.py`
+
+**تست واقعی (نه فقط عدد):** POST filename `../../evil.txt` → saved inside TEMP_DIR only; GET /muscle/download/..%2F..%2Fetc%2Fpasswd → 404; 3GB dummy upload → 413; .exe upload → 415
+
+**Done when:** All security tests green; bandit/ruff S-rules clean
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-002
+
+### S-004 — MoviePy 2.0 compatibility + FFmpeg-first audio extraction (BUG 4)
+
+**هدف:** `from moviepy.editor import` در MoviePy≥2 حذف شده و آرگومان verbose هم نیست → Beat Sync همیشه شکست می‌خورد. FFmpeg subprocess به‌عنوان مسیر اصلی استخراج صدا، MoviePy فقط fallback؛ ماژول مشترک core/ffmpeg.py با کشف باینری (PATH → imageio-ffmpeg → bundled)
+
+**فایل‌ها:** `ai-engine/src/core/ffmpeg.py`, `ai-engine/src/editor_ai/beat_sync.py`, `tests/test_beat_sync.py`
+
+**تست واقعی (نه فقط عدد):** Fixture 120-BPM click-track MP4 → detected BPM within ±3; silent MP4 → returns [] without exception; MP4 with AAC 48k → WAV 22050 mono via ffprobe
+
+**Done when:** Beat sync passes on all audio fixtures; no moviepy.editor import anywhere
+
+**دخالت کاربر:** `none`
+
+**باگ‌های بسته‌شونده:** BUG-4
+
+**وابستگی‌ها:** S-002
+
+### S-005 — Real-media fixture factory (FFmpeg-generated + licensed human clip)
+
+**هدف:** کارخانه‌ی فیکسچر که با FFmpeg مدیای واقعی می‌سازد: (a) 10s 1280x720 30fps با testsrc متحرک + کلیک ۱۲۰BPM، (b) بی‌صدا، (c) 2s کوتاه، (d) فایل ۰ بایت، (e) هدر خراب، (f) 9:16 عمودی، (g) 4K 3s، (h) نام فایل فارسی/فاصله‌دار؛ به‌علاوه دانلود یک کلیپ انسانی واقعی با مجوز آزاد (Pexels License) و تصویر pose از testdata مدیاپایپ با پین‌کردن SHA256 و کش آفلاین
+
+**فایل‌ها:** `tests/fixtures/make_fixtures.py`, `tests/fixtures/manifest.json`, `tests/conftest.py`, `.gitignore`
+
+**تست واقعی (نه فقط عدد):** make_fixtures.py produces every fixture; ffprobe confirms streams/duration/resolution for each; manifest SHA256 matches; offline run degrades to synthetic-only with explicit warning (not silent skip)
+
+**Done when:** conftest exposes fixtures by name; CI caches fixtures dir
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-004
+
+### S-006 — Test harness: live-server API tests + artifact assertions helper
+
+**هدف:** pytest با مارکرهای unit/real/heavy/gpu، conftest که uvicorn واقعی روی پورت آزاد بالا می‌آورد، helper `assert_playable(path, min_dur, has_audio, w, h)` مبتنی بر ffprobe، helper `frame_diff(a,b)` و `ssim_region`؛ قانون: skipped ≠ passed (گزارش جدا)
+
+**فایل‌ها:** `tests/conftest.py`, `tests/helpers/media.py`, `tests/test_api_live.py`, `pytest.ini`
+
+**تست واقعی (نه فقط عدد):** Upload fixture (a) to /editor/beat-sync over real HTTP → JSON schema valid AND clips non-empty; /muscle/enhance → download file → assert_playable + mean abs pixel diff vs input > 2.0
+
+**Done when:** `pytest -m real` green locally; junit report lists skips separately
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-005
+
+### S-007 — Frontend styling fix: Tailwind 4 + DaisyUI 5 + fonts + globals.css
+
+**هدف:** page.tsx پر از کلاس‌های Tailwind است اما tailwindcss/postcss/daisyui اصلاً نصب نیستند → UI بدون استایل رندر می‌شود. نصب Tailwind 4 (@tailwindcss/postcss)، DaisyUI 5 (نسخه‌ی سازگار با Tailwind 4؛ DaisyUI 4 با Tailwind 4 ناسازگار است — این «شفاف‌سازی استک» است نه تغییر آن)، فونت‌های آفلاین @fontsource (Inter, Vazirmatn, JetBrains Mono)، globals.css با توکن‌های design-system
+
+**فایل‌ها:** `apps/desktop/package.json`, `apps/desktop/postcss.config.mjs`, `apps/desktop/src/app/globals.css`, `apps/desktop/src/app/layout.tsx`, `packages/design-system/tokens.ts`
+
+**تست واقعی (نه فقط عدد):** Playwright: body computed background == rgb(9,9,11); header gradient text present; Vazirmatn font-family resolved (document.fonts.check); zero console errors
+
+**Done when:** `next build` emits out/ with CSS > 10KB; screenshot baseline saved
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-001
+
+### S-008 — Toolchain: Biome, Ruff, tsc strict, Turbo 2 tasks, pinned versions, pre-commit
+
+**هدف:** پیکربندی Biome و Ruff، `tsc --noEmit` سخت‌گیرانه، turbo.json از `pipeline` به `tasks` (Turbo 2)، حذف همه‌ی `latest`، pre-commit با lefthook (lint + secret scan)، اسکریپت‌های `pnpm gate:*`
+
+**فایل‌ها:** `biome.json`, `ai-engine/ruff.toml`, `turbo.json`, `package.json`, `lefthook.yml`, `scripts/gate.py`
+
+**تست واقعی (نه فقط عدد):** `python scripts/gate.py --stage static` exits 0 on clean tree and exits 1 when a file containing `sk-or-v1-TEST` is staged
+
+**Done when:** All static checks wired into gate.py and CI
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-007
+
+### S-009 — CI overhaul: matrix (ubuntu lint/unit/e2e + windows heavy/tauri), caching, artifacts, all branches
+
+**هدف:** CI فعلی فقط روی main و فقط pytest سنگین روی ویندوز بدون کش. ماتریس: ubuntu (static+unit+frontend build+Playwright)، windows (pytest real + cargo check + tauri build → آپلود .exe)، کش pnpm/pip/cargo، اجرای روی همه‌ی شاخه‌ها و PRها، gitleaks، آپلود junit و اسکرین‌شات‌ها
+
+**فایل‌ها:** `.github/workflows/ci.yml`, `.github/workflows/release.yml`, `.gitleaks.toml`
+
+**تست واقعی (نه فقط عدد):** Push to branch → both jobs green; artifacts list contains junit.xml + playwright-report; total wall time < 20 min with warm cache
+
+**Done when:** Branch protection can require `ci / ubuntu` and `ci / windows`
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-008
+
+### S-010 — Tauri walking skeleton that compiles and ships a first .exe
+
+**هدف:** Cargo.toml فیچر `shell-open` ندارد (Tauri 2 → plugin)، بدون tauri-build/build.rs/آیکون/bundle → کامپایل نمی‌شود. ساخت اسکلت کامل: tauri.conf.json با devUrl/beforeBuildCommand/bundle.nsis، آیکون موقت با `tauri icon`، capabilities حداقلی، `cargo check` روی ubuntu و build کامل روی windows-latest که نصب‌کننده‌ی NSIS بدهد — از روز اول هر مرحله یک .exe قابل نصب تولید کند
+
+**فایل‌ها:** `apps/desktop/src-tauri/Cargo.toml`, `apps/desktop/src-tauri/build.rs`, `apps/desktop/src-tauri/tauri.conf.json`, `apps/desktop/src-tauri/capabilities/default.json`, `apps/desktop/src-tauri/icons/`
+
+**تست واقعی (نه فقط عدد):** CI windows job: `pnpm tauri build` → `*_x64-setup.exe` artifact; silent install `/S` on runner; launched process shows window title 'Cutting Edge' (PowerShell Get-Process MainWindowTitle); uninstall leaves no files
+
+**Done when:** Downloadable .exe from CI artifacts on every push
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-007, S-009
+
+### S-011 — Loop tooling: gate.py stages, ledger verifier, smoke-gpu.ps1, session handoff template
+
+**هدف:** اجراپذیر کردن خودِ لوپ: gate.py با مراحل static/unit/real/e2e/perf/chaos، verify_ledger.py که هر S-xxx را در دفترچه چک می‌کند و GREEN بدون verified_on را رد می‌کند، smoke-gpu.ps1 برای ماشین کاربر (خروجی JSON)، قالب handoff سشن
+
+**فایل‌ها:** `scripts/gate.py`, `scripts/verify_ledger.py`, `scripts/loop/render_steps.py`, `scripts/smoke-gpu.ps1`, `docs/loop/`
+
+**تست واقعی (نه فقط عدد):** Mark a step GREEN in ledger without verified_on → verify_ledger exits 1; remove a step id → exits 1; gate.py --stage all on clean checkout reports each stage PASS/FAIL/MISSING (never silently OK)
+
+**Done when:** verify_ledger runs in CI static stage
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-008
+
+### S-012 — Non-blocking processing: job model + thread pool so /health stays alive
+
+**هدف:** اندپوینت‌های سنگین (muscle/enhance) داخل `async def` به‌صورت همزمان اجرا می‌شوند و کل event loop را قفل می‌کنند. مدل Job حداقلی: POST → job_id، اجرای در ThreadPool، GET /jobs/{id} با progress/percent/eta/error، لغو؛ نسخه‌ی کامل صف در S-072
+
+**فایل‌ها:** `ai-engine/src/core/jobs.py`, `ai-engine/src/main.py`, `apps/desktop/src/lib/api.ts`, `tests/test_jobs.py`
+
+**تست واقعی (نه فقط عدد):** Start muscle enhance on 10s 720p fixture; during processing hammer /health 50x → p95 latency < 200ms; job reaches 100% and output passes assert_playable; cancel at 30% → process stops within 2s and partial file removed
+
+**Done when:** All endpoints > 2s runtime use jobs; frontend polls /jobs
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-006
+
+
+---
+
+## P1 — Timeline Real → v0.3.0
+
+_تایم‌لاین واقعی چندتِرَکه با برش/کشیدن/undo و پخش سکانس_
+
+### S-013 — Timeline domain model + Zustand store with undo history (zundo) + vitest
+
+**هدف:** مدل داده‌ی سکانس: tracks[] (video/audio/text)، clips با mediaId/in/out/start/duration/transform/effects، مارکرها، selection؛ استور با immer و zundo برای undo/redo؛ تست‌های واحد جامع (split/trim/move/ripple)
+
+**فایل‌ها:** `apps/desktop/src/domain/timeline.ts`, `apps/desktop/src/stores/timelineStore.ts`, `apps/desktop/src/domain/__tests__/timeline.test.ts`, `apps/desktop/vitest.config.ts`
+
+**تست واقعی (نه فقط عدد):** Property-based tests (fast-check): any sequence of random ops keeps clips non-overlapping per track and undo(n) restores exact prior state
+
+**Done when:** ≥ 90% line coverage on domain/timeline.ts
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-008
+
+### S-014 — Media Bin: multi-file import, metadata probe, thumbnails, rename/delete
+
+**هدف:** ایمپورت چند فایل با drag&drop و دیالوگ، استخراج مدت/ابعاد/fps با HTMLVideoElement، تامبنیل‌های canvas در چند نقطه، تغییر نام/حذف، جستجو، نمایش وضعیت پردازش
+
+**فایل‌ها:** `apps/desktop/src/components/media-bin/`, `apps/desktop/src/stores/mediaStore.ts`, `apps/desktop/src/lib/probe.ts`
+
+**تست واقعی (نه فقط عدد):** Playwright: drop 3 fixture files → 3 cards with correct durations (±0.1s) and non-blank thumbnails (pixel variance > 0); rename persists after reload of store snapshot
+
+**Done when:** E2E green; import of Persian-named file works
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-013
+
+### S-015 — Timeline canvas: ruler, tracks, virtualized clips, 60fps rendering
+
+**هدف:** رندر تایم‌لاین با ruler زمان، هدر ترک‌ها، کلیپ‌ها با تامبنیل و waveform ساده، مجازی‌سازی افقی، اندازه‌گیری فریم‌ریت؛ تصمیم DOM+transform در برابر Canvas با بنچمارک روی ۲۰۰ کلیپ
+
+**فایل‌ها:** `apps/desktop/src/components/timeline/Timeline.tsx`, `apps/desktop/src/components/timeline/Ruler.tsx`, `apps/desktop/src/components/timeline/Track.tsx`, `apps/desktop/src/components/timeline/ClipView.tsx`
+
+**تست واقعی (نه فقط عدد):** Playwright + CDP tracing while scrolling a 200-clip sequence: dropped frames < 5%; long tasks > 50ms == 0
+
+**Done when:** Perf budget met on CI CPU
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-013
+
+### S-016 — Playhead sync, scrubbing, JKL, frame-step, time display
+
+**هدف:** پلی‌هد با requestVideoFrameCallback همگام با ویدیو، اسکراب با درگ روی ruler، کلیدهای J/K/L، فریم‌به‌فریم با ←/→، نمایش timecode HH:MM:SS:FF
+
+**فایل‌ها:** `apps/desktop/src/components/timeline/Playhead.tsx`, `apps/desktop/src/hooks/usePlayback.ts`
+
+**تست واقعی (نه فقط عدد):** Playwright: play 3s → playhead x-position drift vs video.currentTime < 1 frame; press → 10x from 0 → currentTime == 10/fps ± 1ms
+
+**Done when:** Sync tests green at 30 and 60 fps fixtures
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-015
+
+### S-017 — Clip drag/move/reorder across tracks with snapping
+
+**هدف:** کشیدن کلیپ‌ها در همان ترک و بین ترک‌ها، snap به گرید/لبه‌ی کلیپ‌ها/پلی‌هد/مارکرهای بیت (با آستانه‌ی پیکسلی)، جلوگیری از هم‌پوشانی یا insert/ripple با کلید modifier، فیزیک spring برای بازگشت
+
+**فایل‌ها:** `apps/desktop/src/components/timeline/useClipDrag.ts`, `apps/desktop/src/domain/snap.ts`
+
+**تست واقعی (نه فقط عدد):** Playwright real mouse drag: clip B dropped 4px from clip A's end snaps exactly to A.end; drag to audio track is rejected for video clip with visual feedback
+
+**Done when:** Snap unit tests + E2E green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-016
+
+### S-018 — Trim handles (in/out), ripple & roll trim
+
+**هدف:** دستگیره‌های ابتدا/انتهای کلیپ با محدودیت به طول مدیای منبع، ripple trim (جابه‌جایی بعدی‌ها) و roll trim با modifier، پیش‌نمایش فریم هنگام trim
+
+**فایل‌ها:** `apps/desktop/src/components/timeline/TrimHandle.tsx`, `apps/desktop/src/domain/trim.ts`
+
+**تست واقعی (نه فقط عدد):** Playwright: drag out-handle left by 2s → clip.duration decreases exactly 2s (±1 frame); cannot extend beyond source duration; preview frame updates (canvas hash changes)
+
+**Done when:** Trim tests green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-017
+
+### S-019 — Split at playhead (Ctrl+B), delete, ripple delete
+
+**هدف:** برش کلیپ زیر پلی‌هد (همه‌ی کلیپ‌های انتخاب‌شده یا همه‌ی ترک‌ها با modifier)، حذف و ripple delete با بستن فاصله
+
+**فایل‌ها:** `apps/desktop/src/domain/split.ts`, `apps/desktop/src/lib/shortcuts.ts`
+
+**تست واقعی (نه فقط عدد):** Playwright: playhead at 4.5s on a 10s clip, Ctrl+B → two clips [0,4.5] [4.5,10] with continuous source in/out; ripple delete first → second starts at 0
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-018
+
+### S-020 — Selection (click/shift/marquee), copy/paste/duplicate
+
+**هدف:** انتخاب تکی/چندتایی/کادر انتخاب، کپی/پیست در محل پلی‌هد، duplicate، هایلایت انتخاب با توکن‌های طراحی
+
+**فایل‌ها:** `apps/desktop/src/components/timeline/Marquee.tsx`, `apps/desktop/src/stores/selectionStore.ts`
+
+**تست واقعی (نه فقط عدد):** Playwright marquee over 3 of 5 clips → selection size 3; Ctrl+C/Ctrl+V at 20s → 3 new clips starting at 20s with preserved relative offsets
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-019
+
+### S-021 — Undo/Redo UI (Ctrl+Z / Ctrl+Shift+Z) + history panel
+
+**هدف:** اتصال zundo به کلیدها و منو، پنل تاریخچه با برچسب‌های فارسی/انگلیسی هر عمل، جلوگیری از ثبت اکشن‌های ریز (debounce درگ)
+
+**فایل‌ها:** `apps/desktop/src/components/shared/HistoryPanel.tsx`
+
+**تست واقعی (نه فقط عدد):** Playwright: 5 edits → 5 history entries; Ctrl+Z ×5 → state hash == initial; redo ×5 → hash == final
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-020
+
+### S-022 — Multi-track: add/remove tracks, mute/solo/lock, text track
+
+**هدف:** ترک‌های ویدیو/صدا/متن، افزودن/حذف، mute/solo/lock با اثر واقعی روی پخش و خروجی، ترتیب ترک‌ها
+
+**فایل‌ها:** `apps/desktop/src/components/timeline/TrackHeader.tsx`, `apps/desktop/src/domain/tracks.ts`
+
+**تست واقعی (نه فقط عدد):** Playwright: lock track → drag on its clip is a no-op; mute audio track → AudioContext analyser reports silence during playback
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-021
+
+### S-023 — Timeline zoom (Ctrl+wheel, slider, fit) + horizontal scroll + minimap
+
+**هدف:** زوم حول نشانگر ماوس، زوم به اندازه‌ی سکانس، اسکرول افقی نرم، مینی‌مپ
+
+**فایل‌ها:** `apps/desktop/src/components/timeline/ZoomControls.tsx`, `apps/desktop/src/hooks/useZoom.ts`
+
+**تست واقعی (نه فقط عدد):** Playwright: Ctrl+wheel at x=400 → time under cursor unchanged (±1px); fit → full sequence visible
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-022
+
+### S-024 — Sequence preview player: multi-clip compositing playback
+
+**هدف:** پخش سکانس ویرایش‌شده (نه فقط یک فایل): دو عنصر video به‌صورت ping-pong با preload برای سوئیچ بی‌درنگ سر برش‌ها، ترک متن روی canvas، صدا از چند منبع با WebAudio، حالت کیفیت پایین زیر فشار (Reheal L2)
+
+**فایل‌ها:** `apps/desktop/src/components/preview/SequencePlayer.tsx`, `apps/desktop/src/lib/compositor.ts`
+
+**تست واقعی (نه فقط عدد):** Playwright: sequence of clipA[0-3s]+clipB[5-8s]; capture frame at t=3.2s → matches clipB@5.2s thumbnail (SSIM > 0.9); gap at cut < 100ms measured via timestamps
+
+**Done when:** Green; CPU < 60% on CI runner during playback
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-023
+
+### S-025 — Keyboard shortcuts registry + in-app cheat sheet (?)
+
+**هدف:** رجیستری مرکزی شورتکات‌ها با پشتیبانی از RTL و کیبورد فارسی، مودال راهنما با «?»، تداخل با Command Palette حل شود
+
+**فایل‌ها:** `apps/desktop/src/lib/shortcuts.ts`, `apps/desktop/src/components/shared/ShortcutsModal.tsx`
+
+**تست واقعی (نه فقط عدد):** Playwright: every registered shortcut fires its action exactly once; `?` opens modal listing them all (count matches registry)
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-024
+
+### S-026 — E2E journey v0.3: import → arrange → trim → split → undo → preview
+
+**هدف:** سفر کامل کاربر در Playwright با فیکسچرهای واقعی و اسکرین‌شات‌های رگرسیون بصری
+
+**فایل‌ها:** `apps/desktop/e2e/timeline.spec.ts`, `playwright.config.ts`
+
+**تست واقعی (نه فقط عدد):** Full journey passes 3× consecutively (flake check); visual snapshots diff < 0.1%
+
+**Done when:** Green in CI ubuntu
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-025
+
+### S-027 — MILESTONE v0.3.0: regression, tag, CI installer, pre-release, user smoke test
+
+**هدف:** اجرای کامل gate all، تگ v0.3.0، انتشار pre-release با .exe از CI، اجرای smoke-gpu.ps1 توسط کاربر و ثبت نتیجه در دفترچه
+
+**فایل‌ها:** `CHANGELOG.md`, `docs/loop/04_LEDGER.md`
+
+**تست واقعی (نه فقط عدد):** User runs installer on Windows/GTX 1650 → smoke-gpu.ps1 JSON: app_launch=true, backend_health=true, import_ok=true
+
+**Done when:** Ledger row S-027 verified_on includes user-gpu
+
+**دخالت کاربر:** `U2`
+
+**وابستگی‌ها:** S-026
+
+
+---
+
+## P2 — Export Pipeline → v0.4.0
+
+_خروجی واقعی FFmpeg با پیشرفت لحظه‌ای، لغو و پریست‌های شبکه‌های اجتماعی_
+
+### S-028 — FFmpeg export engine: timeline JSON → filter_complex, progress, cancel, NVENC detect
+
+**هدف:** کامپایل سکانس به دستور FFmpeg (trim/setpts/concat/scale/pad/fps/amix/afade)، پارس `-progress pipe:1`، لغو با kill، تشخیص h264_nvenc (GTX 1650) با fallback به libx264، پروفایل‌های H.264/H.265
+
+**فایل‌ها:** `ai-engine/src/export/compiler.py`, `ai-engine/src/export/runner.py`, `tests/test_export.py`
+
+**تست واقعی (نه فقط عدد):** 3-clip sequence with overlap-free timeline → output duration == sum ±1 frame; resolution/fps per settings; A/V sync: audio click at 2.0s lands at 2.0s ±20ms (detected via librosa onset); cancel at 40% kills process < 1s
+
+**Done when:** Export tests green with libx264; NVENC path unit-tested via mocked encoder list
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-012, S-013
+
+### S-029 — WebSocket progress channel /ws/jobs/{id} (BUG 6) + frontend hook
+
+**هدف:** کانال WebSocket برای پیشرفت لحظه‌ای هر job (percent/fps/eta/stage/log)، fallback به polling، هوک useJob در فرانت با reconnect
+
+**فایل‌ها:** `ai-engine/src/core/ws.py`, `apps/desktop/src/hooks/useJob.ts`
+
+**تست واقعی (نه فقط عدد):** During real export, WS delivers ≥ 10 monotonically increasing percent messages; killing WS mid-way → hook falls back to polling and completes
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**باگ‌های بسته‌شونده:** BUG-6
+
+**وابستگی‌ها:** S-028
+
+### S-030 — Export dialog: resolution/fps/codec/bitrate/presets/destination
+
+**هدف:** دیالوگ خروجی با 720p/1080p/4K، 24/30/60، H.264/H.265، بیت‌ریت/CRF، پریست‌های YouTube 1080p، Instagram Reels 9:16، TikTok، Shorts، نام فایل و مقصد، تخمین حجم
+
+**فایل‌ها:** `apps/desktop/src/components/export/ExportDialog.tsx`, `apps/desktop/src/domain/exportPresets.ts`
+
+**تست واقعی (نه فقط عدد):** Playwright: choose Reels preset → request body {w:1080,h:1920,fps:30,codec:h264}; 4K on non-4K source shows upscale warning
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-029
+
+### S-031 — Export progress UI, cancel, open output folder, export history
+
+**هدف:** نوار پیشرفت واقعی با ETA و fps، دکمه‌ی لغو، «باز کردن پوشه» (در وب: دانلود؛ در Tauri: opener)، تاریخچه‌ی خروجی‌ها
+
+**فایل‌ها:** `apps/desktop/src/components/export/ExportProgress.tsx`
+
+**تست واقعی (نه فقط عدد):** Playwright: progress element text increases; cancel → toast in Persian + job status cancelled + no output file
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-030
+
+### S-032 — Audio mixdown: track gains, fades, ducking, music bed
+
+**هدف:** میکس صدا در خروجی: گین هر ترک/کلیپ، fade in/out، داکینگ خودکار موسیقی زیر گفتار (sidechaincompress)، نرمال‌سازی loudness (-14 LUFS)
+
+**فایل‌ها:** `ai-engine/src/export/audio.py`
+
+**تست واقعی (نه فقط عدد):** Export with music -12dB + voice → ebur128 integrated loudness -14 ±1 LUFS; music RMS during voice segment lower by ≥ 6dB than in silence
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-028
+
+### S-033 — Export quality validation suite (ffprobe + SSIM + browser playback)
+
+**هدف:** سوییت اعتبارسنجی خروجی: ffprobe، SSIM نسبت به رفرنس ≥ 0.95، پخش در Chromium (رویداد canplaythrough)، moov atom در ابتدا (faststart)
+
+**فایل‌ها:** `tests/test_export_quality.py`, `apps/desktop/e2e/export.spec.ts`
+
+**تست واقعی (نه فقط عدد):** All presets exported from same sequence pass validation; Playwright loads each output in <video> and reaches readyState 4
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-031, S-032
+
+### S-034 — MILESTONE v0.4.0
+
+**هدف:** رگرسیون کامل، تگ، pre-release، smoke تست کاربر با یک خروجی واقعی روی NVENC
+
+**فایل‌ها:** `CHANGELOG.md`
+
+**تست واقعی (نه فقط عدد):** User: export 1080p60 60s clip → smoke JSON reports encoder=h264_nvenc and realtime_factor ≥ 1.0
+
+**Done when:** Ledger verified_on user-gpu
+
+**دخالت کاربر:** `U2`
+
+**وابستگی‌ها:** S-033
+
+
+---
+
+## P3 — AI Full Integration → v0.5.0
+
+_هر ۱۶ قابلیت با UI واقعی، تست واقعی روی مدیا و زنجیره‌ی fallback_
+
+### S-035 — Muscle Enhancer: 478-pt Face Mesh protection with feathering + temporal smoothing (BUG 3)
+
+**هدف:** ماسک صورت از Face Mesh کامل با پرشدن چندضلعی دقیق، feather وابسته به اندازه‌ی صورت، هموارسازی زمانی برای جلوگیری از فلیکر، پشتیبانی چند چهره
+
+**فایل‌ها:** `ai-engine/src/muscle/face_guard.py`, `ai-engine/src/muscle/muscle_enhancer.py`, `tests/test_face_guard.py`
+
+**تست واقعی (نه فقط عدد):** Real human fixture: SSIM(face bbox, input vs output) ≥ 0.98 while SSIM(torso region) ≤ 0.95; flicker metric (mean |Δmask| between frames) < 0.02
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**باگ‌های بسته‌شونده:** BUG-3
+
+**وابستگی‌ها:** S-006
+
+### S-036 — Muscle Enhancer: real pose-based body/muscle-group masks + GPU path + CPU fallback + frame checkpoints
+
+**هدف:** ماسک‌های عضلانی از ۳۳ نقطه‌ی MediaPipe (بازو/سینه/شکم/پا)، مسیر GPU (OpenCV CUDA یا torch float16) با fallback CPU، چک‌پوینت هر ۱۰۰ فریم (Reheal L7)، بودجه‌ی VRAM < 800MB
+
+**فایل‌ها:** `ai-engine/src/muscle/body_masks.py`, `ai-engine/src/muscle/gpu.py`, `ai-engine/src/muscle/muscle_enhancer.py`
+
+**تست واقعی (نه فقط عدد):** CPU: 720p ≥ 8 fps on CI; kill process at frame 150 of 300 → resume finishes with identical output hash to uninterrupted run
+
+**Done when:** Green (GPU numbers recorded from user bench, not required for green)
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-035
+
+### S-037 — Muscle Enhancer: FFmpeg mux (keep audio, H.264 not mp4v), job progress, cancel
+
+**هدف:** خروجی فعلی با fourcc mp4v و بدون صدا. لوله‌ی فریم‌ها به FFmpeg stdin با کپی صدا از ورودی، faststart، progress و cancel از طریق jobs
+
+**فایل‌ها:** `ai-engine/src/muscle/pipeline.py`, `ai-engine/src/main.py`
+
+**تست واقعی (نه فقط عدد):** Output has audio stream identical duration to input (±20ms), video codec h264, plays in Chromium
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-036, S-012
+
+### S-038 — Muscle Enhancer UI: before/after split slider on live frame, presets, progress
+
+**هدف:** اندپوینت سریع /muscle/preview-frame (یک فریم < 300ms)، اسلایدر قبل/بعد، ۴ پریست، کنترل تک‌تک تکنیک‌ها، پیشرفت پردازش کامل
+
+**فایل‌ها:** `apps/desktop/src/components/muscle-enhancer/`, `ai-engine/src/main.py`
+
+**تست واقعی (نه فقط عدد):** Playwright: move slider to 50% → left half pixels == original frame, right half differ; preset change updates preview < 500ms
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-037
+
+### S-039 — Beat Sync integration: markers on timeline, snap-to-beat, auto-cut to clips, music import
+
+**هدف:** نمایش مارکرهای بیت روی ruler، snap به بیت، تولید خودکار برش‌ها روی تایم‌لاین از بیت‌ها با انتخاب هر n بیت، ایمپورت موسیقی جدا
+
+**فایل‌ها:** `apps/desktop/src/components/timeline/BeatMarkers.tsx`, `apps/desktop/src/features/beatSync.ts`
+
+**تست واقعی (نه فقط عدد):** 120-BPM fixture → markers every 0.5s (±30ms); auto-cut every 4 beats → clip boundaries at 2.0s multiples
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-017, S-004
+
+### S-040 — Living Timeline: real energy/emotion heat-map per segment
+
+**هدف:** تحلیل انرژی حرکت + صدا + احساس صحنه به‌صورت job، رنگ‌آمیزی کلیپ‌ها/ruler با گرادیان heat-map، کش نتایج بر اساس hash فایل
+
+**فایل‌ها:** `ai-engine/src/analyzer/energy_map.py`, `apps/desktop/src/components/timeline/HeatMap.tsx`
+
+**تست واقعی (نه فقط عدد):** Fixture with static first half + fast motion second half → heat values second half > 2× first half; UI colors match value buckets
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-015, S-012
+
+### S-041 — Emotion Color Engine: analysis → LUT (.cube) → preview + export (lut3d)
+
+**هدف:** تشخیص احساس صحنه، تولید LUT سه‌بعدی، اعمال در پیش‌نمایش (S-049) و در خروجی با فیلتر lut3d، شدت قابل تنظیم
+
+**فایل‌ها:** `ai-engine/src/editor_ai/emotion_color.py`, `ai-engine/src/color/lut.py`
+
+**تست واقعی (نه فقط عدد):** Generated .cube parses in FFmpeg; exported frame mean hue shift matches LUT intent (warm preset → +R −B); identity LUT at 0% yields SSIM 1.0
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-028
+
+### S-042 — One-Click Viral Cut → new sequence with 9:16 subject-tracked crop
+
+**هدف:** پیدا کردن بهترین ۳۰ ثانیه، ساخت سکانس جدید، پیشنهاد کراپ عمودی با دنبال‌کردن مرکز بدن (pose)، پریست‌های Reels/Shorts/TikTok
+
+**فایل‌ها:** `ai-engine/src/editor_ai/viral_cut.py`, `apps/desktop/src/features/viralCut.ts`
+
+**تست واقعی (نه فقط عدد):** Fixture with subject moving left→right → crop x follows (correlation > 0.8); 2s fixture → whole clip, no crash
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-040, S-024
+
+### S-043 — Voice Command: mic UI → Whisper → Persian/English intent → editor actions
+
+**هدف:** دکمه‌ی میکروفون با MediaRecorder، ارسال به /editor/voice-command/audio، Whisper small (CUDA float16 / CPU tiny fallback)، پارسر نیت فارسی/انگلیسی، اجرای اکشن‌ها از طریق command bus، تأیید بصری
+
+**فایل‌ها:** `apps/desktop/src/components/editor/VoiceButton.tsx`, `ai-engine/src/editor_ai/voice_editor.py`, `ai-engine/src/captioner/whisper_caption.py`
+
+**تست واقعی (نه فقط عدد):** Round-trip: edge-tts synthesizes «ده ثانیه‌ی اول را ببر» → Whisper → intent {action:'cut', start:0, end:10}; English «split here» → split; ≥ 90% on a 20-utterance set
+
+**Done when:** Green (CPU tiny model in CI; small model on user)
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-019, S-012
+
+### S-044 — Whisper captions: transcript panel, SRT export, caption text track, burn-in on export
+
+**هدف:** ترنسکریپت با تایم‌کد و کلیک-برای-پرش، ترجمه‌ی fa↔en، خروجی SRT/VTT، ترک متن روی تایم‌لاین، burn-in با فیلتر subtitles/ass و فونت فارسی
+
+**فایل‌ها:** `apps/desktop/src/components/captions/`, `ai-engine/src/captioner/`, `ai-engine/src/export/subtitles.py`
+
+**تست واقعی (نه فقط عدد):** TTS-generated Persian narration fixture → WER ≤ 0.3; exported SRT parses; burned-in export frame at caption time contains text (OCR via tesseract optional, else pixel-diff vs no-caption export > threshold in bottom band)
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-043, S-028
+
+### S-045 — Mood DNA visualization: radar + timeline charts, cache by hash
+
+**هدف:** نمودار رادار ۸ بُعدی و نمودار زمانی انرژی/رنگ، کش نتایج بر اساس SHA256 فایل، خروجی JSON
+
+**فایل‌ها:** `apps/desktop/src/components/style-match/MoodDnaChart.tsx`, `ai-engine/src/style_match/mood_dna.py`
+
+**تست واقعی (نه فقط عدد):** Same file twice → second call served from cache < 50ms; radar SVG has 8 axes with values in [0,1]
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-012
+
+### S-046 — Style Match: side-by-side compare, DNA diff, 'Apply Style' suggestions
+
+**هدف:** نمای دو ویدیو کنار هم با اسکراب همگام، diff بُعدهای DNA، «اعمال استایل» → پیشنهاد LUT + ریتم برش + ترنزیشن‌ها با پیش‌نمایش و تأیید
+
+**فایل‌ها:** `apps/desktop/src/components/style-match/CompareView.tsx`, `ai-engine/src/style_match/apply_style.py`
+
+**تست واقعی (نه فقط عدد):** Reference fast-cut fixture vs slow target → suggested avg cut length within 20% of reference; applying produces timeline with N cuts matching
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-045, S-041, S-039
+
+### S-047 — Pose-to-Pose mapping: skeleton overlay + matched segments
+
+**هدف:** اورلی اسکلت ۳۳ نقطه روی پیش‌نمایش، لیست سگمنت‌های مشابه بین رفرنس و ویدیوی کاربر با امتیاز شباهت، پرش به سگمنت
+
+**فایل‌ها:** `apps/desktop/src/components/preview/PoseOverlay.tsx`, `ai-engine/src/style_match/pose_mapper.py`
+
+**تست واقعی (نه فقط عدد):** Real human fixture vs itself → similarity 1.0; vs time-shifted copy → matched segments offset detected within 0.2s
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-024
+
+### S-048 — Transition Intelligence: per-cut suggestions with reasoning + apply via xfade
+
+**هدف:** برای هر برش دلیل و نوع ترنزیشن پیشنهادی (cut/crossfade/dip/whip) بر اساس انرژی و بیت، اعمال در خروجی با xfade/acrossfade و پیش‌نمایش تقریبی
+
+**فایل‌ها:** `ai-engine/src/style_match/transition_ai.py`, `ai-engine/src/export/transitions.py`
+
+**تست واقعی (نه فقط عدد):** Export with 1s crossfade between two solid-color fixtures → frame at midpoint has mean color ≈ 50/50 blend (±10)
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-028, S-040
+
+### S-049 — Real-Time Style Preview: WebGL LUT shader on preview canvas
+
+**هدف:** اعمال LUT سه‌بعدی و تنظیمات پایه‌ی رنگ در شیدر WebGL روی پیش‌نمایش بدون رندر؛ سوئیچ فوری بین استایل‌ها؛ fallback به CSS filter
+
+**فایل‌ها:** `apps/desktop/src/lib/gl/lutShader.ts`, `apps/desktop/src/components/preview/GlPreview.tsx`
+
+**تست واقعی (نه فقط عدد):** Playwright: identity LUT → canvas pixels == video frame (Δ<2); warm LUT → red channel mean increases; frame time < 8ms at 1080p on CI GPU-less SwiftShader ≤ 33ms
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-041, S-024
+
+### S-050 — Style Library: preset JSON, thumbnails, import/export, naming policy
+
+**هدف:** کتابخانه‌ی استایل با پریست‌های JSON، تامبنیل، ایمپورت/اکسپورت، جستجو؛ نام‌گذاری «الهام‌گرفته» به‌جای اسم اشخاص/برندها برای پرهیز از مشکل علامت تجاری
+
+**فایل‌ها:** `packages/style-presets/`, `apps/desktop/src/components/style-match/StyleLibrary.tsx`
+
+**تست واقعی (نه فقط عدد):** Every preset validates against JSON schema; applying each preset to fixture completes without error
+
+**Done when:** Green
+
+**دخالت کاربر:** `U3` — پیش‌فرض در سکوت: _Generic descriptive names (e.g. 'Competition Stage', 'Science Explainer', 'Athleisure Ad')_
+
+**وابستگی‌ها:** S-046
+
+### S-051 — Proactive Coach: analysis-triggered suggestions panel (apply/dismiss, throttled)
+
+**هدف:** پیشنهادهای خودکار بعد از ایمپورت/تحلیل (برش‌های خسته‌کننده، بی‌صدایی، رنگ نامتوازن)، پنل غیرمزاحم با apply/dismiss، throttle و حافظه‌ی رد‌شده‌ها
+
+**فایل‌ها:** `ai-engine/src/assistant/proactive_coach.py`, `apps/desktop/src/components/ai-assistant/CoachPanel.tsx`
+
+**تست واقعی (نه فقط عدد):** Import fixture with 5s static segment → suggestion 'trim static segment 0–5s' appears within 10s; apply → timeline changes accordingly; dismissed suggestion never re-appears for same file hash
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-040
+
+### S-052 — Workout Form Analyzer: pose overlay, rep counting, joint angles, report
+
+**هدف:** تحلیل فرم: زاویه‌ی زانو/لگن، عمق اسکوات، شمارش تکرار، هشدار خطا روی پیش‌نمایش، گزارش قابل خروجی
+
+**فایل‌ها:** `ai-engine/src/assistant/form_analyzer.py`, `apps/desktop/src/components/ai-assistant/FormOverlay.tsx`
+
+**تست واقعی (نه فقط عدد):** Licensed squat fixture with N known reps → count == N (±1); min knee angle reported within ±10° of hand-labeled value
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-047
+
+### S-053 — Multi-Modal Brain: chat with frame/transcript/timeline context + fallback chain (Reheal L4)
+
+**هدف:** چت با کانتکست (تامبنیل فریم فعلی به مدل vision رایگان OpenRouter، ترنسکریپت، وضعیت تایم‌لاین)، زنجیره‌ی OpenRouter → Nvidia NIM → قواعد محلی → کش، timeout 15s، retry ۳ با backoff نمایی، استریم پاسخ
+
+**فایل‌ها:** `ai-engine/src/ai/router.py`, `ai-engine/src/ai/providers/`, `apps/desktop/src/components/ai-assistant/Chat.tsx`, `tests/test_ai_router.py`
+
+**تست واقعی (نه فقط عدد):** Provider mock returns 500 twice then 200 → 3 attempts, success; all cloud down → local rule reply in Persian (no exception); with real key (if present) live smoke gets non-empty reply — otherwise ledger marks 'cloud unverified' not green-by-skip
+
+**Done when:** Green; live smoke recorded when key present
+
+**دخالت کاربر:** `U1`
+
+**وابستگی‌ها:** S-012
+
+### S-054 — Auto-Narrator: script generation → edge-tts → audio clip on timeline
+
+**هدف:** تولید متن روایت از تحلیل ویدیو، انتخاب صدا (fa/en)، edge-tts، افزودن به ترک صدا با هم‌ترازی، کش صداها
+
+**فایل‌ها:** `ai-engine/src/assistant/auto_narrator.py`, `apps/desktop/src/components/ai-assistant/Narrator.tsx`
+
+**تست واقعی (نه فقط عدد):** Generate Persian narration → mp3 duration > 0; Whisper round-trip word match ≥ 70%; clip appears on audio track at requested time
+
+**Done when:** Green (network needed for edge-tts; offline → explicit 'unverified')
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-022, S-043
+
+### S-055 — Content Strategy dashboard: virality score breakdown, hook timing, length, hashtags
+
+**هدف:** داشبورد امتیاز وایرال با تفکیک مؤلفه‌ها، تشخیص hook در ۳ ثانیه‌ی اول، پیشنهاد طول برای هر پلتفرم، هشتگ‌ها (fa/en)
+
+**فایل‌ها:** `ai-engine/src/assistant/content_strategy.py`, `apps/desktop/src/components/ai-assistant/StrategyDashboard.tsx`
+
+**تست واقعی (نه فقط عدد):** High-energy-start fixture scores hook ≥ 0.7; static-start fixture ≤ 0.3; UI renders all components with values in range
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-040
+
+### S-056 — AI guardrails: rate limits, content-hash cache, offline mode UX, cost = $0 enforcement
+
+**هدف:** محدودیت نرخ فراخوانی، کش بر اساس hash محتوا، پیام‌های شفاف حالت آفلاین، فقط مدل‌های :free مجاز (لیست سفید) تا هزینه صفر بماند
+
+**فایل‌ها:** `ai-engine/src/ai/guard.py`, `apps/desktop/src/components/shared/OfflineBanner.tsx`
+
+**تست واقعی (نه فقط عدد):** Request non-free model id → rejected 400; 20 identical requests → 1 upstream call; disconnect network → banner in Persian within 5s
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-053
+
+### S-057 — MILESTONE v0.5.0
+
+**هدف:** همه‌ی ۱۶ قابلیت با تست واقعی سبز، تگ، pre-release، smoke کاربر شامل Whisper CUDA و NVENC
+
+**فایل‌ها:** `CHANGELOG.md`
+
+**تست واقعی (نه فقط عدد):** User smoke JSON: whisper_device=cuda, vram_peak_mb < 800, ram_peak_mb < 1500 during muscle enhance 1080p
+
+**Done when:** Ledger verified_on user-gpu
+
+**دخالت کاربر:** `U2`
+
+**وابستگی‌ها:** S-038, S-039, S-042, S-044, S-046, S-048, S-049, S-050, S-051, S-052, S-054, S-055, S-056
+
+
+---
+
+## P4 — Tauri Desktop → v0.6.0
+
+_اپ دسکتاپ ویندوز با sidecar پایتون، نصب‌کننده‌ی NSIS و آپدیتر_
+
+### S-058 — Tauri shell: custom titlebar, window state, min size, dark theme, drag region
+
+**هدف:** decorations=false با titlebar سفارشی (RTL)، ذخیره‌ی موقعیت/اندازه‌ی پنجره، حداقل 1024×640، دکمه‌های min/max/close، دوبار کلیک برای maximize
+
+**فایل‌ها:** `apps/desktop/src-tauri/src/lib.rs`, `apps/desktop/src/components/shell/TitleBar.tsx`, `apps/desktop/src-tauri/tauri.conf.json`
+
+**تست واقعی (نه فقط عدد):** CI windows: launch → window size restored after relaunch (registry/state file); tauri-driver clicks maximize → window bounds == work area
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-010
+
+### S-059 — Rust IPC: dialogs, fs metadata, native drag-drop paths, opener, minimal capabilities
+
+**هدف:** دستورات Rust برای دیالوگ باز/ذخیره (tauri-plugin-dialog)، متادیتای فایل، دریافت مسیر واقعی از drag&drop، باز کردن پوشه (opener)، capabilities حداقلی و CSP
+
+**فایل‌ها:** `apps/desktop/src-tauri/src/commands/`, `apps/desktop/src/lib/native.ts`, `apps/desktop/src-tauri/capabilities/`
+
+**تست واقعی (نه فقط عدد):** Rust unit tests for path normalization (unicode, long paths, UNC); tauri-driver: open dialog cancelled → no error toast; capability audit lists only used permissions
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-058
+
+### S-060 — Python backend as sidecar: PyInstaller bundle, spawn/health-wait/restart, model download on first run
+
+**هدف:** بسته‌بندی ai-engine با PyInstaller (one-dir)، ثبت به‌عنوان externalBin، اجرای خودکار با پورت آزاد، انتظار /health، ری‌استارت روی کرش (Reheal)، کشتن هنگام خروج، دانلود مدل Whisper small (~460MB) و FFmpeg در اولین اجرا به %LOCALAPPDATA% با نوار پیشرفت و checksum
+
+**فایل‌ها:** `ai-engine/build/pyinstaller.spec`, `apps/desktop/src-tauri/src/sidecar.rs`, `apps/desktop/src/components/shell/FirstRun.tsx`, `scripts/build-sidecar.ps1`
+
+**تست واقعی (نه فقط عدد):** CI windows: installed app spawns sidecar; /health 200 within 15s cold; kill sidecar PID → respawned within 5s and UI shows reconnect; app exit leaves no orphan python.exe
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-059, S-012
+
+### S-061 — Windows path handling: asset protocol for preview, unicode/Persian names, long paths, drive letters
+
+**هدف:** پیش‌نمایش فایل‌های محلی با convertFileSrc/asset protocol به‌جای blob آپلود، پشتیبانی نام‌های فارسی و مسیرهای بلند، ارسال مسیر به بک‌اند به‌جای آپلود (سرعت)
+
+**فایل‌ها:** `apps/desktop/src/lib/paths.ts`, `apps/desktop/src-tauri/tauri.conf.json`, `ai-engine/src/main.py`
+
+**تست واقعی (نه فقط عدد):** CI windows: import `C:\Temp\ویدیو تست ۱.mp4` → preview plays; backend processes by path without copy; 260+ char path works
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-060
+
+### S-062 — NSIS installer: icon, license, per-user install, shortcuts, clean uninstall, fa/en languages
+
+**هدف:** پیکربندی NSIS: نصب per-user (بدون UAC)، شورتکات‌ها، انتخاب زبان فارسی/انگلیسی، حذف تمیز شامل %LOCALAPPDATA% اختیاری، بدون نیاز به قانون فایروال (بک‌اند فقط 127.0.0.1)
+
+**فایل‌ها:** `apps/desktop/src-tauri/tauri.conf.json`, `apps/desktop/src-tauri/nsis/`, `docs/user/install.fa.md`
+
+**تست واقعی (نه فقط عدد):** CI windows: silent install → Start Menu shortcut exists → app launches → silent uninstall → no leftover files/registry keys (scripted diff)
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-060
+
+### S-063 — Branding: final icon set, metadata, single-source version sync
+
+**هدف:** آیکون نهایی (تولید با generate + بازبینی)، `tauri icon` برای همه‌ی سایزها، متادیتای exe (نام/شرکت/کپی‌رایت)، اسکریپت sync نسخه بین package.json/Cargo.toml/tauri.conf.json/pyproject
+
+**فایل‌ها:** `apps/desktop/src-tauri/icons/`, `scripts/sync-version.py`, `assets/brand/`
+
+**تست واقعی (نه فقط عدد):** `sync-version.py --check` fails when any manifest differs; exe FileVersion == package.json version (PowerShell Get-Item VersionInfo)
+
+**Done when:** Green
+
+**دخالت کاربر:** `U3` — پیش‌فرض در سکوت: _Product name 'Cutting Edge'; icon = generated concept approved by silence after 48h_
+
+**وابستگی‌ها:** S-062
+
+### S-064 — System tray, single-instance, graceful shutdown with running jobs
+
+**هدف:** آیکون tray با منوی وضعیت Reheal، single-instance (فوکوس پنجره‌ی موجود)، هشدار خروج هنگام job در حال اجرا و لغو تمیز
+
+**فایل‌ها:** `apps/desktop/src-tauri/src/tray.rs`, `apps/desktop/src-tauri/src/lib.rs`
+
+**تست واقعی (نه فقط عدد):** CI windows: launch twice → one process; close with running export → confirm dialog → confirm → job cancelled, temp removed, exit code 0
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-060
+
+### S-065 — Auto-updater: tauri-plugin-updater + GitHub Releases + minisign keys in CI secrets
+
+**هدف:** آپدیتر با امضای minisign، کلید عمومی در tauri.conf، کلید خصوصی در GitHub Secrets (ایجنت با gh secret set می‌گذارد و یک نسخه‌ی رمزشده برای کاربر در issue خصوصی/فایل محلی می‌گذارد)، latest.json در Release، UI «به‌روزرسانی موجود است» با release notes فارسی
+
+**فایل‌ها:** `apps/desktop/src-tauri/src/updater.rs`, `.github/workflows/release.yml`, `apps/desktop/src/components/shell/UpdateBanner.tsx`
+
+**تست واقعی (نه فقط عدد):** CI: build v0.6.0-rc1 then rc2; install rc1, point updater to staging latest.json → app detects rc2, downloads, verifies signature, relaunches as rc2; tampered signature → rejected
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-062
+
+### S-066 — Desktop E2E on CI Windows: tauri-driver journeys + installer smoke + orphan/leak checks
+
+**هدف:** سفرهای کاربر با tauri-driver (Edge WebDriver): نصب → اجرا → ایمپورت → برش → خروجی → بستن؛ بررسی پروسه‌های یتیم، مصرف حافظه، حذف
+
+**فایل‌ها:** `apps/desktop/e2e-desktop/`, `.github/workflows/ci.yml`
+
+**تست واقعی (نه فقط عدد):** Journey passes 2× on windows-latest; peak private bytes < 1.5GB; no python.exe/ffmpeg.exe after exit
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-061, S-064, S-065
+
+### S-067 — MILESTONE v0.6.0 — first installable pre-release
+
+**هدف:** اولین نصب‌کننده‌ی واقعی؛ کاربر نصب می‌کند و smoke-gpu.ps1 را می‌زند
+
+**فایل‌ها:** `CHANGELOG.md`
+
+**تست واقعی (نه فقط عدد):** User smoke JSON: install_ok, first_run_models_downloaded, sidecar_health, whisper_device=cuda, export_nvenc=true
+
+**Done when:** Ledger verified_on user-gpu
+
+**دخالت کاربر:** `U2`
+
+**وابستگی‌ها:** S-063, S-066
+
+
+---
+
+## P5 — Project & Stability → v0.7.0
+
+_پروژه‌ی ذخیره‌شدنی، صف کار، هر ۷ لایه‌ی Reheal فعال و تست آشوب_
+
+### S-068 — Project file (.cev2) versioned JSON schema, save/save-as/open/recent, migrations
+
+**هدف:** فرمت پروژه با اسکیمای نسخه‌دار، مسیرهای نسبی مدیا، ذخیره/ذخیره‌ی با نام/باز کردن/اخیرها، مهاجرت بین نسخه‌ها، dirty flag در عنوان
+
+**فایل‌ها:** `apps/desktop/src/domain/project.ts`, `apps/desktop/src/lib/projectIO.ts`, `packages/schemas/project.schema.json`
+
+**تست واقعی (نه فقط عدد):** Save → reopen → deep-equal state; open v1 fixture project → migrated to current; corrupted JSON → friendly Persian error + backup offer
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-059, S-024
+
+### S-069 — Auto-save + crash restore (Reheal L6)
+
+**هدف:** ذخیره‌ی خودکار هر ۳۰ ثانیه/بعد از هر تغییر با debounce به فایل recovery، پیشنهاد بازیابی بعد از کرش، persist استور UI
+
+**فایل‌ها:** `apps/desktop/src/lib/autosave.ts`, `apps/desktop/src/components/shell/RecoveryDialog.tsx`
+
+**تست واقعی (نه فقط عدد):** tauri-driver: edit → kill process (taskkill /F) → relaunch → recovery dialog → restored state equals pre-kill snapshot
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-068
+
+### S-070 — Project & sequence settings: resolution, fps, aspect, color space; new-project dialog
+
+**هدف:** دیالوگ پروژه‌ی جدید با پریست‌ها (1080p30، 4K، 9:16)، تغییر تنظیمات سکانس با هشدار، نمایش ناهماهنگی مدیا با سکانس
+
+**فایل‌ها:** `apps/desktop/src/components/project/NewProjectDialog.tsx`, `apps/desktop/src/components/project/SequenceSettings.tsx`
+
+**تست واقعی (نه فقط عدد):** Create 9:16 project → preview aspect 9:16; import 16:9 clip → mismatch badge + fit/fill options change export output
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-068
+
+### S-071 — Media relink + integrity (checksum, backup before overwrite) (Reheal L5)
+
+**هدف:** پیدا کردن مدیای جابه‌جاشده با نام/اندازه/hash جزئی، دیالوگ relink، پشتیبان‌گیری قبل از بازنویسی پروژه، اعتبارسنجی checksum خروجی
+
+**فایل‌ها:** `apps/desktop/src/lib/relink.ts`, `ai-engine/src/core/integrity.py`
+
+**تست واقعی (نه فقط عدد):** Move fixture to new folder → open project → offline badge → relink folder → all clips online; overwrite project → .bak exists with previous content
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-068
+
+### S-072 — Full job queue: priority, concurrency=2, retry×3 backoff, persistence, resume from checkpoint (Reheal L7)
+
+**هدف:** صف پایدار (SQLite) با اولویت، حداکثر ۲ کار همزمان، retry سه‌باره با backoff، ادامه از چک‌پوینت بعد از ری‌استارت بک‌اند، پنل صف در UI
+
+**فایل‌ها:** `ai-engine/src/core/queue.py`, `ai-engine/src/core/jobs.py`, `apps/desktop/src/components/shared/JobsPanel.tsx`
+
+**تست واقعی (نه فقط عدد):** Enqueue 5 jobs → never > 2 running; inject failure on attempt 1–2 → succeeds on 3rd; kill backend at 50% → restart → job resumes from checkpoint and final hash equals uninterrupted run
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-012, S-036
+
+### S-073 — Structured logging (JSON) + rotation + log viewer API + Reheal drawer real data
+
+**هدف:** loguru با sink JSON و rotation، tracing در Rust به فایل، اندپوینت /reheal/log با فیلتر، کشوی Reheal با داده‌ی واقعی و دکمه‌ی «کپی گزارش خطا»
+
+**فایل‌ها:** `ai-engine/src/core/logging.py`, `apps/desktop/src-tauri/src/logging.rs`, `apps/desktop/src/components/shared/RehealDrawer.tsx`
+
+**تست واقعی (نه فقط عدد):** Trigger an auto-fix (simulate RAM pressure) → JSON log line with fields {ts, level, component, fix, ok}; drawer shows it within 5s; logs rotate at 10MB
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-072
+
+### S-074 — Temp cleanup (BUG 5) + disk space guard
+
+**هدف:** پاک‌سازی پس‌زمینه‌ی فایل‌های موقت قدیمی‌تر از ۱ ساعت و همه در خروج، بررسی فضای دیسک قبل از خروجی با تخمین حجم، پیام فارسی
+
+**فایل‌ها:** `ai-engine/src/core/cleanup.py`, `ai-engine/src/main.py`
+
+**تست واقعی (نه فقط عدد):** Create 3 temp files aged 2h (utime) → cleanup removes them, keeps fresh ones and in-use job files; mock free space 100MB → export refused with clear message
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**باگ‌های بسته‌شونده:** BUG-5
+
+**وابستگی‌ها:** S-072
+
+### S-075 — Memory & GPU guards live (Reheal L1/L2): thresholds, float16 switch, preview downscale
+
+**هدف:** پایش RAM/VRAM با آستانه‌های واقعی (RAM app < 1.5GB، VRAM < 800MB مدل‌ها / 3500MB کل)، سوئیچ خودکار float16، کاهش رزولوشن پیش‌نمایش تحت فشار، رویدادها به UI
+
+**فایل‌ها:** `ai-engine/src/reheal/memory_guard.py`, `ai-engine/src/reheal/health_monitor.py`, `apps/desktop/src/hooks/usePressure.ts`
+
+**تست واقعی (نه فقط عدد):** Simulate pressure via env flag → backend emits 'degraded' → preview switches to 540p (Playwright checks video width) → recovers when pressure clears
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-073
+
+### S-076 — Rust watchdog for sidecar + frontend reconnect UX
+
+**هدف:** واچ‌داگ Rust: ۳ شکست متوالی /health → ری‌استارت sidecar با backoff، حداکثر ۵ بار، سپس پیام راهنما؛ UI حالت «در حال اتصال مجدد» بدون از دست دادن وضعیت
+
+**فایل‌ها:** `apps/desktop/src-tauri/src/watchdog.rs`, `apps/desktop/src/components/shared/ConnectionBanner.tsx`
+
+**تست واقعی (نه فقط عدد):** tauri-driver: kill python → banner appears < 5s → auto-recovers → banner disappears; 6 consecutive kills → guidance dialog with log path
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-060, S-073
+
+### S-077 — Chaos test suite: kill backend mid-export, pull file mid-import, fill temp, no GPU, bad key
+
+**هدف:** سوییت آشوب که هر لایه‌ی Reheal را واقعاً تحریک می‌کند و مسیر بازیابی را assert می‌کند؛ اجرا در CI ubuntu (بک‌اند) و windows (دسکتاپ)
+
+**فایل‌ها:** `tests/chaos/`, `apps/desktop/e2e/chaos.spec.ts`
+
+**تست واقعی (نه فقط عدد):** All 7 layers have ≥ 1 chaos scenario each with assertion on recovery artifact (log line + UI state + no crash + no orphan process)
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-074, S-075, S-076
+
+### S-078 — MILESTONE v0.7.0
+
+**هدف:** رگرسیون کامل + chaos، تگ، pre-release، smoke کاربر شامل کشتن پروسه‌ی پایتون و بازیابی
+
+**فایل‌ها:** `CHANGELOG.md`
+
+**تست واقعی (نه فقط عدد):** User smoke JSON: crash_restore_ok=true, sidecar_respawn_ok=true
+
+**Done when:** Ledger verified_on user-gpu
+
+**دخالت کاربر:** `U2`
+
+**وابستگی‌ها:** S-069, S-070, S-071, S-077
+
+
+---
+
+## P6 — Testing & Polish → v0.8.0
+
+_پوشش تست، کارایی روی GTX 1650، دسترس‌پذیری، i18n، امنیت_
+
+### S-079 — Coverage targets: Python core ≥ 80%, TS domain ≥ 80%, Rust commands ≥ 70%; mutation spot-checks
+
+**هدف:** پوشش با coverage.py/v8/cargo-llvm-cov، گیت روی افت پوشش، mutmut/Stryker روی ماژول‌های حیاتی (timeline domain، export compiler)
+
+**فایل‌ها:** `pytest.ini`, `apps/desktop/vitest.config.ts`, `.github/workflows/ci.yml`
+
+**تست واقعی (نه فقط عدد):** Coverage report artifacts; mutation score ≥ 60% on timeline.ts and compiler.py
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-078
+
+### S-080 — Integration tests for every endpoint with real fixtures + OpenAPI contract check
+
+**هدف:** هر اندپوینت حداقل یک تست موفق + یک تست خطا با فیکسچر واقعی، بررسی OpenAPI با کلاینت TS تولیدشده (openapi-typescript) تا فرانت و بک هم‌قرارداد بمانند
+
+**فایل‌ها:** `tests/test_api_*.py`, `apps/desktop/src/lib/api.generated.ts`, `scripts/gen-api-client.sh`
+
+**تست واقعی (نه فقط عدد):** Endpoint count in OpenAPI == tested endpoint count (script asserts); generated client compiles under tsc strict
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-079
+
+### S-081 — Full E2E journeys + visual regression across all panels (fa & en, RTL & LTR)
+
+**هدف:** سفرهای کامل: ایمپورت → ویرایش → هر ماژول AI → خروجی؛ اسکرین‌شات‌های رگرسیون برای هر پنل در دو زبان و دو جهت
+
+**فایل‌ها:** `apps/desktop/e2e/journeys/`, `apps/desktop/e2e/__snapshots__/`
+
+**تست واقعی (نه فقط عدد):** All journeys pass 3× (no flake); snapshot diffs < 0.1%; zero console errors/warnings
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-080
+
+### S-082 — Performance benchmark suite + budgets (CI CPU baseline + user GTX 1650 profile)
+
+**هدف:** بنچمارک‌های ثبت‌شده: fps خروجی 1080p60، fps muscle enhance، زمان Whisper برای ۶۰s، پیک RAM/VRAM، زمان راه‌اندازی، first paint؛ آستانه‌های رگرسیون؛ اجرای یک‌دستوری روی ماشین کاربر
+
+**فایل‌ها:** `bench/`, `scripts/bench.py`, `scripts/smoke-gpu.ps1`, `docs/PERFORMANCE.md`
+
+**تست واقعی (نه فقط عدد):** CI baseline regression < 10% vs stored; user profile recorded: startup < 3s, muscle 1080p ≥ 12 fps GPU, export 1080p60 realtime ≥ 1.0×
+
+**Done when:** Budgets documented and gated
+
+**دخالت کاربر:** `U2`
+
+**وابستگی‌ها:** S-081
+
+### S-083 — Memory leak audit: frontend heap snapshots, Python tracemalloc soak, Rust valgrind-lite
+
+**هدف:** تست soak ۳۰ دقیقه‌ای: باز/بستن ۱۰۰ بار پنل‌ها و ۲۰ job پشت‌سرهم؛ heap فرانت با CDP، tracemalloc بک‌اند، RSS پروسه‌ها
+
+**فایل‌ها:** `tests/soak/`, `apps/desktop/e2e/leak.spec.ts`
+
+**تست واقعی (نه فقط عدد):** Heap growth after 100 cycles < 10MB; backend RSS after 20 jobs within 15% of after 1 job
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-082
+
+### S-084 — Accessibility WCAG 2.1 AA: axe, keyboard-only, focus, contrast, reduced motion
+
+**هدف:** axe-core در Playwright بدون violation جدی، ناوبری کامل با کیبورد، حلقه‌های فوکوس، کنتراست ≥ 4.5:1 با توکن‌ها، prefers-reduced-motion
+
+**فایل‌ها:** `apps/desktop/e2e/a11y.spec.ts`, `apps/desktop/src/app/globals.css`
+
+**تست واقعی (نه فقط عدد):** axe: 0 serious/critical on every panel; tab order test reaches every interactive control; reduced-motion disables Framer springs
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-081
+
+### S-085 — i18n: fa + en with runtime switch, all strings externalized, RTL/LTR, number/date locale
+
+**هدف:** استخراج همه‌ی رشته‌ها به فایل‌های پیام، سوئیچ زبان بدون ری‌لود، جهت خودکار، اعداد فارسی اختیاری، ترجمه‌ی پیام‌های خطای بک‌اند
+
+**فایل‌ها:** `apps/desktop/src/i18n/`, `ai-engine/src/core/i18n.py`, `scripts/check-i18n.py`
+
+**تست واقعی (نه فقط عدد):** check-i18n: 0 hardcoded UI strings (lint rule), 0 missing keys between fa/en; Playwright switch → dir attribute flips and layout snapshot matches LTR baseline
+
+**Done when:** Green
+
+**دخالت کاربر:** `U3` — پیش‌فرض در سکوت: _Default language = Persian (RTL); English selectable in Settings_
+
+**وابستگی‌ها:** S-081
+
+### S-086 — Security audit: secrets in OS keyring, CSP, capabilities, dependency audits, path/ssrf review
+
+**هدف:** کلید OpenRouter در Settings برنامه و ذخیره در keyring ویندوز (نه .env)، CSP سخت‌گیرانه، حداقل capabilities، pnpm/pip/cargo audit در CI، gitleaks، بازبینی مسیرها و SSRF، threat model کوتاه
+
+**فایل‌ها:** `apps/desktop/src-tauri/src/secrets.rs`, `apps/desktop/src/components/settings/ApiKeys.tsx`, `docs/SECURITY.md`
+
+**تست واقعی (نه فقط عدد):** Key entered in UI → not present in any file on disk (grep %LOCALAPPDATA%) → backend receives via IPC; audits 0 high/critical; CSP blocks inline script test
+
+**Done when:** Green
+
+**دخالت کاربر:** `U1`
+
+**وابستگی‌ها:** S-081
+
+### S-087 — UX polish: empty states, skeletons, error states, onboarding, motion tokens, micro-interactions
+
+**هدف:** پاس نهایی طراحی در سطح Linear/Cursor: حالت‌های خالی معنادار، اسکلتون‌ها، پیام‌های خطا با اقدام، تور معرفی ۵ مرحله‌ای، spring tokens یکسان، تیک‌های موفقیت، صدا/ارتعاش خاموش پیش‌فرض
+
+**فایل‌ها:** `apps/desktop/src/components/`, `packages/design-system/motion.ts`
+
+**تست واقعی (نه فقط عدد):** Every panel has snapshot for empty/loading/error/success; Lighthouse (static export) performance ≥ 90, best-practices 100
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-084, S-085
+
+### S-088 — Shortcuts documentation + settings for remapping
+
+**هدف:** سند شورتکات‌ها (fa/en) تولیدشده از رجیستری، صفحه‌ی تنظیمات برای تغییر کلیدها با تشخیص تداخل
+
+**فایل‌ها:** `docs/user/shortcuts.md`, `apps/desktop/src/components/settings/Shortcuts.tsx`, `scripts/gen-shortcuts-doc.ts`
+
+**تست واقعی (نه فقط عدد):** Doc regenerated == committed (CI diff check); remap Ctrl+B→Ctrl+K flagged as conflict with palette
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-087
+
+### S-089 — Privacy & diagnostics: no telemetry by default, opt-in local crash bundle export
+
+**هدف:** بدون ارسال داده؛ دکمه‌ی «ساخت بسته‌ی عیب‌یابی» (لاگ‌ها + مشخصات سخت‌افزار + نسخه، بدون مدیا/کلید) به‌صورت zip محلی
+
+**فایل‌ها:** `apps/desktop/src/components/settings/Diagnostics.tsx`, `ai-engine/src/core/diagnostics.py`, `docs/PRIVACY.md`
+
+**تست واقعی (نه فقط عدد):** Zip contains logs + sysinfo, contains no *.mp4 and no key pattern; network monitor shows zero outbound calls except user-invoked AI/edge-tts/model download
+
+**Done when:** Green
+
+**دخالت کاربر:** `U3` — پیش‌فرض در سکوت: _No telemetry_
+
+**وابستگی‌ها:** S-086
+
+### S-090 — MILESTONE v0.8.0 (Release Candidate 1)
+
+**هدف:** RC1: همه‌ی gateها، بنچمارک‌ها، a11y، i18n، امنیت سبز؛ تست کاربر ۷ روزه‌ی استفاده‌ی واقعی با ثبت اشکالات
+
+**فایل‌ها:** `CHANGELOG.md`
+
+**تست واقعی (نه فقط عدد):** User completes a real bodybuilding edit end-to-end and exports for Instagram; issues logged as S-090-x hotfix cards
+
+**Done when:** Ledger verified_on user-gpu; hotfix cards closed
+
+**دخالت کاربر:** `U2`
+
+**وابستگی‌ها:** S-083, S-088, S-089
+
+
+---
+
+## P7 — Release → v1.0.0
+
+_انتشار عمومی: نصب‌کننده‌ی امضاشده‌ی چک‌سام‌دار، مستندات، دمو، پشتیبانی_
+
+### S-091 — Decision freeze: product name, default language, formats, icon, license (defaults apply on silence)
+
+**هدف:** ثبت نهایی تصمیم‌ها در docs/DECISIONS.md؛ اگر پاسخ نیامده باشد پیش‌فرض‌ها قطعی می‌شوند
+
+**فایل‌ها:** `docs/DECISIONS.md`
+
+**تست واقعی (نه فقط عدد):** DECISIONS.md lists every U3 item with chosen value and date; version strings and metadata reflect it
+
+**Done when:** Green
+
+**دخالت کاربر:** `U3` — پیش‌فرض در سکوت: _Name 'Cutting Edge'; fa default; MP4 H.264 + optional H.265/WebM/GIF export; MIT_
+
+**وابستگی‌ها:** S-090
+
+### S-092 — User documentation (fa + en): install, first run, each module, troubleshooting, GPU notes, FAQ
+
+**هدف:** مستندات کاربر دو‌زبانه با اسکرین‌شات‌های تولیدشده‌ی خودکار از Playwright (همیشه به‌روز)، راهنمای عیب‌یابی (CUDA، فایروال، فضای دیسک)
+
+**فایل‌ها:** `docs/user/`, `scripts/gen-doc-screens.ts`
+
+**تست واقعی (نه فقط عدد):** All doc links valid (lychee); screenshots regenerated in CI match committed (or auto-committed on release branch); each feature has a page
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-091
+
+### S-093 — README overhaul: screenshots/GIF, badges, architecture diagram, quick start
+
+**هدف:** README حرفه‌ای با گیف دمو، نشان‌های CI/نسخه/لایسنس، دیاگرام معماری (Mermaid)، شروع سریع برای کاربر و توسعه‌دهنده
+
+**فایل‌ها:** `README.md`, `docs/assets/`
+
+**تست واقعی (نه فقط عدد):** Mermaid renders on GitHub; all commands in quick start executed by a CI job from a clean clone
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-092
+
+### S-094 — Demo video: auto-recorded Playwright journey + Auto-Narrator voiceover (fa/en)
+
+**هدف:** دموی ۹۰ ثانیه‌ای تولیدشده‌ی خودکار (ضبط Playwright + روایت edge-tts + موسیقی آزاد) — با خود محصول خروجی گرفته شود
+
+**فایل‌ها:** `scripts/demo/`, `docs/assets/demo.mp4`
+
+**تست واقعی (نه فقط عدد):** Demo exported through the app's own export pipeline; passes assert_playable; captions burned-in
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-093
+
+### S-095 — Licensing & third-party notices: FFmpeg (LGPL build), models, fonts, dependencies
+
+**هدف:** LICENSE نهایی، THIRD_PARTY_NOTICES تولیدشده (pnpm licenses، pip-licenses، cargo-about)، اطمینان از build LGPL برای FFmpeg و مجوز مدل‌ها/فونت‌ها
+
+**فایل‌ها:** `LICENSE`, `THIRD_PARTY_NOTICES.md`, `scripts/gen-notices.sh`
+
+**تست واقعی (نه فقط عدد):** Notices regenerated == committed; no GPL-only dependency in bundle (script asserts)
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-091
+
+### S-096 — Release rehearsal: clean-VM install, upgrade 0.8→1.0 via updater, uninstall, rollback plan
+
+**هدف:** تمرین انتشار روی رانر تمیز: نصب، ارتقا از RC با آپدیتر، حذف، بازگشت به نسخه‌ی قبل؛ چک‌لیست انتشار
+
+**فایل‌ها:** `docs/RELEASE_CHECKLIST.md`, `.github/workflows/release.yml`
+
+**تست واقعی (نه فقط عدد):** CI release-dry-run job passes all checklist items automatically; SHA256SUMS generated and verified
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-094, S-095
+
+### S-097 — SHIP v1.0.0: tag, GitHub Release (exe + SHA256 + latest.json), release notes fa/en, CHANGELOG
+
+**هدف:** انتشار عمومی نسخه‌ی ۱.۰ با نصب‌کننده‌ی ویندوز، چک‌سام، فایل آپدیتر و یادداشت‌های انتشار دوزبانه
+
+**فایل‌ها:** `CHANGELOG.md`, `docs/releases/1.0.0.fa.md`, `docs/releases/1.0.0.en.md`
+
+**تست واقعی (نه فقط عدد):** Fresh Windows machine (user) downloads from Release page, verifies SHA256, installs, completes a real edit + export; updater from 0.8 lands on 1.0
+
+**Done when:** Release published; ledger verified_on user-gpu
+
+**دخالت کاربر:** `U2`
+
+**وابستگی‌ها:** S-096
+
+### S-098 — Post-release loop: issue templates, triage labels, 1.0.x hotfix protocol, next-cycle backlog
+
+**هدف:** قالب‌های issue (fa/en)، برچسب‌ها، پروتکل hotfix (شاخه، تست، انتشار در < 48h)، بک‌لاگ ۱.۱ (macOS/Linux، WebM/GIF، پلاگین‌ها)
+
+**فایل‌ها:** `.github/ISSUE_TEMPLATE/`, `docs/HOTFIX_PROTOCOL.md`, `docs/BACKLOG_1.1.md`
+
+**تست واقعی (نه فقط عدد):** Dry-run hotfix: intentional bug → issue → fix → 1.0.1 release via release.yml in one CI run
+
+**Done when:** Green
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-097
+
