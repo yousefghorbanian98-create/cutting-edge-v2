@@ -16,6 +16,7 @@
 | 07 | `07_SESSION_HANDOFF.md` | پرامپت آماده برای سشن بعدی (نقش Builder / نقش Reviewer) |
 | 08 | `08_FINN_LOOP_ADOPTION.md` | بررسی Finn-loop: چه گرفتیم (بازبین تازه، AC/NG، scope ledger) و چه نگرفتیم (merge انسانی، Linear) |
 | 09 | `09_UI_COMPONENT_PROMPT.md` | پرامپت آماده برای دادن به یک AI دیگر جهت تولید کامپوننت‌های UI کلاس جهانی |
+| 10 | `10_OPERATING_GUIDE.md` | راهنمای **شما** برای اجرای لوپ با کمترین خطا: راه‌اندازی یک‌باره، یک سشن = یک نقش = یک مرحله، پیام‌های آماده، چک ۶۰ ثانیه‌ای، نشانه‌های انحراف |
 | — | `templates/` | `CONTRACT.md` (AC/NG هر مرحله) و `REVIEW.md` (verdict بازبین) |
 | — | `steps.json` | منبع حقیقت مراحل (ویرایش این؛ سپس `python scripts/loop/render_steps.py`) |
 | — | `evidence/` | هر مرحله: `S-xxx/CONTRACT.md`, `REVIEW.md`, artifacts + `SESSIONS.md` |
