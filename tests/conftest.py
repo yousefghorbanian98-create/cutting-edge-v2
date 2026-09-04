@@ -47,3 +47,62 @@ def fixture(fixtures_dir: Path):
         return p
 
     return _get
+
+
+# ── live uvicorn server (S-006) ───────────────────────────────────────────────
+@pytest.fixture(scope="session")
+def live_api(fixtures_dir: Path):
+    """Boot a real uvicorn server on a free port for the live API tests."""
+    import os
+    import signal
+    import socket
+    import subprocess
+    import time
+
+    import requests
+
+    def _free_port() -> int:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(("127.0.0.1", 0))
+            return s.getsockname()[1]
+
+    venv = Path(os.environ.get("CE_TEST_VENV", str(REPO_ROOT / "ai-engine" / ".venv")))
+    py = venv / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+    port = _free_port()
+    env = os.environ.copy()
+    env["CE_HOST"] = "127.0.0.1"
+    env["CE_PORT"] = str(port)
+
+    log_f = tempfile.NamedTemporaryFile(delete=False, suffix=".log", mode="w")
+    proc = subprocess.Popen(
+        [str(py), "-m", "uvicorn", "ai_engine.main:app", "--host", "127.0.0.1", "--port", str(port)],
+        cwd=str(REPO_ROOT / "ai-engine"),
+        env=env,
+        stdout=log_f,
+        stderr=subprocess.STDOUT,
+        start_new_session=True,
+    )
+
+    base = f"http://127.0.0.1:{port}"
+    deadline = time.monotonic() + 20
+    ok = False
+    while time.monotonic() < deadline:
+        try:
+            if requests.get(base + "/health", timeout=1.0).status_code == 200:
+                ok = True
+                break
+        except Exception:
+            pass
+        time.sleep(0.1)
+    if not ok:
+        proc.kill()
+        raise RuntimeError(f"live server did not come up: {(log_f.name)}")
+    yield {"base": base, "port": port}
+    try:
+        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+    except Exception:
+        try:
+            proc.kill()
+        except Exception:
+            pass
+
