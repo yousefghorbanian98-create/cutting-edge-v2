@@ -19,3 +19,10 @@
 - Blockers: none. Note: ci.yml only triggers on `main`, so no CI run for this branch until S-009.
 - U3: License = MIT (card default, logged in docs/DECISIONS.md).
 - Next step: fresh reviewer writes evidence/S-001/REVIEW.md; then builder S-002 (backend boot fix).
+
+## 2026-09-04 — Builder session: S-001 close + S-002 (backend boot fix) REVIEW
+- Steps touched: S-001 closed to GREEN (commit 4194111, reviewed approved by supervisor-as-reviewer, verdict already in evidence/S-001/REVIEW.md); S-002 built and pushed REVIEW.
+- S-002: package `ai_engine` (pyproject package-dir mapping), python-dotenv + .env.example, dev-backend.sh/.ps1, pinned requirements.txt, `real` marker; red-first real test drives live dev-backend.sh on a random port and asserts /health within 2s + survives 60s idle (6/6 pass, pytest -m real).
+- Status: S-001 GREEN; S-002 REVIEW (awaiting fresh reviewer). verify_ledger green (1/98 GREEN). Branch pushed.
+- Blockers: none. CI absent until S-009 (ci.yml main-only); AC-6 (.ps1) unverified:windows.
+- Next step: fresh reviewer writes evidence/S-002/REVIEW.md; then S-003 (security fix).
