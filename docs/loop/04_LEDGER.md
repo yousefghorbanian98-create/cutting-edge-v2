@@ -16,7 +16,7 @@
 
 | id | title | status | iter | verified_on | evidence | notes |
 |----|-------|--------|------|-------------|----------|-------|
-| S-001 | Repo hygiene: remove generator scripts, add LICENSE/.editorconfig/docs tree | REVIEW | 0 |  | docs/loop/evidence/S-001/CONTRACT.md; tests/unit/test_repo_hygiene.py (5/5 pass local-linux) | CI (ci.yml) only triggers on main — S-009 fixes; fresh reviewer runs tests on this branch |
+| S-001 | Repo hygiene: remove generator scripts, add LICENSE/.editorconfig/docs tree | REVIEW | 1 |  | docs/loop/evidence/S-001/CONTRACT.md; tests/unit/test_repo_hygiene.py (5/5 pass local-linux) | CI (ci.yml) only triggers on main — S-009 fixes. Review round 1 (badca39) = changes-requested for ENVIRONMENT reason only (shallow clone, ed3b290 unreachable); no code finding; supervisor voids it — does not count toward the 2-round cap. Round 2 pending. |
 | S-002 | Backend boot fix: package imports, dotenv, dev scripts | TODO | 0 |  |  |  |
 | S-003 | Security fix: upload/download path traversal, size & type limits, CORS | TODO | 0 |  |  |  |
 | S-004 | MoviePy 2.0 compatibility + FFmpeg-first audio extraction (BUG 4) | TODO | 0 |  |  |  |

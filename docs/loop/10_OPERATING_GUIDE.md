@@ -26,6 +26,15 @@ Builder session  →  (fix must-fix if any) → GREEN → S-(xxx+1)
 
 ## C. پیام‌های آماده (کپی کنید)
 
+**اول هر سشن (تأیید جای درست):**
+```
+Run and paste raw output: git fetch --unshallow origin 2>/dev/null || git fetch --deepen=200 origin;
+git remote get-url origin; git rev-parse --abbrev-ref HEAD; git log --oneline -3;
+git merge-base --is-ancestor <SUPERVISOR_HEAD_SHA> HEAD && echo BASE_OK || echo BASE_WRONG; git status --porcelain | wc -l
+Do not start any step until I confirm.
+```
+(SHA را ناظر می‌دهد. `BASE_WRONG` = سشن از main ساخته شده → ببندید و از شاخه‌ی ناظر بسازید.)
+
 **شروع سشن Builder (پیش‌فرض):**
 ```
 Role: BUILDER. Read docs/loop/07_SESSION_HANDOFF.md and follow it exactly.

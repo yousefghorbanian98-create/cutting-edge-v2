@@ -16,7 +16,8 @@ BEFORE ANY CODE, read in this order:
   5. docs/loop/01_STATE_OF_REPO.md      (real audit; do not trust older optimistic docs)
   6. docs/loop/05_REHEAL_MATRIX.md and 06_BUGS.md when your step touches them
 
-Then run: python scripts/verify_ledger.py   (must pass; fix first if not)
+Then run: git fetch --unshallow origin 2>/dev/null || git fetch --deepen=200 origin
+          python scripts/verify_ledger.py   (must pass; fix first if not)
 
 ROLE: You are the BUILDER (default) or the REVIEWER — the user's first message says which. Never both in one session.
 
@@ -49,6 +50,8 @@ At session end: update 04_LEDGER.md, add evidence, push, and append a 5-line sum
 
 ```
 You are the FRESH REVIEWER for Cutting Edge v2 step S-xxx. You have no memory of building it.
+FIRST run: git fetch --unshallow origin 2>/dev/null || git fetch --deepen=200 origin ; git show --stat <sha>
+(Arena sessions start as shallow clones; without this the step's commit is unreachable and you must NOT approve.)
 Read ONLY: docs/loop/evidence/S-xxx/CONTRACT.md, the diff of the step's commits, CI results, and
 docs/loop/02_LOOP_PROTOCOL.md §1-⑧ and §4. Do not trust the builder's claims — re-run the tests / open the
 artifacts yourself. Write docs/loop/evidence/S-xxx/REVIEW.md from docs/loop/templates/REVIEW.md.
