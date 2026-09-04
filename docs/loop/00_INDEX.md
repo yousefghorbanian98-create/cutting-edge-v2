@@ -17,6 +17,7 @@
 | 08 | `08_FINN_LOOP_ADOPTION.md` | بررسی Finn-loop: چه گرفتیم (بازبین تازه، AC/NG، scope ledger) و چه نگرفتیم (merge انسانی، Linear) |
 | 09 | `09_UI_COMPONENT_PROMPT.md` | پرامپت آماده برای دادن به یک AI دیگر جهت تولید کامپوننت‌های UI کلاس جهانی |
 | 10 | `10_OPERATING_GUIDE.md` | راهنمای **شما** برای اجرای لوپ با کمترین خطا: راه‌اندازی یک‌باره، یک سشن = یک نقش = یک مرحله، پیام‌های آماده، چک ۶۰ ثانیه‌ای، نشانه‌های انحراف |
+| 11 | `11_SUPERVISOR.md` | نقش سوم: ناظر روند ساخت (این سشن Arena) — `scripts/supervise.py` با ۱۲ چک، verdict OK/ATTENTION/STOP |
 | — | `templates/` | `CONTRACT.md` (AC/NG هر مرحله) و `REVIEW.md` (verdict بازبین) |
 | — | `steps.json` | منبع حقیقت مراحل (ویرایش این؛ سپس `python scripts/loop/render_steps.py`) |
 | — | `evidence/` | هر مرحله: `S-xxx/CONTRACT.md`, `REVIEW.md`, artifacts + `SESSIONS.md` |
@@ -42,6 +43,7 @@ P7 Release             S-091…S-098  v1.0.0   ← GitHub Release + SHA256 + lat
 ## دستورات روزمره
 ```bash
 python scripts/verify_ledger.py            # سلامت دفترچه (در CI اجرا می‌شود)
+python scripts/supervise.py --write        # ممیزی ناظر: ۱۲ چک + گزارش در evidence/SUPERVISOR/
 python scripts/loop/render_steps.py        # بعد از ویرایش steps.json
 python scripts/loop/render_steps.py --check
 python scripts/gate.py --stage static|unit|real|e2e|perf|chaos|all   # از S-011

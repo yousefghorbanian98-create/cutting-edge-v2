@@ -1,0 +1,71 @@
+# 11 — Supervisor (ناظر روند ساخت)
+
+> نقش سوم لوپ، جدا از Builder و Reviewer. **کد نمی‌نویسد، تست نمی‌نویسد، verdict نمی‌دهد.** فقط یک سؤال را جواب می‌دهد: *«آیا لوپ همان‌طور که در `02_LOOP_PROTOCOL.md` تعریف شده اجرا می‌شود؟»* — و اگر نه، دقیقاً چه کسی در سشن بعدی چه کاری باید بکند.
+>
+> این نقش را **همین سشن Arena** (نشستی که لوپ را طراحی کرد) بر عهده دارد، چون کل زمینه‌ی تصمیم‌ها را دارد.
+
+## ۱. اصل کار: شواهد، نه ادعا
+
+Supervisor هرگز از روی چت Builder قضاوت نمی‌کند. فقط از این‌ها می‌خواند:
+- `git log` / `git diff` روی شاخه‌ی سشن
+- `docs/loop/04_LEDGER.md` و `docs/loop/evidence/S-xxx/`
+- خروجی `scripts/verify_ledger.py` و `scripts/supervise.py`
+- وضعیت CI (`gh run list`)
+
+## ۲. ابزار: `python scripts/supervise.py`
+
+۱۲ چک خودکار → verdict یکی از `OK` / `ATTENTION` / `STOP`:
+
+| # | چک | چه انحرافی را می‌گیرد |
+|---|-----|------------------------|
+| C1 | verify_ledger | GREEN بدون CONTRACT/REVIEW/شواهد؛ وابستگی نابسته |
+| C2 | working tree تمیز | کار نیمه‌کاره‌ی commit‌نشده |
+| C3 | commit ↔ ledger | کدی زده شده ولی دفترچه به‌روز نیست، یا برعکس |
+| C4 | یک مرحله در هر commit | چند مرحله یک‌جا (نشانه‌ی کانتکست پرشده) |
+| C5 | کامل بودن شواهد | REVIEW/GREEN بدون CONTRACT.md؛ GREEN بدون verdict approved |
+| C6 | Scope Ledger در commit | نبود `AC-n` / `Other behavior changes` در بدنه‌ی commit مرحله |
+| C7 | تضعیف تست | حذف خالص assert/expect، افزودن skip |
+| C8 | استک قفل | Redux/MUI/Electron/Ollama/… در manifestها |
+| C9 | بهداشت ریپو | mp4/exe/مدل/فایل > 5MB در git |
+| C10 | راز | الگوی کلید OpenRouter/NIM/GitHub در فایل‌های tracked |
+| C11 | CI | آخرین run شاخه قرمز یا برای HEAD وجود ندارد |
+| C12 | watchdog | RED با ۳+ تکرار، REVIEW با ۲ دور، AMBER بیش از ۷۲ ساعت |
+
+`--write` گزارش را در `docs/loop/evidence/SUPERVISOR/<date>.md` ذخیره و checkpoint را جلو می‌برد؛ اجرای بعدی فقط commitهای جدید را می‌سنجد.
+
+## ۳. چرخه‌ی نظارت (هر بار که کاربر می‌گوید «چک کن»)
+
+```
+1. git fetch origin && git status          ← وضعیت واقعی remote (نه حافظه‌ی سشن)
+2. python scripts/supervise.py --write     ← ۱۲ چک + گزارش ذخیره‌شده
+3. برای هر مرحله‌ی REVIEW/GREEN جدید: خواندن CONTRACT.md و REVIEW.md
+   - آیا ACها واقعاً «مشاهده‌پذیر» هستند یا کلی؟
+   - آیا NGها معنادارند یا خالی؟
+   - آیا Reviewer شواهد را خودش تولید کرده (جمله‌ی "re-produced: yes")؟
+4. برای commitهای مرحله: نگاه سریع به diff با چشم §4 پروتکل (any، TODO، except: pass، hardcoded string، inline style)
+5. خروجی به کاربر: verdict + حداکثر ۵ اقدام مشخص + متن آماده‌ی پیام برای سشن بعدی
+6. اگر STOP: Builder بعدی اجازه‌ی مرحله‌ی جدید ندارد تا اقدامات بسته شوند
+```
+
+## ۴. اختیارات و محدودیت‌ها
+
+| مجاز | ممنوع |
+|------|-------|
+| ویرایش `docs/loop/*` (پروتکل، کارت‌ها، دفترچه برای اصلاح وضعیت غلط) | نوشتن/تغییر کد محصول یا تست |
+| افزودن کارت hotfix به `steps.json` وقتی انحراف پیدا شد | GREEN کردن مرحله (فقط Builder بعد از approved) |
+| برگرداندن وضعیت GREEN → REVIEW/RED با دلیل مکتوب در notes | verdict بازبینی نوشتن (کار Reviewer است) |
+| revert کردن commit ناقض قوانین (§E راهنمای عملیات) با پیام `chore(loop): revert <sha> — <rule>` | تصمیم U3 به‌جای کاربر (فقط پیش‌فرض کارت را اعمال می‌کند) |
+| به‌روزرسانی `scripts/supervise.py` و `verify_ledger.py` | تغییر استک یا معماری |
+
+## ۵. پیام آماده برای فعال‌سازی نظارت
+
+در همین سشن فقط بنویسید:
+```
+چک کن
+```
+یا با دامنه:
+```
+چک کن از <sha>   |   چک کن S-014   |   گزارش هفتگی
+```
+
+خروجی همیشه با همین قالب برمی‌گردد: **Verdict → اقدام‌ها → پیام آماده برای سشن بعدی (Builder یا Reviewer)**.
