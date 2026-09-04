@@ -2,7 +2,7 @@
 
 | تاریخ | کارت | تصمیم | منبع (کاربر / پیش‌فرض) |
 |-------|------|-------|-------------------------|
-| — | S-001 | License | pending — default MIT |
+| 2026-09-04 | S-001 | License = **MIT** (LICENSE at repo root, "Cutting Edge v2 contributors") | پیش‌فرض کارت (U3، سکوت کاربر) |
 | — | S-050 | Style preset naming | pending — default generic descriptive names |
 | — | S-063 | Product name & icon | pending — default "Cutting Edge" |
 | — | S-085 | Default language | pending — default Persian (RTL) |

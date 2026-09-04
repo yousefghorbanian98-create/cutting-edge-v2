@@ -1,0 +1,31 @@
+# EditorConfig — https://editorconfig.org
+# Consistent whitespace/encoding across Python, TypeScript, Rust, and docs.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Python: PEP 8 (4-space indents); line length handled by Ruff
+[*.py]
+indent_size = 4
+
+# Rust: rustfmt defaults (4-space indents)
+[*.rs]
+indent_size = 4
+
+# PowerShell scripts (Windows dev helpers)
+[*.ps1]
+indent_size = 4
+
+# Markdown: trailing whitespace is significant (hard line breaks)
+[*.md]
+trim_trailing_whitespace = false
+
+# Windows batch files historically use CRLF
+[*.{bat,cmd}]
+end_of_line = crlf
