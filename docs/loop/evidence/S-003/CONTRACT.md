@@ -13,6 +13,7 @@
 | AC-4 | آپلود با پسوند غیرمجاز (مثلاً `.exe`) کد **415** برمی‌گرداند. | زنده uvicorn + `requests` | `tests/test_security.py::test_disallowed_extension_returns_415` |
 | AC-5 | رشته‌ی `sanitize_filename` جداکننده‌ها ( `/` `\`) و `..` را حذف می‌کند و فقط یک نام بی‌خطر برمی‌گرداند. | تست واحد تابع | `tests/test_security.py::test_sanitize_filename_strips_separators_and_dotdot` |
 | AC-6 | CORS فقط به `http://localhost:3000`، `http://127.0.0.1:3000`، `tauri://localhost`، `https://tauri.localhost` محدود است و هیچ origin دیگری back-reflect نمی‌شود (پیش‌تر `*` بود). | زنده uvicorn + preflight OPTIONS | `tests/test_security.py::test_cors_origin_allowlist` |
+| AC-7 | نام دانلود با NUL byte یا `%00` (کدگذاری‌شده/دوگانه) هرگز 500 نمی‌دهد؛ به‌عنوان path traversal به **404** ختم می‌شود (`Storage._safe_path` ابتدا `_is_safe_basename` را قبل از resolve صدا می‌زند و `resolve()` را در `try/except (ValueError, OSError) → PathTraversalError` می‌گیرد؛ `""` و `.` و `..` صریحاً رد می‌شوند). | زنده uvicorn + `requests` روی `/muscle/download/<name>` | `tests/test_security.py::test_download_traversal_returns_404` (موارد `x%00.mp4`، `%00`، `a%00b.mp4`) |
 
 ## Non-Goals (الزام‌آور — عمداً در این مرحله ساخته نمی‌شود)
 

@@ -66,9 +66,16 @@ def sanitize_filename(name: str) -> str:
 
 
 def _is_safe_basename(name: str) -> bool:
-    if not name or name in {"", ".", ".."}:
-        return True  # empty names resolved to '' mean "not found" downstream
+    """`name` must be a bare, resolvable basename that cannot escape the base.
+
+    Explicitly rejects empty, `.`, and `..` (they resolve to the base dir itself
+    or above it), any path separator, and any embedded NUL byte.
+    """
+    if not name or name in {".", ".."}:
+        return False
     if any(c in name for c in SEPARATOR_CHARS):
+        return False
+    if "\x00" in name:
         return False
     parts = name.split("/")
     if any(p in DOT_DOT or p == "" for p in parts):
@@ -98,10 +105,20 @@ class Storage:
         return ext
 
     def _safe_path(self, name: str) -> Path:
-        """Resolve `name` under base_dir and forbid escaping it."""
-        candidate = (self.base_dir / name).resolve()
+        """Resolve `name` under base_dir and forbid escaping it.
+
+        The basename is validated BEFORE any path resolve so that hostile input
+        (including an embedded NUL byte, which would make Path.resolve() raise
+        ValueError) is rejected as a traversal up front. resolve() is also
+        wrapped so a ValueError/OSError surfaces as PathTraversalError (→ 404)
+        instead of a 500.
+        """
         if _is_safe_basename(name) is False:
             raise PathTraversalError(name)
+        try:
+            candidate = (self.base_dir / name).resolve()
+        except (ValueError, OSError) as exc:
+            raise PathTraversalError(name) from exc
         try:
             candidate.relative_to(self.base_dir)
         except ValueError as exc:

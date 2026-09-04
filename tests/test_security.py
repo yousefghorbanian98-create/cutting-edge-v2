@@ -191,6 +191,13 @@ def test_download_traversal_returns_404(live_server):
     assert r.status_code == 404, f"expected 404, got {r.status_code}: {r.text}"
     r2 = requests.get(live_server["base"] + "/muscle/download/../../../etc/passwd")
     assert r2.status_code == 404, f"expected 404, got {r2.status_code}"
+    # SECURITY: embedded null byte must be rejected as traversal (→ 404, not 500)
+    r3 = requests.get(live_server["base"] + "/muscle/download/x%00.mp4")
+    assert r3.status_code == 404, f"expected 404 for null byte, got {r3.status_code}: {r3.text}"
+    # URL-encoded %00 (double-encoded) and literal % in name
+    for enc in ("%2500", "%00", "a%00b.mp4"):
+        r = requests.get(live_server["base"] + f"/muscle/download/{enc}")
+        assert r.status_code == 404, f"expected 404 for {enc!r}, got {r.status_code}: {r.text}"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -295,6 +302,11 @@ def _run_all() -> int:
 def _check_404(requests, base):
     r = requests.get(base + "/muscle/download/..%2F..%2Fetc%2Fpasswd")
     assert r.status_code == 404, f"got {r.status_code}"
+    r3 = requests.get(base + "/muscle/download/x%00.mp4")
+    assert r3.status_code == 404, f"null byte got {r3.status_code}"
+    for enc in ("%2500", "%00", "a%00b.mp4"):
+        r = requests.get(base + f"/muscle/download/{enc}")
+        assert r.status_code == 404, f"{enc!r} got {r.status_code}"
 
 
 def _check_413(requests, base):
