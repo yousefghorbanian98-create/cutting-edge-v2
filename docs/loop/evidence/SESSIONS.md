@@ -26,3 +26,12 @@
 - Status: S-001 GREEN; S-002 REVIEW (awaiting fresh reviewer). verify_ledger green (1/98 GREEN). Branch pushed.
 - Blockers: none. CI absent until S-009 (ci.yml main-only); AC-6 (.ps1) unverified:windows.
 - Next step: fresh reviewer writes evidence/S-002/REVIEW.md; then S-003 (security fix).
+
+## 2026-09-04 — BATCH BUILDER session: sync + S-002 round-2, S-003, S-004
+- Synced session branch to supervisor base (fast-forward to cce5037), BASE_OK.
+- Job 0: closed S-002 round-1 changes-requested [DEFECT] (missing pyproject readme) — added ai-engine/README.md + assertion that every [project]-referenced file exists; ledger REVIEW iter 2. Commit 5bceae8.
+- S-003 (security): Storage layer (UUID names, ext whitelist, streaming size limit →413, path-traversal-safe resolve →404), restricted CORS, fail-fast save_upload before heavy imports; tests/test_security.py 6/6 real. Commit 219f69c.
+- S-004 (BUG 4): core/ffmpeg.py FFmpeg-first audio extraction + MoviePy 2 fallback; beat_sync returns [] on silence; click-track BPM within ±3; AAC→WAV 22050 mono. tests/test_beat_sync.py 3/3 real. Commit 8dab714.
+- Status: S-001 GREEN; S-002 REVIEW iter 2; S-003 REVIEW; S-004 REVIEW. verify_ledger green (1/98 GREEN). All pushed.
+- Blockers: none. Stopped at S-004 step boundary (context long; remaining steps heavy/unrunnable here — no system ffmpeg/rust/pnpm, no net for Pexels, no GitHub Actions for S-009).
+- Next step: S-005 (real-media fixture factory).
