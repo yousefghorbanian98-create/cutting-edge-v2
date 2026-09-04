@@ -227,6 +227,19 @@ def test_pinned_requirements_and_pyproject():
     assert "package-dir" in text
     assert "ai_engine" in text
 
+    # Every file referenced by [project] must exist (e.g. readme/license),
+    # otherwise a standard build/install emits invalid-metadata warnings.
+    import tomllib
+
+    proj = tomllib.loads(text).get("project", {})
+    refs: list[str] = []
+    if isinstance(proj.get("readme"), str):
+        refs.append(proj["readme"])
+    if isinstance(proj.get("license"), dict) and isinstance(proj["license"].get("file"), str):
+        refs.append(proj["license"]["file"])
+    for ref in refs:
+        assert (AI_DIR / ref).exists(), f"[project] references missing file: {ref!r}"
+
 
 @pytest.mark.real
 def test_dev_backend_ps1_present():
