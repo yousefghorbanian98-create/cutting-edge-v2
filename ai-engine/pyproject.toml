@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cutting-edge-ai-engine"
+version = "0.1.0"
+description = "Cutting Edge v2 — AI core backend (FastAPI + MediaPipe + Whisper)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "fastapi==0.115.6",
+    "uvicorn[standard]==0.32.1",
+    "python-multipart==0.0.18",
+    "pydantic==2.10.4",
+    "python-dotenv==1.0.1",
+    "psutil==6.1.0",
+    "requests==2.32.3",
+    "numpy==1.26.4",
+    "scipy==1.11.4",
+    "opencv-python==4.10.0.84",
+    "mediapipe==0.10.14",
+    "faster-whisper==1.1.0",
+    "scenedetect[opencv]==0.6.4",
+    "moviepy==2.1.1",
+    "librosa==0.10.2.post1",
+    "gputil==1.4.0",
+    "edge-tts==6.1.12",
+]
+
+[tool.setuptools]
+# The source lives under ai-engine/src/ but is published as the `ai_engine`
+# package so it can be run as `uvicorn ai_engine.main:app` (see S-002 card).
+package-dir = { ai_engine = "src" }
+packages = [
+    "ai_engine",
+    "ai_engine.analyzer",
+    "ai_engine.assistant",
+    "ai_engine.captioner",
+    "ai_engine.editor_ai",
+    "ai_engine.muscle",
+    "ai_engine.reheal",
+    "ai_engine.style_match",
+]

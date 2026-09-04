@@ -1,9 +1,28 @@
-"""Cutting Edge AI Core v2 — FULLY WIRED to real AI modules"""
+"""Cutting Edge AI Core v2 — FULLY WIRED to real AI modules.
+
+Run as a package so the relative imports below resolve:
+    uvicorn ai_engine.main:app
+(see scripts/dev-backend.sh / scripts/dev-backend.ps1 and the S-002 card).
+"""
+import os
+import tempfile
+import shutil
+import requests
+import psutil
+
+from pathlib import Path
+
+from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-import os, tempfile, shutil, requests, psutil
+
+# Load ai-engine/.env before anything reads config (S-002: python-dotenv).
+# When run as an installed package the working dir is still ai-engine/, so a
+# plain load_dotenv() picks up .env; fall back to the package-relative path.
+load_dotenv()
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 app = FastAPI(title="Cutting Edge AI Core v2")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -217,4 +236,4 @@ async def style_compare(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8001)
+    uvicorn.run(app, host=os.getenv("CE_HOST", "127.0.0.1"), port=int(os.getenv("CE_PORT", "8001")))

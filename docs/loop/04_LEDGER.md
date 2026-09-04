@@ -17,7 +17,7 @@
 | id | title | status | iter | verified_on | evidence | notes |
 |----|-------|--------|------|-------------|----------|-------|
 | S-001 | Repo hygiene: remove generator scripts, add LICENSE/.editorconfig/docs tree | GREEN | 2 | local-linux | docs/loop/evidence/S-001/CONTRACT.md; docs/loop/evidence/S-001/REVIEW.md; tests/unit/test_repo_hygiene.py (5/5 pass local-linux) | CI absent until S-009 |
-| S-002 | Backend boot fix: package imports, dotenv, dev scripts | TODO | 0 |  |  |  |
+| S-002 | Backend boot fix: package imports, dotenv, dev scripts | REVIEW | 1 |  | docs/loop/evidence/S-002/CONTRACT.md; tests/real/test_backend_boot.py (6/6 pass local-linux) | Ready for fresh review. AC-6 (dev-backend.ps1) statically verified on Linux only — actual Windows execution later; unverified:windows. Static tooling (gate.py/Biome/Ruff/tsc) deferred to S-008/S-011; applicable static checks (verify_ledger.py, py_compile, bash -n) green. |
 | S-003 | Security fix: upload/download path traversal, size & type limits, CORS | TODO | 0 |  |  |  |
 | S-004 | MoviePy 2.0 compatibility + FFmpeg-first audio extraction (BUG 4) | TODO | 0 |  |  |  |
 | S-005 | Real-media fixture factory (FFmpeg-generated + licensed human clip) | TODO | 0 |  |  |  |
