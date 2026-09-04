@@ -48,6 +48,31 @@ At session end: update 04_LEDGER.md, add evidence, push, and append a 5-line sum
 
 ---
 
+## پرامپت BATCH BUILDER (حالت سریع — پیش‌فرض از S-003 به بعد)
+
+> یک چت = یک **دسته** (همه‌ی مراحل باقی‌مانده‌ی یک فاز، یا تا سقف تعیین‌شده). هر مرحله همچنان کامیت/قرارداد/تست جدا دارد؛ فقط تعداد چت‌ها کم می‌شود. ناظر در پایان دسته همه را یک‌جا بازبینی می‌کند.
+
+```
+git fetch --unshallow origin 2>/dev/null || git fetch --deepen=200 origin
+git merge-base --is-ancestor <SUPERVISOR_HEAD> HEAD && echo BASE_OK || echo BASE_WRONG
+If BASE_WRONG: stop immediately and tell me.
+
+Role: BATCH BUILDER. Read docs/loop/07_SESSION_HANDOFF.md and 02_LOOP_PROTOCOL.md; run python scripts/verify_ledger.py.
+
+Job 0 — close/fix: for every step whose evidence/S-xxx/REVIEW.md verdict is `approved` but ledger is REVIEW → stages ⑨⑩ (GREEN).
+  For every step with `changes-requested` → fix ONLY the must-fix items, commit "fix(scope): S-xxx round-N — <what>", keep REVIEW, iter+1.
+
+Job 1 — build the batch: steps <FROM> through <TO>, strictly in order, each one a full ①–⑦ loop:
+  own CONTRACT.md (AC/NG), red-first real test, code, static checks available, Reheal probe if applicable,
+  its OWN commit with Scope Ledger, ledger row → REVIEW. Push after EVERY step (never batch pushes).
+  A step may start only when all its deps are GREEN or REVIEW-in-this-batch.
+  If a step hits 5 debug iterations → BLOCKED + docs/loop/blockers/S-xxx.md, continue with the next independent step.
+  Never mark GREEN yourself. Never weaken a test. Locked stack. No questions except U1/U2/U3 (apply defaults).
+
+Stop when: <TO> is pushed, OR context is getting long (then stop at a step boundary), OR 3 consecutive steps are BLOCKED.
+Final report: branch, last SHA, table of steps touched with status, and any BLOCKED ids.
+```
+
 ## پرامپت WORKER (سازنده + بازبین در یک چت) — فقط برای محیط‌هایی که subagent مستقل دارند (در Arena موجود نیست → از پرامپت BUILDER + بازبینی ناظر استفاده کنید، `11_SUPERVISOR.md` §6)
 
 > برای کاهش تعداد چت‌ها. جدایی سازنده/بازبین با یک **subagent تازه** داخل همان چت حفظ می‌شود: بازبین فقط CONTRACT + diff + CI را می‌بیند و هیچ‌چیز از مکالمه‌ی ساخت را نمی‌بیند. اگر ایجنت subagent ندارد، خودش باید صریحاً بگوید و وضعیت را REVIEW بگذارد تا ناظر بازبین جدا بگیرد.
