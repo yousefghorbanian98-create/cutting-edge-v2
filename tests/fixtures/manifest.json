@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "synthetic": [
+    {
+      "name": "tone_120bpm_720p.mp4",
+      "kind": "video_with_audio",
+      "duration_min": 9.5,
+      "duration_max": 10.5,
+      "width": 1280,
+      "height": 720,
+      "fps": 30,
+      "audio": true
+    },
+    {
+      "name": "silent_720p.mp4",
+      "kind": "video",
+      "duration_min": 4.5,
+      "duration_max": 5.5,
+      "width": 1280,
+      "height": 720,
+      "fps": 30,
+      "audio": false
+    },
+    {
+      "name": "short_2s.mp4",
+      "kind": "video",
+      "duration_min": 1.8,
+      "duration_max": 2.2,
+      "width": 640,
+      "height": 360,
+      "fps": 24,
+      "audio": false
+    },
+    {
+      "name": "empty_0byte.mp4",
+      "kind": "empty",
+      "size_bytes": 0
+    },
+    {
+      "name": "broken_header.mp4",
+      "kind": "corrupt"
+    },
+    {
+      "name": "vertical_9x16.mp4",
+      "kind": "video",
+      "duration_min": 2.8,
+      "duration_max": 3.2,
+      "width": 720,
+      "height": 1280,
+      "fps": 30,
+      "audio": false
+    },
+    {
+      "name": "wide_4k_3s.mp4",
+      "kind": "video",
+      "duration_min": 2.8,
+      "duration_max": 3.2,
+      "width": 3840,
+      "height": 2160,
+      "fps": 30,
+      "audio": false
+    },
+    {
+      "name": "كلیپ-تمرین. mp4",
+      "kind": "video",
+      "duration_min": 1.8,
+      "duration_max": 2.2,
+      "width": 640,
+      "height": 360,
+      "fps": 30,
+      "audio": false
+    }
+  ],
+  "downloaded": {
+    "human_clip.mp4": { "source": "pexels", "sha256": null, "note": "network-only; recorded when downloaded" },
+    "pose.jpg":       { "source": "mediapipe-testdata", "sha256": null, "note": "network-only; recorded when downloaded" }
+  }
+}
