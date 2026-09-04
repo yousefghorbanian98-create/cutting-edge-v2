@@ -4,10 +4,10 @@
 
 | id | عنوان | وضعیت واقعی | فایل | مرحله | تست اثبات |
 |----|-------|-------------|------|-------|-----------|
-| BUG-1 | librosa نمی‌تواند MP4 بخواند | **OPEN (regressed)** — «رفع» با `moviepy.editor` انجام شده که در MoviePy 2 وجود ندارد؛ عملاً هنوز شکسته | `editor_ai/beat_sync.py` | S-004 | `test_beat_sync.py::test_mp4_click_track_bpm` |
+| BUG-1 | librosa نمی‌تواند MP4 بخواند | **CLOSED (S-004, 8dab714)** — FFmpeg-first extraction در `core/ffmpeg.py`؛ `extract_audio` صدا را به WAV 22050 mono تبدیل می‌کند و فقط سپس librosa اجرا می‌شود | `editor_ai/beat_sync.py`, `core/ffmpeg.py` | S-004 | `test_beat_sync.py::test_mp4_click_track_bpm` (`test_click_track_bpm_within_3`) |
 | BUG-2 | ViralCut روی ویدیوی کوتاه کرش می‌کند | FIXED در کد؛ **بدون تست** | `editor_ai/viral_cut.py` | S-006 (تست), S-042 | `test_api_live.py::test_viral_cut_short_video` |
 | BUG-3 | محافظت صورت دقیق نیست (۳۴ نقطه) | OPEN | `muscle/muscle_enhancer.py` | S-035 | `test_face_guard.py::test_face_ssim_preserved` |
-| BUG-4 | بدون fallback استخراج صدا | OPEN | `editor_ai/beat_sync.py` | S-004 | `test_beat_sync.py::test_ffmpeg_extract_aac` |
+| BUG-4 | بدون fallback استخراج صدا | **CLOSED (S-004, 8dab714)** — FFmpeg subprocess مسیر اصلی؛ MoviePy 2 import در `core/ffmpeg.py` فقط fallback است (بدون `moviepy.editor`/`verbose=`) | `editor_ai/beat_sync.py`, `core/ffmpeg.py` | S-004 | `test_beat_sync.py::test_ffmpeg_extract_aac` |
 | BUG-5 | فایل‌های موقت پاک نمی‌شوند | OPEN | `main.py` | S-074 | `test_cleanup.py::test_old_files_removed` |
 | BUG-6 | بدون WebSocket پیشرفت | OPEN | `main.py` + فرانت | S-029 | `test_ws.py::test_progress_monotonic` |
 | BUG-7 | **(جدید)** import نسبی + `python main.py` → ImportError | OPEN | `main.py` | S-002 | `scripts/dev-backend.sh` در CI + `/health` |
