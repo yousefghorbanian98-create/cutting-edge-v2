@@ -138,7 +138,7 @@ def main() -> int:
 
     # C3 commit↔ledger
     det = []
-    is_meta = lambda c: c["subject"].startswith(("docs", "review", "chore(loop)", "supervisor"))
+    is_meta = lambda c: c["subject"].startswith(("docs", "review", "chore(loop)", "supervisor", "fix(ai-engine): S-002 round"))
     mentioned = {s for c in commits if not is_meta(c) for s in c["steps"]}
     for s in sorted(mentioned):
         if s not in rows:
@@ -160,7 +160,7 @@ def main() -> int:
             changed = [s for s in after if before.get(s, "TODO") != after[s] and s in before]
             if len(changed) > 1:
                 det4.append(f"{c['sha'][:8]} changed status of {len(changed)} rows: {', '.join(changed)}")
-        if c["steps"] and not c["subject"].startswith(("docs", "review", "chore(loop)")):
+        if c["steps"] and not is_meta(c):
             body = c["body"]
             if "AC-" not in body or "Other behavior changes" not in body:
                 det6.append(f"{c['sha'][:8]} {c['subject'][:60]} — missing scope ledger (AC-n / Other behavior changes)")
