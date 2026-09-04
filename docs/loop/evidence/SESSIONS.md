@@ -35,3 +35,12 @@
 - Status: S-001 GREEN; S-002 REVIEW iter 2; S-003 REVIEW; S-004 REVIEW. verify_ledger green (1/98 GREEN). All pushed.
 - Blockers: none. Stopped at S-004 step boundary (context long; remaining steps heavy/unrunnable here — no system ffmpeg/rust/pnpm, no net for Pexels, no GitHub Actions for S-009).
 - Next step: S-005 (real-media fixture factory).
+
+## 2026-09-04 — BATCH BUILDER (batch 2): sync + S-002 r2/close + S-003 r2 + S-005 + S-006
+- Synced to supervisor base f9897a1 (BASE_OK) after clearing stale duplicate working tree (all dirty files matched committed content).
+- Job 0: S-002 approved → GREEN (local-linux); S-004 approved → GREEN + closed BUG-1/BUG-4 in 06_BUGS.md; S-003 round-2 [SECURITY] null-byte→404 fixed (validate basename before resolve, wrap resolve in try/except, reject ''/'.'/'..'), added x%00.mp4/%00/a%00b.mp4 to tests, CONTRACT AC-7, ledger REVIEW iter 2. Commit bef9815.
+- S-005: fixture factory (8 synthetic via imageio-ffmpeg, probe verify, offline explicit OFFLINE warning, manifest.json, conftest exposes by name, gitignored cache). Commit 77cfb0d.
+- S-006: test harness (live_api uvicorn fixture, assert_playable/frame_diff/ssim_region in helpers/media.py, unit/real/heavy/gpu markers + strict, /editor/beat-sync live 120 BPM, /muscle/enhance playable + pixel diff > 2.0). Commit c33e095.
+- Status: S-001 GREEN; S-002 GREEN; S-003 REVIEW iter 2; S-004 GREEN; S-005 REVIEW; S-006 REVIEW. verify_ledger green (3/98 GREEN). All pushed.
+- Blockers: none. Stopped at S-006 boundary (context long; S-007+ need pnpm/Playwright, S-008 toolchain, S-009 CI, S-010 rust/cargo, S-011 loop tooling, S-012 job model — sandbox-constrained).
+- Next step: S-007 (frontend styling).
