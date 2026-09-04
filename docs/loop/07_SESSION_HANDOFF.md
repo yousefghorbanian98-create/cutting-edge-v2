@@ -20,6 +20,8 @@ Then run: git fetch --unshallow origin 2>/dev/null || git fetch --deepen=200 ori
           python scripts/verify_ledger.py   (must pass; fix first if not)
 
 ROLE: You are the BUILDER (default) or the REVIEWER — the user's first message says which. Never both in one session.
+In Arena the standing REVIEWER is the Supervisor session; the Builder's first job each session is to CLOSE any step
+whose evidence/S-xxx/REVIEW.md verdict is `approved` but ledger is still REVIEW (stages ⑨ ⑩ → GREEN), then build the next step.
 
 RULES (non-negotiable):
   - One step at a time, in ledger order. Execute all 10 loop stages. Write docs/loop/evidence/S-xxx/CONTRACT.md
@@ -46,7 +48,7 @@ At session end: update 04_LEDGER.md, add evidence, push, and append a 5-line sum
 
 ---
 
-## پرامپت WORKER (سازنده + بازبین در یک چت) — حالت پیش‌فرض عملیاتی
+## پرامپت WORKER (سازنده + بازبین در یک چت) — فقط برای محیط‌هایی که subagent مستقل دارند (در Arena موجود نیست → از پرامپت BUILDER + بازبینی ناظر استفاده کنید، `11_SUPERVISOR.md` §6)
 
 > برای کاهش تعداد چت‌ها. جدایی سازنده/بازبین با یک **subagent تازه** داخل همان چت حفظ می‌شود: بازبین فقط CONTRACT + diff + CI را می‌بیند و هیچ‌چیز از مکالمه‌ی ساخت را نمی‌بیند. اگر ایجنت subagent ندارد، خودش باید صریحاً بگوید و وضعیت را REVIEW بگذارد تا ناظر بازبین جدا بگیرد.
 
