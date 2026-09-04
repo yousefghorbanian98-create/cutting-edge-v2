@@ -46,7 +46,37 @@ At session end: update 04_LEDGER.md, add evidence, push, and append a 5-line sum
 
 ---
 
-## پرامپت نقش Reviewer (سشن جدا با کانتکست خالی)
+## پرامپت WORKER (سازنده + بازبین در یک چت) — حالت پیش‌فرض عملیاتی
+
+> برای کاهش تعداد چت‌ها. جدایی سازنده/بازبین با یک **subagent تازه** داخل همان چت حفظ می‌شود: بازبین فقط CONTRACT + diff + CI را می‌بیند و هیچ‌چیز از مکالمه‌ی ساخت را نمی‌بیند. اگر ایجنت subagent ندارد، خودش باید صریحاً بگوید و وضعیت را REVIEW بگذارد تا ناظر بازبین جدا بگیرد.
+
+```
+git fetch --unshallow origin 2>/dev/null || git fetch --deepen=200 origin
+
+Role: WORKER for Cutting Edge v2 (Builder + fresh Reviewer in one session).
+Read docs/loop/07_SESSION_HANDOFF.md and docs/loop/02_LOOP_PROTOCOL.md first.
+Run python scripts/verify_ledger.py. Then:
+
+PHASE A — BUILD (you):
+  Take the next eligible step in docs/loop/04_LEDGER.md (oldest REVIEW with changes-requested first,
+  then first TODO/RED whose deps are GREEN). Execute loop stages ①–⑦. Push with status REVIEW.
+
+PHASE B — REVIEW (fresh subagent):
+  Spawn a NEW subagent with EMPTY context. Give it ONLY: the step id, the commit SHA(s),
+  docs/loop/evidence/S-xxx/CONTRACT.md, docs/loop/templates/REVIEW.md, and 02_LOOP_PROTOCOL.md §1-⑧ and §4.
+  It must re-run the tests itself and write docs/loop/evidence/S-xxx/REVIEW.md with a verdict.
+  You may not edit its verdict. If you cannot spawn an isolated subagent, say so and STOP at REVIEW.
+
+PHASE C — CLOSE (you):
+  approved → stage ⑨ ⑩: ledger GREEN with verified_on + evidence, commit, push. Then start the next step (max 2 steps per session).
+  changes-requested → fix ONLY must-fix items, re-run PHASE B (max 2 rounds), else BLOCKED.
+
+Rules: one step per commit; Scope Ledger in every step commit; never weaken a test; locked stack;
+never ask the user anything except U1/U2/U3 — apply defaults on U3.
+At the end report: branch name, last commit SHA, steps touched with final status.
+```
+
+## پرامپت نقش Reviewer (سشن جدا با کانتکست خالی) — فقط وقتی ناظر بخواهد
 
 ```
 You are the FRESH REVIEWER for Cutting Edge v2 step S-xxx. You have no memory of building it.
