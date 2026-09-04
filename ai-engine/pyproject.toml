@@ -38,6 +38,7 @@ packages = [
     "ai_engine.analyzer",
     "ai_engine.assistant",
     "ai_engine.captioner",
+    "ai_engine.core",
     "ai_engine.editor_ai",
     "ai_engine.muscle",
     "ai_engine.reheal",

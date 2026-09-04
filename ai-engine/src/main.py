@@ -13,10 +13,17 @@ import psutil
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
+
+from ai_engine.core.storage import (
+    Storage,
+    MediaTypeError,
+    PayloadTooLargeError,
+    PathTraversalError,
+)
 
 # Load ai-engine/.env before anything reads config (S-002: python-dotenv).
 # When run as an installed package the working dir is still ai-engine/, so a
@@ -25,16 +32,48 @@ load_dotenv()
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 app = FastAPI(title="Cutting Edge AI Core v2")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+# S-003: tighten CORS to the known local/tauri origins only (was "*").
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "tauri://localhost",
+        "https://tauri.localhost",
+    ],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-TEMP_DIR = tempfile.mkdtemp(prefix="ce_")
 
-# ── Helpers ──
+# S-003: all uploads go through the safe Storage (whitelist, size limit, UUID,
+# path-traversal-safe resolve). Max size is configurable for tests/CI.
+TEMP_DIR = tempfile.mkdtemp(prefix="ce_")
+storage = Storage(
+    base_dir=TEMP_DIR,
+    max_upload_bytes=int(os.getenv("CE_MAX_UPLOAD_MB", "2048")) * 1024 * 1024,
+)
+
+
 def save_upload(file: UploadFile) -> str:
-    path = os.path.join(TEMP_DIR, file.filename or "input.mp4")
-    with open(path, "wb") as f:
-        shutil.copyfileobj(file.file, f)
-    return path
+    """Store an upload safely and return its absolute path (S-003)."""
+    return storage.save_upload(file)
+
+
+# ── Exception handlers (S-003) ──
+@app.exception_handler(MediaTypeError)
+async def _media_type_handler(request: Request, exc: MediaTypeError):
+    return JSONResponse(status_code=415, content={"error": str(exc)})
+
+
+@app.exception_handler(PayloadTooLargeError)
+async def _payload_too_large_handler(request: Request, exc: PayloadTooLargeError):
+    return JSONResponse(status_code=413, content={"error": str(exc)})
+
+
+@app.exception_handler(PathTraversalError)
+async def _path_traversal_handler(request: Request, exc: PathTraversalError):
+    return JSONResponse(status_code=404, content={"error": "File not found"})
 
 # ── Models ──
 class ChatReq(BaseModel):
@@ -90,8 +129,8 @@ def chat(req: ChatReq):
 # ══════════════════════════════════════════
 @app.post("/editor/beat-sync")
 async def beat_sync(file: UploadFile = File(...)):
+    path = save_upload(file)  # validate type/size first (S-003 fail-fast)
     from .editor_ai.beat_sync import BeatSyncEngine
-    path = save_upload(file)
     engine = BeatSyncEngine()
 
     # analyze_audio now handles MP4 → WAV extraction internally
@@ -128,9 +167,9 @@ async def viral_cut(
     file: UploadFile = File(...),
     target_duration: int = Form(30)
 ):
+    path = save_upload(file)  # validate type/size first (S-003 fail-fast)
     from .editor_ai.viral_cut import ViralCutFinder
     from .analyzer.video_analyzer import VideoAnalyzer
-    path = save_upload(file)
 
     analyzer = VideoAnalyzer()
     analysis = analyzer.analyze(path, sample_rate=10)
@@ -162,9 +201,9 @@ async def viral_cut(
 # ══════════════════════════════════════════
 @app.post("/mood-dna")
 async def mood_dna(file: UploadFile = File(...)):
+    path = save_upload(file)  # validate type/size first (S-003 fail-fast)
     from .style_match.mood_dna import MoodDNAExtractor
     from dataclasses import asdict
-    path = save_upload(file)
     extractor = MoodDNAExtractor()
     dna = extractor.extract(path)
     return asdict(dna)
@@ -178,10 +217,10 @@ async def muscle_enhance(
     intensity: float = Form(0.6),
     preset: str = Form("natural_gym")
 ):
+    path = save_upload(file)  # validate type/size first (S-003 fail-fast)
+    out_path, out_name = storage.save_output(file.filename or "output.mp4")
+
     from .muscle.muscle_enhancer import MuscleEnhancer, EnhancementSettings, PRESETS
-    path = save_upload(file)
-    out_name = f"enhanced_{file.filename or 'output.mp4'}"
-    out_path = os.path.join(TEMP_DIR, out_name)
 
     settings = PRESETS.get(preset, EnhancementSettings(intensity=intensity))
     enhancer = MuscleEnhancer()
@@ -197,10 +236,11 @@ async def muscle_enhance(
 
 @app.get("/muscle/download/{filename}")
 def download_enhanced(filename: str):
-    path = os.path.join(TEMP_DIR, filename)
-    if os.path.exists(path):
-        return FileResponse(path, media_type="video/mp4", filename=filename)
-    return {"error": "File not found"}
+    # S-003: resolved strictly inside the storage dir (path traversal → 404).
+    path = storage.resolve_download(filename)
+    if not path.is_file():
+        return JSONResponse(status_code=404, content={"error": "File not found"})
+    return FileResponse(path, media_type="video/mp4", filename=path.name)
 
 # ══════════════════════════════════════════
 # VOICE COMMAND
@@ -220,10 +260,10 @@ async def style_compare(
     reference: UploadFile = File(...),
     source: UploadFile = File(...)
 ):
+    ref_path = save_upload(reference)  # validate type/size first (S-003 fail-fast)
+    src_path = save_upload(source)
     from .style_match.mood_dna import MoodDNAExtractor
     from dataclasses import asdict
-    ref_path = save_upload(reference)
-    src_path = save_upload(source)
     extractor = MoodDNAExtractor()
     ref_dna = extractor.extract(ref_path)
     src_dna = extractor.extract(src_path)
