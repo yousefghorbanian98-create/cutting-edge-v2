@@ -14,8 +14,28 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys_path_ok = str(REPO_ROOT)  # noqa: F841 - keep root importable if needed
 
-# fixtures are built into a gitignored temp dir (never committed media).
-_default_cache = Path(os.environ.get("CE_FIXTURES_DIR", tempfile.mkdtemp(prefix="ce_fixtures_")))
+# Fixtures are built into a gitignored cache dir (never committed media).
+# Default is tests/fixtures/.cache/ (already in .gitignore) so local reruns and
+# the CI cache actually hit; CE_FIXTURES_DIR overrides it.
+DEFAULT_CACHE_DIR = REPO_ROOT / "tests" / "fixtures" / ".cache"
+_default_cache = Path(os.environ.get("CE_FIXTURES_DIR") or DEFAULT_CACHE_DIR)
+
+# Every synthetic fixture the factory must produce (see manifest.json).
+_EXPECTED_SYNTHETIC = (
+    "tone_120bpm_720p.mp4",
+    "silent_720p.mp4",
+    "short_2s.mp4",
+    "empty_0byte.mp4",
+    "broken_header.mp4",
+    "vertical_9x16.mp4",
+    "wide_4k_3s.mp4",
+    "کلیپ تمرین ۱.mp4",
+)
+
+
+def _cache_is_complete(workdir: Path) -> bool:
+    """True when every expected synthetic fixture is already present."""
+    return all((workdir / name).exists() for name in _EXPECTED_SYNTHETIC)
 
 
 @pytest.fixture(scope="session")
@@ -24,8 +44,9 @@ def fixtures_dir() -> Path:
     from tests.fixtures.make_fixtures import make_fixtures
 
     workdir = _default_cache
-    # Reuse if already built.
-    if (workdir / "tone_120bpm_720p.mp4").exists():
+    # Reuse only a *complete* cache — a stale/partial dir (e.g. one built before
+    # the fixture (h) rename) must be regenerated, never silently reused.
+    if _cache_is_complete(workdir):
         return workdir
     res = make_fixtures(workdir, allow_network=os.getenv("CE_FIXTURE_OFFLINE", "0") != "1")
     for w in res["warnings"]:

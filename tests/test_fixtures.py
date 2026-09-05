@@ -31,7 +31,7 @@ MANIFEST_EXPECTED = [
     ("short_2s.mp4", "video", 640, 360),
     ("vertical_9x16.mp4", "video", 720, 1280),
     ("wide_4k_3s.mp4", "video", 3840, 2160),
-    ("كلیپ-تمرین. mp4", "video", 640, 360),
+    ("کلیپ تمرین ۱.mp4", "video", 640, 360),
 ]
 
 
@@ -95,7 +95,7 @@ def test_manifest_describes_every_synthetic_fixture() -> None:
     synthetic_names = {e["name"] for e in mf["synthetic"]}
     generated = {"tone_120bpm_720p.mp4", "silent_720p.mp4", "short_2s.mp4",
                  "empty_0byte.mp4", "broken_header.mp4", "vertical_9x16.mp4",
-                 "wide_4k_3s.mp4", "كلیپ-تمرین. mp4"}
+                 "wide_4k_3s.mp4", "کلیپ تمرین ۱.mp4"}
     assert synthetic_names == generated, "manifest synthetic set != generated set"
     # every generated fixture (except the two synthetic-only specials) has a probe spec
     for e in mf["synthetic"]:

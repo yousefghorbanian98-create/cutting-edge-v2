@@ -12,7 +12,8 @@ Fixtures produced (synthetic set is always built):
   e) broken_header.mp4      corrupt file (bad magic bytes)
   f) vertical_9x16.mp4      3s 720x1280@30
   g) wide_4k_3s.mp4         3s 3840x2160@30
-  h) Persian name with spaces and a dash: 'كلیپ-تمرین. mp4'  2s 640x360
+  h) Persian name, internal spaces, Persian digit, real .mp4 suffix:
+     'کلیپ تمرین ۱.mp4'  2s 640x360  (accepted by Storage._validate_extension)
 
 Optional (network, SHA256-pinned, cached):
   human_clip.mp4    licensed Pexels human clip (downloads only if network)
@@ -87,10 +88,6 @@ def _mux(audio_wav: str | None, out: Path,
         cmd += ["-i", audio_wav]
     cmd += ["-shortest", "-c:v", vcodec, "-pix_fmt", "yuv420p"]
     cmd += ["-c:a", "aac", "-ar", "48000", "-b:a", "128k"]
-    # A filename that isn't a clean `<name>.mp4` (e.g. a Persian name with a
-    # stray space before the extension) confuses the muxer — force the format.
-    if not out.suffix.lower() == ".mp4":
-        cmd += ["-f", "mp4"]
     cmd += [str(out)]
     _run(cmd)
 
@@ -145,8 +142,9 @@ def build_synthetic(out_dir: Path) -> dict[str, Path]:
     g = tmp("wide_4k_3s.mp4")
     _mux(None, g, size=(3840, 2160), fps=30, dur=3.0)
 
-    # h) Persian name with spaces + dash
-    h = tmp("كلیپ-تمرین. mp4")
+    # h) Persian name (U+06A9 kaf / U+06CC ye / U+06F1 digit), internal spaces,
+    #    real `.mp4` suffix so Storage._validate_extension accepts it (→ not 415).
+    h = tmp("کلیپ تمرین ۱.mp4")
     _mux(None, h, size=(640, 360), fps=30, dur=2.0)
 
     return {p.name: p for p in [
