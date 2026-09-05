@@ -13,3 +13,10 @@ venv/
 *.egg-info/
 .next/
 tests/fixtures/.cache/
+
+# Next.js static export + Playwright (S-007)
+out/
+playwright-report/
+test-results/
+.turbo/
+next-env.d.ts

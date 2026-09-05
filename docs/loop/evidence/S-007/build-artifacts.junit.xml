@@ -1,0 +1,20 @@
+<testsuites id="" name="" tests="8" failures="0" skipped="0" errors="0" time="0.856928">
+<testsuite name="build-artifacts.spec.ts" timestamp="2026-09-05T08:03:50.188Z" hostname="chromium" tests="8" failures="0" skipped="0" time="0.088" errors="0">
+<testcase name="out/ contains a real stylesheet (&gt; 10 KB)" classname="build-artifacts.spec.ts" time="0.011">
+</testcase>
+<testcase name="body colour/font come from CSS, not an inline style" classname="build-artifacts.spec.ts" time="0.006">
+</testcase>
+<testcase name="header gradient utilities are compiled" classname="build-artifacts.spec.ts" time="0.007">
+</testcase>
+<testcase name="fonts are bundled offline (no external font host)" classname="build-artifacts.spec.ts" time="0.018">
+</testcase>
+<testcase name="daisyui 5 rules and theme tokens are compiled" classname="build-artifacts.spec.ts" time="0.007">
+</testcase>
+<testcase name="exported HTML is Persian + RTL" classname="build-artifacts.spec.ts" time="0.001">
+</testcase>
+<testcase name="tokens.ts cssTheme map matches the @theme block exactly" classname="build-artifacts.spec.ts" time="0.036">
+</testcase>
+<testcase name="out/ is git-ignored (no build artifacts in git)" classname="build-artifacts.spec.ts" time="0.002">
+</testcase>
+</testsuite>
+</testsuites>

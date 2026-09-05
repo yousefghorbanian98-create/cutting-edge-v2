@@ -1,0 +1,118 @@
+/*
+ * S-007 — global stylesheet (Tailwind 4 + DaisyUI 5 + offline fonts).
+ *
+ * Before this file existed the app rendered with NO CSS at all: page.tsx has 86
+ * Tailwind classNames but tailwindcss/postcss/daisyui were not installed and no
+ * stylesheet was imported (01_STATE_OF_REPO.md B-4).
+ *
+ * `@theme` below is the CSS mirror of packages/design-system/tokens.ts — keep
+ * the two in sync (the TS object is for framer-motion/JS, this block is what
+ * generates the utilities).
+ */
+
+@import 'tailwindcss';
+
+/* Offline, self-hosted fonts (@fontsource → woff2 files inside the bundle).
+   No fonts.googleapis.com / fonts.gstatic.com anywhere: the desktop app must
+   work with no network at all. */
+@import '@fontsource-variable/inter';
+@import '@fontsource/vazirmatn/400.css';
+@import '@fontsource/vazirmatn/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+
+/* DaisyUI 5 — the only DaisyUI line that works with Tailwind 4 (DaisyUI 4 is a
+   Tailwind 3 plugin; see 02_LOOP_PROTOCOL.md §5 "clarifications"). */
+@plugin 'daisyui' {
+  themes: dark --default;
+}
+
+/* `static` = emit every variable even when no utility references it yet. The
+   design system is consumed from JS too (framer-motion colours, inline
+   `var(--color-ai-glow)`), so the tokens must always exist at runtime; it also
+   makes the tokens.ts ↔ globals.css sync claim checkable on the built CSS. */
+@theme static {
+  /* surfaces */
+  --color-surface-base: #09090b;
+  --color-surface-raised: #18181b;
+  --color-surface-overlay: #27272a;
+  --color-surface-border: rgb(255 255 255 / 0.06);
+  --color-surface-hover: rgb(255 255 255 / 0.04);
+
+  /* AI accent */
+  --color-ai-glow: #8b5cf6;
+  --color-ai-pulse: #a78bfa;
+  --color-ai-soft: #c4b5fd;
+  --color-ai-deep: #6d28d9;
+
+  /* status */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  /* muscle enhancer heat */
+  --color-muscle-warm: #f97316;
+  --color-muscle-hot: #ef4444;
+  --color-muscle-cool: #3b82f6;
+  --color-muscle-def: #eab308;
+
+  /* energy scale */
+  --color-energy-low: #22c55e;
+  --color-energy-medium: #eab308;
+  --color-energy-high: #f97316;
+  --color-energy-peak: #ef4444;
+
+  /* typography */
+  --font-sans: 'Inter Variable', 'Vazirmatn', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  /* The page background/colour now come from CSS, not an inline style on
+     <body> — this is what makes the styling testable (AC-2 of S-007). */
+  body {
+    margin: 0;
+    background-color: var(--color-surface-base);
+    color: #ffffff;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Persian/Arabic numerals and text must not be reshaped by ligature rules
+     intended for Latin; keep tabular numerals in the transport bar. */
+  .font-mono,
+  code,
+  kbd,
+  samp {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background-color: var(--color-ai-deep);
+    color: #ffffff;
+  }
+
+  /* Accessibility checklist (02_LOOP_PROTOCOL.md §4): honour reduced motion. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
