@@ -266,6 +266,36 @@ def main() -> int:
                 det.append(f"{s} has been {row['status']} for > 72h — {'ask user for U2/U1' if row['status']=='AMBER' else 'run a Reviewer session'}")
     R.add("C12", "PASS" if not det else "WARN", "Stall watchdog", det)
 
+    # C13 learnings entry per builder session (ECC "remember"; enforced from S-101)
+    det = []
+    step_commits = [c for c in commits if c["steps"] and not is_meta(c)]
+    learn_dir = ROOT / "docs" / "learnings"
+    if step_commits:
+        touched = sh("git", "diff", "--name-only", f"{since}..{head}").splitlines()
+        new_learn = [f for f in touched if f.startswith("docs/learnings/") and not f.endswith(("README.md", "TEMPLATE.md"))]
+        if not new_learn:
+            det.append(f"{len(step_commits)} step commit(s) since {since[:8]} but no new docs/learnings/ entry (remember)")
+        for f in new_learn:
+            fp = ROOT / f
+            if fp.exists():
+                body = fp.read_text(encoding="utf-8")
+                n = len([l for l in body.splitlines() if l.strip()])
+                if n > 24 or not all(k in body for k in ("## What broke", "## Root cause", "## Rule")):
+                    det.append(f"{f}: must be ≤ 20 lines with sections What broke / Root cause / Rule")
+    enforced = rows.get("S-101", {}).get("status") == "GREEN"
+    R.add("C13", "PASS" if not det else ("FAIL" if enforced else "WARN"), "Learnings entry per builder session (remember)", det)
+
+    # C14 design-token drift (DESIGN.md ⇄ globals.css ⇄ tokens.ts; enforced from S-099)
+    det = []
+    chk = ROOT / "scripts" / "check-design-tokens.js"
+    if chk.exists() and rows.get("S-099", {}).get("status") == "GREEN":
+        r14 = subprocess.run(["node", str(chk)], capture_output=True, text=True, cwd=ROOT)
+        if r14.returncode != 0:
+            det.append((r14.stdout + r14.stderr).strip()[-400:] or "check-design-tokens.js failed")
+        R.add("C14", "PASS" if not det else "FAIL", "Design tokens in sync (check-design-tokens.js)", det)
+    else:
+        R.add("C14", "WARN", "Design tokens in sync", ["not enforced until S-099 is GREEN (DESIGN.md is an imported draft)"])
+
     # Next step suggestion
     nxt = next((s for s, r_ in rows.items() if r_["status"] in ("TODO", "RED")), None)
     rev = [s for s, r_ in rows.items() if r_["status"] == "REVIEW"]

@@ -42,6 +42,8 @@
 ### ① SYNC (همگام‌سازی)
 - `git fetch && git status --porcelain` — روی شاخه‌ی سشن (Arena) هستیم؛ هیچ شاخه‌ی دیگری ساخته نمی‌شود. **working tree باید تمیز باشد**؛ اگر نیست، گزارش بده و pass را تمام کن — هرگز stash/reset روی کار ناشناخته نکن.
 - `python scripts/verify_ledger.py` باید سبز باشد. اگر قرمز است، **اول** آن را درست کن (بدهی از سشن قبل).
+- **گیت پوش:** `git ls-remote origin <شاخه‌ی سشن>` باید HEAD فعلی را نشان دهد. اگر کامیت محلی روی GitHub نیست، اول push؛ اگر push با خطای احراز هویت شکست خورد، همان‌جا توقف و گزارش (هرگز توکن نخواه). هیچ مرحله‌ی جدیدی روی کارِ push‌نشده شروع نمی‌شود.
+- `docs/learnings/` را (فقط عنوان‌ها + آخرین ۳ ورودی) بخوان تا اشتباه ثبت‌شده تکرار نشود.
 - **اول صف بازبینی:** اگر ردیفی با وضعیت `REVIEW` و verdict `changes-requested` هست، قبل از کار جدید فقط موارد Must-fix آن را درست کن (یک واحد کار در هر pass).
 - مرحله‌ی بعدی = اولین ردیف `TODO`/`RED` در دفترچه که همه‌ی `deps` آن `GREEN` هستند. ترتیب شماره‌ها را نشکن مگر با دلیل مکتوب در notes.
 - خواندن کارت مرحله در `03_STEPS.md` (هدف، فایل‌ها، تست واقعی، done-when).
@@ -60,12 +62,13 @@
 - هر تابع عمومی docstring/JSDoc دارد. پیام‌های کاربر فارسی و انگلیسی (از i18n بعد از S-085).
 - به‌روزرسانی مستندات همان مرحله (README بخش مربوط، docs/user اگر قابلیت کاربری است).
 - محدودیت سخت‌افزار همیشه در ذهن: RAM اپ < 1.5GB، VRAM مدل‌ها < 800MB، CUDA 11.8، float16.
+- **UI:** قبل از هر کامپوننت `DESIGN.md` خوانده می‌شود؛ رنگ/شعاع/فونت/حرکت فقط از توکن‌ها (`tokens.ts` ⇄ `@theme`). hex خام در TSX ممنوع مگر با کامنت دلیل‌دار. بعد از UI: `python scripts/design_audit.py <files> --strict` (از S-100).
 
 ### ④ STATIC (تحلیل ایستا)
 ```
 python scripts/gate.py --stage static
 ```
-شامل: Biome (lint+format)، `tsc --noEmit` strict، Ruff (lint+format، قوانین S=security، B=bugbear)، `cargo fmt --check && cargo clippy -D warnings`، gitleaks، `verify_ledger.py`، `sync-version.py --check` (بعد از S-063). هر خطا = توقف.
+شامل: Biome (lint+format)، `tsc --noEmit` strict، Ruff (lint+format، قوانین S=security، B=bugbear)، `cargo fmt --check && cargo clippy -D warnings`، gitleaks، `verify_ledger.py`، `node scripts/check-design-tokens.js` (از S-099)، `design_audit.py --strict` (از S-100)، `sync-version.py --check` (بعد از S-063). هر خطا = توقف.
 
 ### ⑤ TEST-REAL (تست واقعی)
 ```
@@ -124,6 +127,7 @@ python scripts/gate.py --stage e2e      # playwright (web) / tauri-driver (windo
   ```
   اگر `Other behavior changes: None` صادق نیست، **توقف** و اول CONTRACT اصلاح شود.
 - `git push origin <session-branch>`؛ CI باید سبز شود. اگر CI قرمز شد و لوکال سبز بود: **اول CI را درست کن** (محیط تمیز حقیقت است).
+- **remember:** در پایان هر سشن سازنده یک فایل `docs/learnings/YYYY-MM-DD-<slug>.md` (≤ ۲۰ خط: چه شکست / ریشه / قاعده‌ی بعدی) — حتی اگر «چیزی شکست نخورد» (آن‌وقت: چه چیزی کندتر از انتظار بود). ناظر آن را در ممیزی به قاعده تبدیل می‌کند (`11_SUPERVISOR.md` §7).
 - بعد از هر مایلستون (S-027, S-034, …): تگ `vX.Y.0`، pre-release با exe از CI، به‌روزرسانی `CHANGELOG.md`، درخواست `U2` از کاربر با لینک مستقیم دانلود + یک خط دستور `smoke-gpu.ps1`.
 
 ---
@@ -183,6 +187,8 @@ for phase in P0..P7:
 - [ ] ۶۰fps در تعامل‌های تایم‌لاین (اندازه‌گیری شده، نه حدس)
 - [ ] کیبورد-محور: هر اکشن شورتکات دارد و در Command Palette هست
 - [ ] RTL بی‌نقص؛ فونت فارسی بارگذاری‌شده‌ی آفلاین
+- [ ] Web Interface Guidelines (S-100): `aria-label` روی دکمه‌ی فقط‌آیکون، `focus-visible` به‌جای `outline-none`، انیمیشن فقط `transform/opacity` و بدون `transition: all`، `<button>` برای اکشن، `Intl.*` برای تاریخ/عدد، `tabular-nums` در ستون عددی، `img` با `alt`+ابعاد
+- [ ] همه‌ی رنگ‌ها/شعاع‌ها/فونت‌ها از توکن‌های `DESIGN.md` (S-099) — `check-design-tokens.js` سبز
 
 **قابلیت اطمینان (Reheal)**
 - [ ] لایه‌های Reheal مرتبط probe شده‌اند (§1-⑥)

@@ -9,7 +9,7 @@
 | 00 | `00_INDEX.md` | همین فایل |
 | 01 | `01_STATE_OF_REPO.md` | ممیزی واقعی کد (۲۰۲۶-۰۹-۰۳): چه هست، چه شکسته، چرا پیشرفت واقعی ~۱۲–۱۵٪ است |
 | 02 | `02_LOOP_PROTOCOL.md` | **لوپ ۱۰ گامی** (Builder + بازبین تازه) برای هر مرحله + لوپ مایلستون + تعریف «تست واقعی» + چک‌لیست کلاس جهانی + سه نقطه‌ی دخالت کاربر |
-| 03 | `03_STEPS.md` | **۹۸ مرحله‌ی شماره‌دار** (S-001 … S-098) در ۸ فاز تا v1.0 — تولیدشده از `steps.json` |
+| 03 | `03_STEPS.md` | **۱۰۱ مرحله‌ی شماره‌دار** (S-001 … S-101؛ سه مرحله‌ی S-099…S-101 در P0 بعد از S-012 اجرا می‌شوند) در ۸ فاز تا v1.0 — تولیدشده از `steps.json` |
 | 04 | `04_LEDGER.md` | وضعیت هر مرحله؛ ماشین‌خوان؛ `scripts/verify_ledger.py` در CI آن را چک می‌کند |
 | 05 | `05_REHEAL_MATRIX.md` | ۷ لایه‌ی Reheal × مرحله‌ی ساخت × probe آشوب × معیار بازیابی |
 | 06 | `06_BUGS.md` | ۱۵ باگ شناخته‌شده (۶ قدیمی + ۹ کشف‌شده در ممیزی) با تست اثبات |
@@ -17,7 +17,12 @@
 | 08 | `08_FINN_LOOP_ADOPTION.md` | بررسی Finn-loop: چه گرفتیم (بازبین تازه، AC/NG، scope ledger) و چه نگرفتیم (merge انسانی، Linear) |
 | 09 | `09_UI_COMPONENT_PROMPT.md` | پرامپت آماده برای دادن به یک AI دیگر جهت تولید کامپوننت‌های UI کلاس جهانی |
 | 10 | `10_OPERATING_GUIDE.md` | راهنمای **شما** برای اجرای لوپ با کمترین خطا: راه‌اندازی یک‌باره، یک سشن = یک نقش = یک مرحله، پیام‌های آماده، چک ۶۰ ثانیه‌ای، نشانه‌های انحراف |
-| 11 | `11_SUPERVISOR.md` | نقش سوم: ناظر روند ساخت (این سشن Arena) — `scripts/supervise.py` با ۱۲ چک، verdict OK/ATTENTION/STOP |
+| 11 | `11_SUPERVISOR.md` | نقش سوم: ناظر روند ساخت (این سشن Arena) — `scripts/supervise.py` با ۱۴ چک، verdict OK/ATTENTION/STOP؛ §7 حلقه‌ی improve |
+| 12 | `12_SIXTEEN_LAYER_MAP.md` | نگاشت نقشه‌ی ۱۶ لایه‌ی تولید روی این محصول: کدام لایه در کدام مرحله؛ چه چیزی عمداً حذف شد |
+| 13 | `13_INTEGRATIONS_ADOPTION.md` | سه ادغام (ECC، Web Interface Guidelines، awesome-design-md): چه پذیرفته شد، چگونه گیت شد، چه رد شد |
+| — | `../../AGENTS.md` | نقطه‌ی ورود هر ایجنت (ریشه‌ی ریپو) — به این پوشه لینک می‌دهد |
+| — | `../../DESIGN.md` | مرجع بصری (پیش‌نویس وارداتی تا S-099؛ سپس گیت‌شده) |
+| — | `../adr/`, `../learnings/` | تصمیم‌های معماری و درس‌های سشن‌ها (از S-101) |
 | — | `templates/` | `CONTRACT.md` (AC/NG هر مرحله) و `REVIEW.md` (verdict بازبین) |
 | — | `steps.json` | منبع حقیقت مراحل (ویرایش این؛ سپس `python scripts/loop/render_steps.py`) |
 | — | `evidence/` | هر مرحله: `S-xxx/CONTRACT.md`, `REVIEW.md`, artifacts + `SESSIONS.md` |
@@ -25,7 +30,7 @@
 
 ## نقشه‌ی راه در یک نگاه
 ```
-P0 Foundation Repair   S-001…S-012  v0.2.1   ← ریپو را واقعاً build/test/ship‌پذیر می‌کند (اولین .exe در S-010)
+P0 Foundation Repair   S-001…S-012 + S-099…S-101  v0.2.1   ← build/test/ship‌پذیر + DESIGN/AGENTS/ADR/learnings گیت‌شده
 P1 Timeline Real       S-013…S-027  v0.3.0
 P2 Export Pipeline     S-028…S-034  v0.4.0
 P3 AI Full Integration S-035…S-057  v0.5.0   ← هر ۱۶ قابلیت
@@ -51,4 +56,4 @@ pwsh scripts/smoke-gpu.ps1                 # روی ماشین کاربر، از
 ```
 
 ## مرحله‌ی بعدی
-`S-001` — اولین ردیف `TODO` در `04_LEDGER.md` که وابستگی ندارد.
+اولین ردیف `TODO` در `04_LEDGER.md` که همه‌ی وابستگی‌هایش GREEN یا REVIEW-در-همین-دسته هستند. ترتیب توصیه‌شده‌ی باقی‌مانده‌ی P0: S-008 → S-009 → S-101 → S-099 → S-100 → S-010 → S-011 → S-012.

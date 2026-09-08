@@ -114,3 +114,6 @@
 | S-096 | Release rehearsal: clean-VM install, upgrade 0.8→1.0 via updater, uninstall, rollback plan | TODO | 0 |  |  |  |
 | S-097 | SHIP v1.0.0: tag, GitHub Release (exe + SHA256 + latest.json), release notes fa/en, CHANGELOG | TODO | 0 |  |  |  |
 | S-098 | Post-release loop: issue templates, triage labels, 1.0.x hotfix protocol, next-cycle backlog | TODO | 0 |  |  |  |
+| S-099 | Agent operating manual + DESIGN.md reconciled to the real design tokens (single source, gated) | TODO | 0 |  |  |  |
+| S-100 | UI guidelines audit gate (offline Web Interface Guidelines checker) wired into gate static | TODO | 0 |  |  |  |
+| S-101 | ADR log + session learnings (ECC remember/improve) with hygiene tests | TODO | 0 |  |  |  |

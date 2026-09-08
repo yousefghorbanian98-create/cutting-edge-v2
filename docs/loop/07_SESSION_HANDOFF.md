@@ -9,6 +9,7 @@ You are the senior engineer continuing "Cutting Edge v2" (Windows desktop AI vid
 Repo: github.com/yousefghorbanian98-create/cutting-edge-v2 — work ONLY on the branch this session is bound to.
 
 BEFORE ANY CODE, read in this order:
+  0. AGENTS.md (repo root — agent operating manual; DESIGN.md is the visual authority)
   1. docs/loop/00_INDEX.md
   2. docs/loop/02_LOOP_PROTOCOL.md      (the 9-step loop — mandatory for every step)
   3. docs/loop/04_LEDGER.md             (find the next TODO/RED step whose deps are all GREEN)
@@ -40,37 +41,46 @@ RULES (non-negotiable):
   - Hardware budget: 16GB RAM, GTX 1650 4GB, CUDA 11.8; app RAM < 1.5GB, model VRAM < 800MB. Cost $0.
   - Persian-first UX (RTL), English second. World-class checklist in 02_LOOP_PROTOCOL.md §4 applies to every step.
 
-At session end: update 04_LEDGER.md, add evidence, push, and append a 5-line summary to docs/loop/evidence/SESSIONS.md
-(date, steps touched, status, blockers, next step id).
+At session end: update 04_LEDGER.md, add evidence, write docs/learnings/YYYY-MM-DD-<slug>.md (what broke / root cause / rule),
+push, and append a 5-line summary to docs/loop/evidence/SESSIONS.md (date, steps touched, status, blockers, next step id).
 ```
 
 ---
 
 ---
 
-## پرامپت BATCH BUILDER (حالت سریع — پیش‌فرض از S-003 به بعد)
+## پرامپت BATCH BUILDER (حالت سریع — پیش‌فرض)
 
-> یک چت = یک **دسته** (همه‌ی مراحل باقی‌مانده‌ی یک فاز، یا تا سقف تعیین‌شده). هر مرحله همچنان کامیت/قرارداد/تست جدا دارد؛ فقط تعداد چت‌ها کم می‌شود. ناظر در پایان دسته همه را یک‌جا بازبینی می‌کند.
+> یک چت = یک **دسته** (همه‌ی مراحل باقی‌مانده‌ی یک فاز، یا تا سقف تعیین‌شده). هر مرحله همچنان کامیت/قرارداد/تست جدا دارد. ناظر در پایان دسته همه را یک‌جا بازبینی می‌کند. چت سازنده **ثابت می‌ماند**؛ برای نوبت‌های بعد فقط پیام «Sync and continue» (۱۰_OPERATING_GUIDE B1) فرستاده می‌شود.
 
 ```
-git fetch --unshallow origin 2>/dev/null || git fetch --deepen=200 origin
-git merge-base --is-ancestor <SUPERVISOR_HEAD> HEAD && echo BASE_OK || echo BASE_WRONG
-If BASE_WRONG: stop immediately and tell me.
+You are the BATCH BUILDER for Cutting Edge v2. Read AGENTS.md, then docs/loop/07_SESSION_HANDOFF.md and 02_LOOP_PROTOCOL.md.
 
-Role: BATCH BUILDER. Read docs/loop/07_SESSION_HANDOFF.md and 02_LOOP_PROTOCOL.md; run python scripts/verify_ledger.py.
+Setup (run exactly, report the echo lines):
+  git fetch --unshallow origin 2>/dev/null || git fetch --deepen=200 origin
+  git fetch origin <SUPERVISOR_BRANCH> && git reset --hard FETCH_HEAD && git clean -fdq
+  git merge-base --is-ancestor <SUPERVISOR_HEAD> HEAD && echo BASE_OK || echo BASE_WRONG
+  git push -u origin HEAD 2>&1 | tail -1 && git ls-remote origin $(git branch --show-current) | cut -c1-7 && echo PUSH_OK
+  python scripts/verify_ledger.py
+If BASE_WRONG or PUSH_OK missing (auth error): stop immediately and say so. Never ask for tokens.
+Stay on your own branch; push there after every step; never push to <SUPERVISOR_BRANCH>.
 
-Job 0 — close/fix: for every step whose evidence/S-xxx/REVIEW.md verdict is `approved` but ledger is REVIEW → stages ⑨⑩ (GREEN).
-  For every step with `changes-requested` → fix ONLY the must-fix items, commit "fix(scope): S-xxx round-N — <what>", keep REVIEW, iter+1.
+Job 0 — close/fix: for every step whose evidence/S-xxx/REVIEW.md verdict is `approved` but ledger is REVIEW → stages ⑨⑩ (GREEN; one ledger row per commit).
+  For every `changes-requested` → fix ONLY the must-fix items, commit "fix(scope): S-xxx round-N — <what>", keep REVIEW, iter+1.
 
-Job 1 — build the batch: steps <FROM> through <TO>, strictly in order, each one a full ①–⑦ loop:
-  own CONTRACT.md (AC/NG), red-first real test, code, static checks available, Reheal probe if applicable,
-  its OWN commit with Scope Ledger, ledger row → REVIEW. Push after EVERY step (never batch pushes).
+Job 1 — build the batch: steps <FROM> through <TO>, strictly in ledger order, each one a full ①–⑦ loop:
+  own CONTRACT.md (AC/NG), red-first real test, code, static gate, Reheal probe if applicable,
+  its OWN commit with Scope Ledger, ledger row → REVIEW. Push after EVERY step and verify with git ls-remote before starting the next.
+  UI work: read DESIGN.md first; tokens only; run design_audit --strict (from S-100) before commit.
+  Sandbox limits are NOT a stop reason: no browser → write the Playwright test, mark unverified:ci; no cargo → write config, mark unverified:windows;
+  no network → offline fixtures + unverified:network. CI (S-009) is the gate; the supervisor verifies runs.
   A step may start only when all its deps are GREEN or REVIEW-in-this-batch.
-  If a step hits 5 debug iterations → BLOCKED + docs/loop/blockers/S-xxx.md, continue with the next independent step.
-  Never mark GREEN yourself. Never weaken a test. Locked stack. No questions except U1/U2/U3 (apply defaults).
+  5 debug iterations → BLOCKED + docs/loop/blockers/S-xxx.md, continue with the next independent step.
+  Never mark GREEN yourself. Never weaken a test. Locked stack (AGENTS.md §1). No questions except U1/U2/U3 (apply defaults).
 
-Stop when: <TO> is pushed, OR context is getting long (then stop at a step boundary), OR 3 consecutive steps are BLOCKED.
-Final report: branch, last SHA, table of steps touched with status, and any BLOCKED ids.
+Stop when: <TO> is pushed, OR context is getting long (stop at a step boundary), OR 3 consecutive steps are BLOCKED, OR push fails.
+Before the final report: write docs/learnings/YYYY-MM-DD-<slug>.md (≤ 20 lines: what broke / root cause / rule for next time) and append to docs/loop/evidence/SESSIONS.md; commit + push.
+Final report: branch name, last SHA (confirmed on GitHub via ls-remote), table of steps touched with status and SHA, BLOCKED ids, and the learnings file name.
 ```
 
 ## پرامپت WORKER (سازنده + بازبین در یک چت) — فقط برای محیط‌هایی که subagent مستقل دارند (در Arena موجود نیست → از پرامپت BUILDER + بازبینی ناظر استفاده کنید، `11_SUPERVISOR.md` §6)
@@ -123,3 +133,5 @@ Commit only REVIEW.md with message: `review(S-xxx): round N — <verdict>`.
 - [ ] ردیف‌های دفترچه با status/iter/verified_on/evidence به‌روز
 - [ ] اگر مایلستون بسته شد: تگ، pre-release، پیام کوتاه به کاربر با لینک exe و دستور `smoke-gpu.ps1`
 - [ ] `docs/loop/evidence/SESSIONS.md` یک بلوک جدید دارد
+- [ ] `docs/learnings/` یک فایل جدید برای این سشن دارد (remember)
+- [ ] `git ls-remote origin <branch>` همان HEAD محلی را نشان می‌دهد (push واقعاً انجام شده)

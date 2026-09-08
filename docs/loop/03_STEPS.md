@@ -1,6 +1,6 @@
 # 03 — Numbered Steps (تولیدشده‌ی خودکار — ویرایش نکنید)
 
-> منبع: `docs/loop/steps.json` — 98 مرحله در 8 فاز. برای تغییر، JSON را ویرایش و `python scripts/loop/render_steps.py` را اجرا کنید.
+> منبع: `docs/loop/steps.json` — 101 مرحله در 8 فاز. برای تغییر، JSON را ویرایش و `python scripts/loop/render_steps.py` را اجرا کنید.
 
 ## کدهای دخالت کاربر
 
@@ -13,7 +13,7 @@
 
 | فاز | نسخه | هدف | مراحل |
 |-----|------|-----|-------|
-| P0 Foundation Repair | 0.2.1 | ریپو را واقعاً قابل build/test/ship کردن؛ بدون این فاز هیچ gate‌ای قابل اجرا نیست | S-001 → S-012 (12) |
+| P0 Foundation Repair | 0.2.1 | ریپو را واقعاً قابل build/test/ship کردن؛ بدون این فاز هیچ gate‌ای قابل اجرا نیست | S-001 → S-101 (15) |
 | P1 Timeline Real | 0.3.0 | تایم‌لاین واقعی چندتِرَکه با برش/کشیدن/undo و پخش سکانس | S-013 → S-027 (15) |
 | P2 Export Pipeline | 0.4.0 | خروجی واقعی FFmpeg با پیشرفت لحظه‌ای، لغو و پریست‌های شبکه‌های اجتماعی | S-028 → S-034 (7) |
 | P3 AI Full Integration | 0.5.0 | هر ۱۶ قابلیت با UI واقعی، تست واقعی روی مدیا و زنجیره‌ی fallback | S-035 → S-057 (23) |
@@ -145,7 +145,7 @@ _ریپو را واقعاً قابل build/test/ship کردن؛ بدون این 
 
 ### S-009 — CI overhaul: matrix (ubuntu lint/unit/e2e + windows heavy/tauri), caching, artifacts, all branches
 
-**هدف:** CI فعلی فقط روی main و فقط pytest سنگین روی ویندوز بدون کش. ماتریس: ubuntu (static+unit+frontend build+Playwright)، windows (pytest real + cargo check + tauri build → آپلود .exe)، کش pnpm/pip/cargo، اجرای روی همه‌ی شاخه‌ها و PRها، gitleaks، آپلود junit و اسکرین‌شات‌ها
+**هدف:** CI فعلی فقط روی main و فقط pytest سنگین روی ویندوز بدون کش. ماتریس: ubuntu (static+unit+frontend build+Playwright)، windows (pytest real + cargo check + tauri build → آپلود .exe)، کش pnpm/pip/cargo، اجرای روی همه‌ی شاخه‌ها و PRها، gitleaks، آپلود junit و اسکرین‌شات‌ها؛ جاب ubuntu همچنین `check-design-tokens` و `design_audit --strict` (وقتی S-099/S-100 سبز شدند) و `verify_ledger` را اجرا می‌کند؛ trigger روی push به `arena/**` و `main`؛ junit + playwright-report + screenshot baseline به‌عنوان artifact
 
 **فایل‌ها:** `.github/workflows/ci.yml`, `.github/workflows/release.yml`, `.gitleaks.toml`
 
@@ -198,6 +198,48 @@ _ریپو را واقعاً قابل build/test/ship کردن؛ بدون این 
 **دخالت کاربر:** `none`
 
 **وابستگی‌ها:** S-006
+
+### S-099 — Agent operating manual + DESIGN.md reconciled to the real design tokens (single source, gated)
+
+**هدف:** AGENTS.md و DESIGN.md (وارد‌شده از نقشه‌ی ۱۶لایه/Roadmap v2) با استک قفل‌شده و توکن‌های واقعی S-007 یکی می‌شوند: DESIGN.md بخش‌های Colors/Typography/Radius/Motion را دقیقاً برابر `@theme` در globals.css و `tokens.ts` توصیف می‌کند (بلوک‌های YAML ماشین‌خوان)؛ `scripts/check-design-tokens.js` از placeholder به چک واقعی تبدیل می‌شود (DESIGN.md ⇄ globals.css ⇄ tokens.ts)؛ فایل‌های هارنس (.cursorrules، .github/copilot-instructions.md، .claude/.cursor/.windsurf) فقط اشاره‌گر نازک به AGENTS.md + DESIGN.md هستند و هیچ ادعای استک بیگانه (NestJS/Prisma/Postgres/shadcn/Geist) ندارند
+
+**فایل‌ها:** `AGENTS.md`, `DESIGN.md`, `.cursorrules`, `.github/copilot-instructions.md`, `.claude/skills/web-design-guidelines/SKILL.md`, `.cursor/skills/web-design-guidelines.md`, `.windsurf/rules/web-design-guidelines.md`, `scripts/check-design-tokens.js`, `tests/unit/test_agent_docs.py`
+
+**تست واقعی (نه فقط عدد):** `node scripts/check-design-tokens.js` روی درخت تمیز exit 0 با گزارش تعداد توکن‌های تطبیق‌شده (≥ 27)؛ تغییر یک رنگ در globals.css (یا DESIGN.md) → exit 1 با نام توکن و دو مقدار؛ `pytest tests/unit/test_agent_docs.py`: هیچ‌یک از فایل‌های agent-facing واژه‌های استک ممنوع را ندارد و همگی به AGENTS.md و DESIGN.md و docs/loop/00_INDEX.md لینک می‌دهند
+
+**Done when:** DESIGN.md تنها مرجع بصری است و در gate static چک می‌شود؛ AGENTS.md نقطه‌ی ورود هر ایجنت است
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-007, S-008
+
+### S-100 — UI guidelines audit gate (offline Web Interface Guidelines checker) wired into gate static
+
+**هدف:** چک‌کننده‌ی آفلاین و قطعی مبتنی بر snapshot قوانین Vercel Web Interface Guidelines (docs/integrations/web-guidelines/) روی apps/desktop/src/**/*.tsx: دکمه‌ی فقط-آیکون بدون aria-label، outline-none بدون focus-visible، transition-all/transition: all، div/span با onClick بدون role+tabIndex+onKeyDown، img بدون alt یا width/height، تاریخ/عدد هاردکد به‌جای Intl، انیمیشن بدون prefers-reduced-motion، input بدون label؛ خروجی `file:line rule message`؛ حالت --warn برای شروع و --strict در CI؛ suppress فقط با کامنت دلیل‌دار `// wig-ignore <rule>: <why> (S-xxx)`
+
+**فایل‌ها:** `scripts/design_audit.py`, `tests/unit/test_design_audit.py`, `tests/fixtures/ui/violations.tsx`, `tests/fixtures/ui/clean.tsx`, `scripts/gate.py`, `package.json`
+
+**تست واقعی (نه فقط عدد):** fixture با ۸ نقض شناخته‌شده → دقیقاً ۸ یافته با شماره‌ی خط درست؛ fixture تمیز → ۰؛ اجرای واقعی روی apps/desktop/src فعلی یافته‌های واقعی page.tsx را گزارش می‌کند و هر یافته یا همان‌جا رفع می‌شود یا با wig-ignore دلیل‌دار به S-084 ارجاع می‌شود؛ `gate.py --stage static` با --strict سبز
+
+**Done when:** gate static شامل design_audit --strict است؛ CI (S-009) آن را اجرا می‌کند؛ صفر یافته‌ی بدون دلیل
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-099
+
+### S-101 — ADR log + session learnings (ECC remember/improve) with hygiene tests
+
+**هدف:** docs/adr/ با ADR-0001…000N برای تصمیم‌های از قبل گرفته‌شده (استک قفل، Tailwind 4→DaisyUI 5، FFmpeg-first، PyInstaller sidecar، فقط مدل‌های :free، بدون telemetry، DESIGN.md مرجع، لوپ ناظر/سازنده) با قالب ثابت (Status/Context/Decision/Consequences) و فهرست؛ docs/learnings/ با قالب ≤ ۲۰ خطی (چه شکست، ریشه، قاعده‌ی بعدی) که هر سشن سازنده در پایان یک ورودی می‌نویسد؛ ناظر در ممیزی آن‌ها را به قاعده/چک تبدیل می‌کند (improve)
+
+**فایل‌ها:** `docs/adr/README.md`, `docs/adr/0001-locked-stack.md`, `docs/learnings/README.md`, `docs/learnings/TEMPLATE.md`, `tests/unit/test_repo_hygiene.py`, `docs/loop/07_SESSION_HANDOFF.md`
+
+**تست واقعی (نه فقط عدد):** `pytest tests/unit/test_repo_hygiene.py -k adr_or_learn`: هر ADR چهار بخش الزامی و شماره‌ی یکتا دارد و در README فهرست شده؛ هر فایل learnings ≤ ۲۰ خط و سه بخش دارد؛ افزودن یک ADR بدون بخش Consequences → تست قرمز
+
+**Done when:** حداقل ۸ ADR ثبت‌شده؛ SESSIONS.md به learnings لینک می‌دهد؛ supervise.py وجود ورودی learnings برای هر سشن سازنده را چک می‌کند
+
+**دخالت کاربر:** `none`
+
+**وابستگی‌ها:** S-001
 
 
 ---
@@ -786,7 +828,7 @@ _هر ۱۶ قابلیت با UI واقعی، تست واقعی روی مدیا �
 
 ### S-053 — Multi-Modal Brain: chat with frame/transcript/timeline context + fallback chain (Reheal L4)
 
-**هدف:** چت با کانتکست (تامبنیل فریم فعلی به مدل vision رایگان OpenRouter، ترنسکریپت، وضعیت تایم‌لاین)، زنجیره‌ی OpenRouter → Nvidia NIM → قواعد محلی → کش، timeout 15s، retry ۳ با backoff نمایی، استریم پاسخ
+**هدف:** چت با کانتکست (تامبنیل فریم فعلی به مدل vision رایگان OpenRouter، ترنسکریپت، وضعیت تایم‌لاین)، زنجیره‌ی OpenRouter → Nvidia NIM → قواعد محلی → کش، timeout 15s، retry ۳ با backoff نمایی، استریم پاسخ؛ پرامپت‌ها در `ai-engine/prompts/*.md` نسخه‌دار می‌شوند (نه رشته در کد) با مجموعه‌ی eval آفلاین ثبت‌شده (fixture پاسخ‌ها) که تغییر پرامپت بدون به‌روزرسانی eval را قرمز می‌کند
 
 **فایل‌ها:** `ai-engine/src/ai/router.py`, `ai-engine/src/ai/providers/`, `apps/desktop/src/components/ai-assistant/Chat.tsx`, `tests/test_ai_router.py`
 
@@ -1243,7 +1285,7 @@ _پوشش تست، کارایی روی GTX 1650، دسترس‌پذیری، i18n
 
 ### S-084 — Accessibility WCAG 2.1 AA: axe, keyboard-only, focus, contrast, reduced motion
 
-**هدف:** axe-core در Playwright بدون violation جدی، ناوبری کامل با کیبورد، حلقه‌های فوکوس، کنتراست ≥ 4.5:1 با توکن‌ها، prefers-reduced-motion
+**هدف:** axe-core در Playwright بدون violation جدی، ناوبری کامل با کیبورد، حلقه‌های فوکوس، کنتراست ≥ 4.5:1 با توکن‌ها، prefers-reduced-motion؛ KPI: صفر نقض critical در axe و صفر یافته‌ی design_audit بدون دلیل (S-100)؛ همه‌ی wig-ignoreهای ارجاع‌شده به این مرحله بسته می‌شوند
 
 **فایل‌ها:** `apps/desktop/e2e/a11y.spec.ts`, `apps/desktop/src/app/globals.css`
 
@@ -1285,7 +1327,7 @@ _پوشش تست، کارایی روی GTX 1650، دسترس‌پذیری، i18n
 
 ### S-087 — UX polish: empty states, skeletons, error states, onboarding, motion tokens, micro-interactions
 
-**هدف:** پاس نهایی طراحی در سطح Linear/Cursor: حالت‌های خالی معنادار، اسکلتون‌ها، پیام‌های خطا با اقدام، تور معرفی ۵ مرحله‌ای، spring tokens یکسان، تیک‌های موفقیت، صدا/ارتعاش خاموش پیش‌فرض
+**هدف:** پاس نهایی طراحی در سطح Linear/Cursor: حالت‌های خالی معنادار، اسکلتون‌ها، پیام‌های خطا با اقدام، تور معرفی ۵ مرحله‌ای، spring tokens یکسان، تیک‌های موفقیت، صدا/ارتعاش خاموش پیش‌فرض؛ هر کامپوننت با DESIGN.md (S-099) و design_audit (S-100) سنجیده می‌شود؛ ≥ ۹۵٪ رنگ‌های به‌کاررفته از توکن‌ها (نه hex خام) — با اسکریپت شمارش
 
 **فایل‌ها:** `apps/desktop/src/components/`, `packages/design-system/motion.ts`
 

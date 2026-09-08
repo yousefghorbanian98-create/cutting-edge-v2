@@ -1,123 +1,69 @@
-# AGENTS.md — cutting-edge-v2
-> **Agent Operating Manual** — این فایل توسط هر Agent Harness (Claude Code, Cursor, Codex, OpenCode) به صورت خودکار خوانده می‌شود.
-> ترکیب ۳ منبع: **ECC + Web Design Guidelines + Awesome Design**
+# AGENTS.md — Cutting Edge v2
 
----
+> **Agent Operating Manual.** Every AI session (Arena builder, Arena supervisor, Claude Code, Cursor, Copilot, Codex) reads this file first.
+> It is short on purpose: the authority for *how we work* is `docs/loop/`, the authority for *how it looks* is `DESIGN.md`.
 
-## 1. Project Identity
-- **Name:** cutting-edge-v2 — AI-Native SaaS Platform (Modular Monolith)
-- **Stack:** Next.js 15 (App Router) + NestJS + PostgreSQL + Prisma + pgvector/Qdrant + Redis + BullMQ
-- **Design System:** `DESIGN.md` در ریشه (Hybrid Linear/Vercel/Stripe) — **مرجع بصری اجباری**
-- **16-Layer Plan:** `docs/16-LAYER-PRODUCTION-PLAN.md` — منبع حقیقت معماری
-- **Roadmap v2:** `docs/ROADMAP-v2-WITH-INTEGRATIONS.md` — این ۳ ادغام در نقشه راه
+## 1. What this project is
+- **Product:** Persian-first (RTL) Windows desktop video editor for sports/fitness creators, with AI Style Match, AI Assistant and a 100 %-natural Muscle Enhancer. Ships as an NSIS `.exe` via GitHub Releases.
+- **Locked stack (do not change):** Tauri 2 (Rust) · Next.js 15 / React 19 / TypeScript 5.5 strict · Tailwind 4 + DaisyUI 5 · Framer Motion 11 · Zustand 5 · FastAPI (Python 3.11) · MediaPipe · OpenCV · MoviePy 2 · librosa · faster-whisper small · edge-tts · OpenRouter `:free` models + Nvidia NIM · Turborepo + pnpm · Vitest / Playwright / pytest · Biome / Ruff.
+- **Not this project:** no NestJS, Prisma, PostgreSQL, Redis, shadcn/ui, Geist fonts, SaaS multi-tenant, RAG chat. Those words appear in `docs/16-LAYER-PRODUCTION-PLAN.md` and `docs/ROADMAP-v2-WITH-INTEGRATIONS.md`, which are **generic reference inputs**, mapped onto this product in `docs/loop/12_SIXTEEN_LAYER_MAP.md`.
+- **Hardware budget:** 16 GB RAM, GTX 1650 4 GB, CUDA 11.8, float16. App RAM < 1.5 GB, model VRAM < 800 MB. Budget $0.
 
-## 2. How to Build
+## 2. Where to look (in this order)
+| # | File | Why |
+|---|------|-----|
+| 1 | `docs/loop/00_INDEX.md` | Entry point of the delivery loop |
+| 2 | `docs/loop/02_LOOP_PROTOCOL.md` | The 10-stage loop every step runs (contract → real test → build → static → review → evidence) |
+| 3 | `docs/loop/04_LEDGER.md` | Status of every numbered step; machine-checked |
+| 4 | `docs/loop/03_STEPS.md` | The step cards (generated from `steps.json`) |
+| 5 | `DESIGN.md` | Visual authority: tokens, typography, motion, component rules |
+| 6 | `docs/loop/13_INTEGRATIONS_ADOPTION.md` | What we took from ECC / Web Interface Guidelines / awesome-design-md and how it is enforced |
+| 7 | `docs/adr/` | Architecture decisions (why things are the way they are) |
+| 8 | `docs/learnings/` | What went wrong before and the rule we derived — read before repeating a mistake |
+
+## 3. How to build and test
 ```bash
-git clone https://github.com/yousefghorbanian98-create/cutting-edge-v2.git
-pnpm install
-cp .env.example .env
-docker compose up -d   # postgres + redis + qdrant
-pnpm dev               # web:3000 api:4000
-pnpm test              # coverage ≥80%
+# backend
+cd ai-engine && python -m venv .venv && . .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt && pip install -e .
+../scripts/dev-backend.sh                                        # Windows: ..\scripts\dev-backend.ps1
+# frontend
+cd apps/desktop && pnpm install && pnpm dev
+# gates (from repo root)
+python scripts/gate.py --stage static      # Biome, tsc, Ruff, gitleaks, verify_ledger, design checks
+python scripts/gate.py --stage real        # pytest -m real against a live uvicorn with FFmpeg-generated media
+python scripts/verify_ledger.py
 ```
+Fixtures are generated at test time with the bundled `imageio-ffmpeg` binary — media is never committed.
 
-- **Conventional Commits:** `feat:`, `fix:`, `docs:`, `chore:`
-- **Branching:** Trunk-based — شاخه کوتاه `feat/*` ≤2 روز، PR squash
-- **Lint/Format:** `pnpm lint` + `pnpm typecheck` باید سبز باشد قبل از PR
-
-## 3. ECC — Agent Harness (Selective)
-> منبع: `affaan-m/ECC` — The agent harness performance system (261 skills, MIT)
-
-**نصب گزینشی فعال:**
-```bash
-npm i -g ecc-universal
-# فقط core skills نصب شده — نه کل 261
+## 4. Workflow (mandatory, from `02_LOOP_PROTOCOL.md`)
 ```
-
-**Skills فعال در این پروژه (از `docs/integrations/ecc/`):**
-- `tdd-workflow` — RED → GREEN → REFACTOR اجباری
-- `code-review` — هر PR یک review با context تازه
-- `security-scan` — OWASP + secrets
-- `plan` (`/ecc:plan`) — قبل از کدنویسی، پلن به عنوان artifact
-- `build-fix`, `e2e-testing`, `doc-updater`
-
-**Workflow اجباری:**
+plan (CONTRACT: AC-n / NG-n) → red real test → implement → static → real test → reheal probe
+→ fresh review (supervisor) → evidence → commit with Scope Ledger → push → learnings entry
 ```
-plan -> test -> implement -> review -> verify -> remember -> improve
-```
-- قبل از هر فیچر: `/ecc:plan "Add X"` → فایل `docs/plan-*.md` → تایید انسانی
-- سپس TDD: تست اول، بعد کد
-- سپس `/code-review` با agent متفاوت
+- **If it is not in `docs/loop/evidence/S-xxx/CONTRACT.md`, it does not exist.**
+- One step per commit; commit subject carries the step id; body carries the Scope Ledger.
+- Builder never marks GREEN; the supervisor's `REVIEW.md` verdict does. Max 2 review rounds.
+- Never weaken a test to make it pass. Skipped ≠ passed. `unverified:<reason>` is recorded in the ledger.
+- Sandbox limits (no browser download, no cargo, no network beyond npm/PyPI) are **not** a reason to stop: write the test, mark `unverified:ci`/`unverified:windows`, CI is the gate.
+- Before starting a new step, confirm the previous one is on GitHub: `git ls-remote origin <branch>` must show your HEAD. If push fails with an auth error, say so and stop — never ask for tokens.
 
-**Hooks فعال:**
-- `SessionStart` — چک `DESIGN.md` و `AGENTS.md` لود شده؟
-- `Stop` — خلاصه سشن + پیشنهاد skill جدید
-- `PreCommit` — lint + typecheck + secrets scan (trufflehog)
+## 5. UI rules (enforced, not advisory)
+- Read `DESIGN.md` before any UI work. Colors, radius, typography and motion only from tokens (`packages/design-system/tokens.ts` ⇄ `apps/desktop/src/app/globals.css` `@theme`). `node scripts/check-design-tokens.js` fails the static gate on drift.
+- After UI work run `python scripts/design_audit.py apps/desktop/src --strict` (offline Web Interface Guidelines checker). Suppress only with `// wig-ignore <rule>: <why> (S-xxx)`.
+- Always: `aria-label` on icon-only buttons, `focus-visible:` ring (never bare `outline-none`), animate `transform`/`opacity` only, honor `prefers-reduced-motion`, `<button>` for actions, `Intl.*` for dates/numbers, Persian `«»` quotes, `tabular-nums` for numeric columns, RTL-correct logical properties.
+- Every action has a keyboard shortcut and appears in the Command Palette; every async > 500 ms has progress + cancel.
 
-## 4. Web Design Guidelines Skill (Vercel Labs)
-> منبع: `vercel-labs/agent-skills` + `vercel-labs/web-interface-guidelines` — MIT
+## 6. Security & privacy
+- Never commit `.env`, keys, or media. `gitleaks` and `scripts/gate.py --stage static` run in CI; OpenRouter key lives in `ai-engine/.env` locally and in the OS keyring after S-086.
+- Uploads go through `ai_engine.core.storage.Storage` (UUID names, extension allow-list, size cap, traversal-safe). Do not bypass it.
+- No telemetry by default.
 
-**فایل:** `.claude/skills/web-design-guidelines/SKILL.md` (همچنین در `.cursor/skills/` و `.windsurf/rules/`)
+## 7. Prompts & AI
+- Prompts live in `ai-engine/prompts/*.md` (versioned, S-053+) with an offline eval fixture set; changing a prompt without updating its eval fails the test.
+- Only OpenRouter `:free` models with the fallback chain in S-053/S-056; offline mode must degrade gracefully with a Persian message.
 
-**چه می‌کند:**
-- کد UI را با قوانین `command.md` (190 قانون) چک می‌کند: a11y, focus, forms, animation, typography, perf
-- منبع زنده: `https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md`
-
-**Usage:**
-- وقتی کاربر گفت `review my UI` / `check a11y` / `audit design` → این Skill را فعال کن
-- خروجی: `file:line` تِرس (مثال: `src/Button.tsx:42 - icon button missing aria-label`)
-
-**قوانین طلایی که همیشه رعایت کن:**
-- `aria-label` روی icon按钮، `label` روی هر input
-- `focus-visible:ring-*` — هرگز `outline-none` بدون جایگزین
-- `transform/opacity` فقط برای انیمیشن — هرگز `transition: all`
-- `width+height` روی هر `img`، `loading=lazy` below-fold
-- `Intl.DateTimeFormat` برای تاریخ — نه hardcode
-
-**CI:** `pnpm design:audit` → این Skill روی `apps/web/**/*.tsx` اجرا می‌شود
-
-## 5. Awesome Design — DESIGN.md
-> منبع: `VoltAgent/awesome-design-md` (114K stars, MIT) — 73 DESIGN.md از برندهای واقعی
-
-**فایل‌های مرجع:** `design-md/DESIGN.linear.md`, `DESIGN.vercel.md`, `DESIGN.stripe.md` (هر کدام 500-700 خط)
-**فایل مرجع پروژه:** `DESIGN.md` در ریشه — **این فایل برای هر خروجی UI اولویت دارد**
-
-**دستور به Agent:**
-> "Use DESIGN.md for all styling. If in doubt, DESIGN.md wins over defaults."
-- رنگ‌ها فقط از `DESIGN.md` بخش Colors
-- تایپوگرافی فقط `Geist Sans / Linear Display`
-- کامپوننت‌ها دقیقاً کلاس‌های بخش Components
-
-**Workflow طراحی:**
-1. یک `DESIGN.md` از `design-md/` به عنوان الهام انتخاب کن (پیش‌فرض: Linear)
-2. به جای کپی، `DESIGN.md` ریشه را بخوان
-3. کامپوننت را با Tailwind + shadcn بساز
-4. با Web Design Guidelines Skill خودت را چک کن
-
-## 6. Quality Gates (قبل از هر PR)
-- [ ] `pnpm lint && pnpm typecheck` سبز
-- [ ] تست‌ها نوشته شده (coverage ≥80% برای ماژول جدید)
-- [ ] `DESIGN.md` رعایت شده (رنگ/فاصله/تایپو)
-- [ ] `web-design-guidelines` audit بدون خطای a11y
-- [ ] `ECC code-review` پاس شده
-- [ ] `promptfoo` eval اگر تغییر prompt/RAG
-
-## 7. Security
-- هرگز `.env` را کامیت نکن — از `Doppler` / `Vault`
-- `npx ecc-agentshield scan --path .` قبل از PRهای حساس
-- `trufflehog` در pre-commit
-
-## 8. Prompts & AI
-- Promptها در `prompts/*.md` version می‌شوند — هر تغییر با git
-- LLM abstraction: `openai` primary, `anthropic` fallback — هرگز مستقیم صدا نزن
-- هر خروجی RAG باید citation داشته باشد
-
-## 9. Where to Look
-- Architecture: `docs/16-LAYER-PRODUCTION-PLAN.md`
-- Roadmap v2: `docs/ROADMAP-v2-WITH-INTEGRATIONS.md`
-- ADRs: `docs/adr/`
-- Runbooks: `docs/runbooks/`
-- Integrations docs: `docs/integrations/{ecc,web-guidelines,awesome-design}/`
-
----
-> این فایل به صورت خودکار توسط Claude Code, Cursor, Codex خوانده می‌شود. آن را به‌روز نگه دار — هر تصمیم جدید را اینجا ثبت کن.
+## 8. Roles in Arena
+- **Supervisor chat** (fixed): audits with `python scripts/supervise.py --write`, reviews, merges builder branches fast-forward into `arena/01a06951-cutting-edge-v2`.
+- **Builder chat** (batch mode): builds numbered steps from `04_LEDGER.md`, pushes to its own branch, reports SHAs. Prompt: `docs/loop/07_SESSION_HANDOFF.md` → "BATCH BUILDER".
+- Humans do: OpenRouter key (U1), Windows/GPU smoke at milestones (U2), product decisions (U3, defaults apply on silence).

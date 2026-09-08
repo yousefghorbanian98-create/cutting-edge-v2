@@ -25,10 +25,16 @@
 
 چت سازنده را **نبندید**. برای هر نوبت بعدی فقط این را بفرستید تا شاخه را با کارهای ناظر (بازبینی‌ها، تغییر پرامپت‌ها) همگام کند و ادامه دهد:
 ```
-Sync and continue: git fetch origin arena/01a06951-cutting-edge-v2 && git merge --ff-only FETCH_HEAD
+Sync and continue:
+  git fetch origin arena/01a06951-cutting-edge-v2 && git merge --ff-only FETCH_HEAD
+  git merge-base --is-ancestor <SUPERVISOR_HEAD> HEAD && echo BASE_OK || echo BASE_WRONG
+  git push origin HEAD 2>&1 | tail -1 && git ls-remote origin $(git branch --show-current) | cut -c1-7 && echo PUSH_OK
 Then re-read docs/loop/04_LEDGER.md and any new docs/loop/evidence/*/REVIEW.md, and continue the batch from where you stopped.
+If BASE_WRONG or no PUSH_OK: stop and report.
 ```
-چت جدید فقط در دو حالت: (۱) سازنده خودش اعلام کند کانتکستش پر شده و در مرز مرحله ایستاده؛ (۲) ناظر در ممیزی افت کیفیت ببیند (چند مرحله در یک کامیت، تکرار خطا) و صریح بگوید «چت جدید بساز».
+چت جدید فقط در سه حالت: (۱) سازنده خودش اعلام کند کانتکستش پر شده و در مرز مرحله ایستاده؛ (۲) ناظر در ممیزی افت کیفیت ببیند (چند مرحله در یک کامیت، تکرار خطا) و صریح بگوید «چت جدید بساز»؛ (۳) اتصال GitHub آن چت منقضی شده و با «reconnect GitHub» در Arena برنگشت.
+
+**اگر توکن GitHub چت سازنده منقضی شد** (پیام «authentication failed»): اول در همان چت GitHub را در Arena دوباره وصل کنید و فقط بنویسید `push`. کامیت‌های push‌نشده فقط در سندباکس آن چت هستند؛ اگر چت را رها کنید از دست می‌روند. چت جدید همیشه از شاخه‌ی ناظر ساخته می‌شود: `arena/01a06951-cutting-edge-v2`.
 
 ## B. حالت کامل: یک سشن = یک نقش = یک مرحله
 

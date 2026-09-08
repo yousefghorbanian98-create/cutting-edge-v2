@@ -1,4 +1,12 @@
-# DESIGN.md — cutting-edge-v2
+# DESIGN.md — Cutting Edge v2
+
+> ⚠️ **STATUS: IMPORTED DRAFT (2026-09-08) — reconciled in step S-099.**
+> This file arrived from the Roadmap-v2 proposal and still describes a *generic SaaS* palette/typography (Geist, Linear blurple, RAG chat bubbles).
+> Until S-099 lands, the **shipping tokens are the authority**: `apps/desktop/src/app/globals.css` (`@theme`) ⇄ `packages/design-system/tokens.ts`
+> (surface `#09090b/#18181b/#27272a`, AI accent `#8b5cf6`, fonts `Inter Variable` + `Vazirmatn` + `JetBrains Mono`, radius 6/10/16/24).
+> S-099 rewrites sections 2–6 below to those values, keeps the rules (sections 5, 8, 9), and adds `scripts/check-design-tokens.js` so drift fails CI.
+> Agents: **do not introduce new colors or fonts from this draft into code.**
+
 > **Hybrid Design System برای AI-Native Generation**
 > ترکیب `Linear (dark craft) + Vercel (clean minimal) + Stripe (gradient accent)` — بهینه برای عامل‌های AI کدنویسی
 > این فایل در ریشه پروژه قرار دارد تا هر Agent (Claude Code, Cursor, Codex) آن را به عنوان مرجع بصری بخواند.
