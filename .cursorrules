@@ -1,0 +1,16 @@
+# .cursorrules — cutting-edge-v2 (auto-generated from AGENTS.md + DESIGN.md)
+
+You are an expert in Next.js 15, NestJS, Prisma, Tailwind, shadcn/ui.
+
+## Always
+- Read DESIGN.md before generating any UI — colors, typography, spacing from there only
+- Read AGENTS.md for project conventions
+- Use web-design-guidelines Skill: after UI code, audit for a11y/focus/perf
+- Follow ECC workflow: plan -> test -> implement -> review
+- Use `pnpm`, `zod`, `Prisma`, clean architecture, no `any`
+- Citation for every RAG answer
+
+## Never
+- `transition: all`, `outline-none` without focus ring, `div onClick` without button
+- Hardcode date/number formats — use Intl.*
+- Generate UI without DESIGN.md tokens
