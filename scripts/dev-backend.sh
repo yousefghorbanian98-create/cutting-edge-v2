@@ -31,8 +31,8 @@ if ! "$VENV_DIR/bin/python" -c "import ai_engine.main, uvicorn, fastapi, psutil,
   # The full media/AI stack is heavy; we install only the deps needed to boot
   # here. `requirements.txt` is used for a full production install (CI / Users).
   "$VENV_DIR/bin/python" -m pip install --quiet \
-    "fastapi==0.115.6" "uvicorn[standard]==0.32.1" "python-multipart==0.0.18" \
-    "pydantic==2.10.4" "python-dotenv==1.0.1" "psutil==6.1.0" "requests==2.32.3"
+    "fastapi==0.141.1" "starlette==1.3.1" "uvicorn[standard]==0.32.1" "python-multipart==0.0.32" \
+    "pydantic==2.10.4" "python-dotenv==1.2.3" "psutil==6.1.0" "requests==2.34.2"
   "$VENV_DIR/bin/python" -m pip install --quiet --no-deps -e .
 fi
 

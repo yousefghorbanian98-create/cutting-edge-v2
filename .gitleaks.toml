@@ -1,0 +1,37 @@
+# gitleaks config (S-009). Extends the default rule set with the project's own
+# provider keys; the unit-test probe pattern is allow-listed so tests/unit/test_gate.py
+# can plant `sk-or-v1-TEST…` without tripping CI.
+title = "Cutting Edge v2 — secret rules"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "openrouter-api-key"
+description = "OpenRouter API key"
+regex = '''sk-or-v1-[A-Za-z0-9]{20,}'''
+keywords = ["sk-or-v1-"]
+
+[[rules]]
+id = "nvidia-nim-api-key"
+description = "Nvidia NIM / build.nvidia.com API key"
+regex = '''nvapi-[A-Za-z0-9_-]{20,}'''
+keywords = ["nvapi-"]
+
+[[rules]]
+id = "github-fine-grained-pat"
+description = "GitHub fine-grained personal access token"
+regex = '''github_pat_[A-Za-z0-9_]{60,}'''
+keywords = ["github_pat_"]
+
+[allowlist]
+description = "Runtime-assembled test probe (tests/unit/test_gate.py writes `sk-or-v1-TEST…` to an untracked file) and doc examples"
+regexes = [
+  '''sk-or-v1-TEST[0-9A-Za-z]*''',
+  '''nvapi-EXAMPLE[0-9A-Za-z_-]*''',
+]
+paths = [
+  '''docs/loop/evidence/S-00[89]/(CONTRACT|EVIDENCE|REVIEW)\.md''',
+  '''pnpm-lock\.yaml''',
+  '''tests/fixtures/\.cache/.*''',
+]

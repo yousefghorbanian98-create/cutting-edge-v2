@@ -32,8 +32,8 @@ if ($LASTEXITCODE -ne 0) {
     Write-Host "[dev-backend] Installing web deps + editable package into $VenvDir"
     & $Python -m pip install --quiet --upgrade pip
     & $Python -m pip install --quiet `
-        "fastapi==0.115.6" "uvicorn[standard]==0.32.1" "python-multipart==0.0.18" `
-        "pydantic==2.10.4" "python-dotenv==1.0.1" "psutil==6.1.0" "requests==2.32.3"
+        "fastapi==0.141.1" "starlette==1.3.1" "uvicorn[standard]==0.32.1" "python-multipart==0.0.32" `
+        "pydantic==2.10.4" "python-dotenv==1.2.3" "psutil==6.1.0" "requests==2.34.2"
     & $Python -m pip install --quiet --no-deps -e .
 }
 

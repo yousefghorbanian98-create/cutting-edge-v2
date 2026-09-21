@@ -58,7 +58,10 @@ def test_static_stage_green_on_clean_tree() -> None:
 def test_staged_secret_fails_static(tmp_path: Path) -> None:
     probe = ROOT / ".gate-secret-probe.py"
     assert not probe.exists()
-    probe.write_text('OPENROUTER_API_KEY = "sk-or-v1-TEST0000000000000000000000000000000000000000000000000000000000"\n')
+    # Assemble the fake key at runtime so no tracked file ever contains a string
+    # matching the OpenRouter pattern (gitleaks / supervise C10 / gate secrets).
+    fake_key = "sk-or-" + "v1-TEST" + "0" * 58
+    probe.write_text(f'OPENROUTER_API_KEY = "{fake_key}"\n')
     try:
         subprocess.run(["git", "add", "-N", str(probe)], cwd=ROOT, check=True, capture_output=True)
         proc = _run_gate("--stage", "static", "--only", "secrets", "--json")

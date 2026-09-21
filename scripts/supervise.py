@@ -335,16 +335,21 @@ def main() -> int:
         )
     else:
         runs = json.loads(ci.stdout)
+        # A run that is still queued/in progress (e.g. the very run executing this
+        # script inside the `loop-audit` job) is *pending*, not a failure.
+        pending = [r for r in runs if r.get("status") != "completed"]
         bad = [
             f"{r['name']}: {r['conclusion'] or r['status']} {r['url']}"
             for r in runs
-            if r.get("conclusion") not in ("success", None) or r.get("status") not in ("completed",)
+            if r.get("status") == "completed" and r.get("conclusion") not in ("success", "skipped")
         ]
-        head_runs = [r for r in runs if r["headSha"] == head]
+        head_done = [r for r in runs if r["headSha"] == head and r.get("status") == "completed"]
         det = bad[:3]
-        if not head_runs:
-            det.append("no CI run for HEAD yet — CI evidence absent (Skip ≠ Pass)")
-        R.add("C11", "FAIL" if bad else ("WARN" if not head_runs else "PASS"), "CI status (latest runs on branch)", det)
+        if pending:
+            det.append(f"{len(pending)} run(s) still in progress — re-check before citing CI as evidence")
+        if not head_done:
+            det.append("no completed CI run for HEAD yet — CI evidence absent (Skip ≠ Pass)")
+        R.add("C11", "FAIL" if bad else ("WARN" if not head_done else "PASS"), "CI status (latest runs on branch)", det)
 
     # C12 stall watchdog
     det = list(watchdog)

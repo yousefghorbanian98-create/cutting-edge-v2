@@ -60,13 +60,14 @@ def _provision_venv() -> Path:
     )
     if probe.returncode != 0:
         for pkg in (
-            "fastapi==0.115.6",
+            "fastapi==0.141.1",
+            "starlette==1.3.1",
             "uvicorn[standard]==0.32.1",
-            "python-multipart==0.0.18",
+            "python-multipart==0.0.32",
             "pydantic==2.10.4",
-            "python-dotenv==1.0.1",
+            "python-dotenv==1.2.3",
             "psutil==6.1.0",
-            "requests==2.32.3",
+            "requests==2.34.2",
         ):
             subprocess.run([str(py), "-m", "pip", "install", "--quiet", pkg], check=True)
         subprocess.run(
@@ -83,26 +84,30 @@ def _start_server(port: int) -> subprocess.Popen:
     env["CE_PORT"] = str(port)
     env["CE_MAX_UPLOAD_MB"] = MAX_UPLOAD_MB
     log = tempfile.NamedTemporaryFile(delete=False, suffix=".log", mode="w")
-    proc = subprocess.Popen(
-        ["bash", str(DEV_BACKEND_SH)],
-        cwd=str(REPO_ROOT),
-        env=env,
-        stdout=log,
-        stderr=subprocess.STDOUT,
-        start_new_session=True,
-    )
+    if os.name == "nt":
+        # Windows CI (S-009): no bash/killpg — boot the same uvicorn target directly.
+        cmd = [str(_venv_python()), "-m", "uvicorn", "ai_engine.main:app", "--host", "127.0.0.1", "--port", str(port)]
+        popen_kw: dict = {"cwd": str(AI_DIR)}
+    else:
+        cmd = ["bash", str(DEV_BACKEND_SH)]
+        popen_kw = {"cwd": str(REPO_ROOT), "start_new_session": True}
+    proc = subprocess.Popen(cmd, env=env, stdout=log, stderr=subprocess.STDOUT, **popen_kw)
     proc._ce_log = log.name  # type: ignore[attr-defined]
     return proc
 
 
 def _stop_server(proc: subprocess.Popen) -> None:
-    with contextlib.suppress(Exception):
-        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+    if os.name == "nt":
+        with contextlib.suppress(Exception):
+            proc.terminate()
+    else:
+        with contextlib.suppress(Exception):
+            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
     try:
         proc.wait(timeout=5)
     except Exception:
         with contextlib.suppress(Exception):
-            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+            proc.kill() if os.name == "nt" else os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
     log = getattr(proc, "_ce_log", None)
     if log and os.path.exists(log):
         with contextlib.suppress(Exception):

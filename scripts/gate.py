@@ -55,7 +55,7 @@ SECRET_SKIP_DIRS = {
     ".cache",
 }
 SECRET_SKIP_FILES = {"pnpm-lock.yaml", "package-lock.json", "Cargo.lock"}
-SECRET_ALLOW_PATH_PARTS = ("tests/unit/test_gate.py", "scripts/gate.py", "docs/loop/", "docs/integrations/")
+SECRET_ALLOW_PATH_PARTS = ("scripts/gate.py",)  # only the pattern definitions themselves
 
 COMMIT_RE = re.compile(
     r"^(feat|fix|test|chore|docs|refactor|perf|build|ci|style|review|supervisor|merge)(\([a-z0-9._/-]+\))?!?: .+"
@@ -342,7 +342,7 @@ def commit_msg_ok(subject: str) -> tuple[bool, str]:
 
 
 # ── main ──────────────────────────────────────────────────────────────────────
-def run_stage(stage: str, staged: bool, only: list[str], strict_missing: bool) -> Report:
+def run_stage(stage: str, staged: bool, only: list[str], strict_missing: bool, skip: list[str] | None = None) -> Report:
     import time
 
     rep = Report(stage)
@@ -356,6 +356,9 @@ def run_stage(stage: str, staged: bool, only: list[str], strict_missing: bool) -
             continue
         if staged and name in STAGED_SKIP and not only:
             rep.checks.append(Check(name, "SKIP", "skipped in --staged mode (runs in full gate / CI)"))
+            continue
+        if name in (skip or []):
+            rep.checks.append(Check(name, "SKIP", "skipped by --skip (owned by another CI job)"))
             continue
         t0 = time.monotonic()
         chk = STATIC_CHECKS[name](staged)  # type: ignore[operator]
@@ -386,6 +389,12 @@ def main() -> int:
     ap.add_argument("--stage", choices=list(STAGES))
     ap.add_argument("--staged", action="store_true", help="only staged files, fast subset (pre-commit)")
     ap.add_argument("--only", action="append", default=[], help="run only this check (repeatable)")
+    ap.add_argument(
+        "--skip",
+        action="append",
+        default=[],
+        help="skip this check, reported as SKIP with the reason (repeatable; CI uses it for cargo-clippy on non-Windows)",
+    )
     ap.add_argument("--json", action="store_true", help="print JSON report as the last line")
     ap.add_argument("--strict-missing", action="store_true", help="treat MISSING as FAIL (CI)")
     ap.add_argument("--commit-msg-check", metavar="SUBJECT")
@@ -410,7 +419,7 @@ def main() -> int:
     if not a.stage:
         ap.error("--stage is required")
 
-    rep = run_stage(a.stage, a.staged, a.only, a.strict_missing)
+    rep = run_stage(a.stage, a.staged, a.only, a.strict_missing, a.skip)
     print_table(rep)
     if a.json:
         print(rep.to_json())

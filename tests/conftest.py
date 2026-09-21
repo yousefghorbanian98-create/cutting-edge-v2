@@ -103,7 +103,7 @@ def live_api(fixtures_dir: Path):
         env=env,
         stdout=log_f,
         stderr=subprocess.STDOUT,
-        start_new_session=True,
+        **({} if os.name == "nt" else {"start_new_session": True}),
     )
 
     base = f"http://127.0.0.1:{port}"
@@ -122,7 +122,11 @@ def live_api(fixtures_dir: Path):
         raise RuntimeError(f"live server did not come up: {(log_f.name)}")
     yield {"base": base, "port": port}
     try:
-        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+        if os.name == "nt":
+            proc.terminate()
+        else:
+            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+        proc.wait(timeout=5)
     except Exception:
         with contextlib.suppress(Exception):
             proc.kill()
