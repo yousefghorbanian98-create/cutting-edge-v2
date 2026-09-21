@@ -6,14 +6,16 @@ This is the only module allowed to touch the media storage directory. It:
   * enforces a maximum upload size, streaming to disk and counting bytes (→ 413),
   * resolves download names strictly inside the base dir (→ 404 on traversal).
 """
+
 from __future__ import annotations
 
+import contextlib
 import os
 import re
 import shutil
 import uuid
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 from fastapi import UploadFile
 
@@ -22,9 +24,7 @@ VIDEO_EXTENSIONS = frozenset({".mp4", ".m4v", ".mov", ".mkv", ".avi", ".webm", "
 AUDIO_EXTENSIONS = frozenset({".mp3", ".wav", ".aac", ".m4a", ".ogg", ".flac"})
 IMAGE_EXTENSIONS = frozenset({".jpg", ".jpeg", ".png", ".webp"})
 SUBTITLE_EXTENSIONS = frozenset({".srt"})
-ALLOWED_EXTENSIONS = (
-    VIDEO_EXTENSIONS | AUDIO_EXTENSIONS | IMAGE_EXTENSIONS | SUBTITLE_EXTENSIONS
-)
+ALLOWED_EXTENSIONS = VIDEO_EXTENSIONS | AUDIO_EXTENSIONS | IMAGE_EXTENSIONS | SUBTITLE_EXTENSIONS
 
 DEFAULT_MAX_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024  # 2 GB (card S-003 default)
 
@@ -78,9 +78,7 @@ def _is_safe_basename(name: str) -> bool:
     if "\x00" in name:
         return False
     parts = name.split("/")
-    if any(p in DOT_DOT or p == "" for p in parts):
-        return False
-    return True
+    return not any(p in DOT_DOT or p == "" for p in parts)
 
 
 class Storage:
@@ -143,9 +141,7 @@ class Storage:
                 if written > self.max_upload_bytes:
                     out.close()
                     path.unlink(missing_ok=True)
-                    raise PayloadTooLargeError(
-                        f"حجم فایل از حد مجاز بیشتر است ({self.max_upload_bytes} bytes)"
-                    )
+                    raise PayloadTooLargeError(f"حجم فایل از حد مجاز بیشتر است ({self.max_upload_bytes} bytes)")
                 out.write(chunk)
         return str(path)
 
@@ -167,10 +163,8 @@ class Storage:
             return False
 
     def delete(self, name: str) -> None:
-        try:
+        with contextlib.suppress(PathTraversalError):
             self._safe_path(name).unlink(missing_ok=True)
-        except PathTraversalError:
-            pass
 
     def clear(self) -> None:
         """Remove all stored files (used by tests / temp cleanup)."""

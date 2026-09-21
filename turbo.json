@@ -1,7 +1,9 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "pipeline": {
-    "build": { "dependsOn": ["^build"], "outputs": [".next/**", "dist/**"] },
+  "tasks": {
+    "build": { "dependsOn": ["^build"], "outputs": ["out/**", ".next/**", "!.next/cache/**", "dist/**"] },
+    "typecheck": { "dependsOn": ["^build"], "outputs": [] },
+    "test:e2e": { "dependsOn": ["build"], "outputs": ["playwright-report/**", "test-results/**"], "cache": false },
     "dev": { "cache": false, "persistent": true }
   }
 }

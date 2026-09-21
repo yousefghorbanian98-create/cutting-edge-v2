@@ -9,11 +9,12 @@ Honest "real" per 02_LOOP_PROTOCOL.md §1-⑤: this drives a live uvicorn server
 started through the actual scripts/dev-backend.sh script and talks to /health
 over HTTP — it does not call functions with fake arrays.
 """
+
 from __future__ import annotations
 
+import contextlib
 import os
 import re
-import shutil
 import signal
 import socket
 import subprocess
@@ -106,23 +107,17 @@ def _start_server(venv: Path, port: int) -> subprocess.Popen:
 
 
 def _stop_server(proc: subprocess.Popen) -> None:
-    try:
+    with contextlib.suppress(Exception):
         os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-    except Exception:
-        pass
     try:
         proc.wait(timeout=5)
     except Exception:
-        try:
+        with contextlib.suppress(Exception):
             os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-        except Exception:
-            pass
     log = getattr(proc, "_ce_log", None)
     if log and os.path.exists(log):
-        try:
+        with contextlib.suppress(Exception):
             os.unlink(log)
-        except Exception:
-            pass
 
 
 def _wait_for_health(port: int, timeout: float = 10.0) -> tuple[float, dict]:
@@ -135,8 +130,8 @@ def _wait_for_health(port: int, timeout: float = 10.0) -> tuple[float, dict]:
             r = requests.get(url, timeout=1.0)
             if r.status_code == 200:
                 return time.monotonic(), r.json()
-        except Exception:
-            pass
+        except requests.RequestException:  # server not up yet — keep polling until deadline
+            continue
         time.sleep(0.05)
     raise AssertionError(f"/health did not respond 200 within {timeout}s (port {port})")
 
@@ -182,8 +177,8 @@ def test_health_within_2s(live_server):
     body = live_server["proc"]
     assert body is not None
     assert HEALTH_FIELDS.issubset(health.keys()), f"missing fields: {health}"
-    assert isinstance(health["ram"], (int, float))
-    assert isinstance(health["cpu"], (int, float))
+    assert isinstance(health["ram"], int | float)
+    assert isinstance(health["cpu"], int | float)
 
 
 @pytest.mark.real
@@ -223,7 +218,7 @@ def test_pinned_requirements_and_pyproject():
         assert line.split("==")[1].strip(), f"missing version for {line!r}"
     assert PYPROJECT.exists()
     text = PYPROJECT.read_text(encoding="utf-8")
-    assert "name = \"cutting-edge-ai-engine\"" in text
+    assert 'name = "cutting-edge-ai-engine"' in text
     assert "package-dir" in text
     assert "ai_engine" in text
 
@@ -268,7 +263,8 @@ def _run_all() -> int:
     def pkg_import():
         out = subprocess.run(
             [str(py), "-c", "from ai_engine.main import app; print(app.title)"],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         assert out.returncode == 0, out.stderr
 
@@ -282,12 +278,13 @@ def _run_all() -> int:
         def health_2s():
             assert elapsed <= 2.0, f"{elapsed:.2f}s > 2.0s"
             assert HEALTH_FIELDS.issubset(health.keys())
-            assert isinstance(health["ram"], (int, float))
+            assert isinstance(health["ram"], int | float)
 
         def idle():
             idle_s = float(os.environ.get("CE_IDLE_SECONDS", "60"))
             time.sleep(idle_s)
             import requests
+
             r = requests.get(f"http://127.0.0.1:{port}/health", timeout=3.0)
             assert r.status_code == 200
             assert HEALTH_FIELDS.issubset(r.json().keys())

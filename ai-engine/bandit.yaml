@@ -1,0 +1,4 @@
+# Bandit config (S-008). -ll = medium+ severity. Subprocess without shell and
+# fixed argv is the intended FFmpeg path; tests are excluded (asserts).
+exclude_dirs: [".venv", "venv", "tests"]
+skips: ["B404", "B603"]

@@ -1,0 +1,12 @@
+# lefthook (S-008) — install once: `pnpm lefthook install`
+# Fast subset per commit; the full gate runs in CI (S-009) and `pnpm gate:static`.
+pre-commit:
+  parallel: false
+  commands:
+    gate-static-staged:
+      run: python scripts/gate.py --stage static --staged
+commit-msg:
+  commands:
+    conventional-with-step-id:
+      # Conventional Commits; step commits must carry S-\d{3} (docs/chore/merge/review/supervisor exempt)
+      run: python scripts/gate.py --commit-msg-file {1}

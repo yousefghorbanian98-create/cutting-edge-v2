@@ -24,6 +24,7 @@ Checks (each yields PASS / WARN / FAIL):
   C11 CI status                   latest GitHub Actions run for this branch (via gh; WARN if unavailable)
   C12 stall watchdog              RED iter>=3, REVIEW iter>=2, AMBER older than 72h (by git blame of the row)
 """
+
 from __future__ import annotations
 
 import argparse
@@ -32,7 +33,7 @@ import re
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -42,10 +43,33 @@ CHECKPOINT = LOOP / "evidence" / "SUPERVISOR" / "checkpoint.json"
 ROW = re.compile(r"^\|\s*(S-\d{3})\s*\|(.*?)\|\s*(\w+)\s*\|\s*(\d*)\s*\|(.*?)\|(.*?)\|(.*?)\|\s*$")
 STEP_RE = re.compile(r"\bS-\d{3}\b")
 
-FORBIDDEN_JS = ["redux", "@reduxjs", "@mui/", "antd", "chakra", "electron", "styled-components", "@emotion", "vue", "svelte", "angular", "bootstrap", "jquery", "mobx", "recoil", "jotai", "shadcn"]
+FORBIDDEN_JS = [
+    "redux",
+    "@reduxjs",
+    "@mui/",
+    "antd",
+    "chakra",
+    "electron",
+    "styled-components",
+    "@emotion",
+    "vue",
+    "svelte",
+    "angular",
+    "bootstrap",
+    "jquery",
+    "mobx",
+    "recoil",
+    "jotai",
+    "shadcn",
+]
 FORBIDDEN_PY = ["ollama", "flask", "django", "transformers>=", "torch==2.5", "tensorflow"]
 FORBIDDEN_EXT = {".mp4", ".mov", ".exe", ".msi", ".pt", ".pth", ".onnx", ".bin", ".safetensors", ".zip", ".7z"}
-SECRET_PATTERNS = [r"sk-or-v1-[A-Za-z0-9]{20,}", r"nvapi-[A-Za-z0-9_-]{20,}", r"ghp_[A-Za-z0-9]{30,}", r"AKIA[0-9A-Z]{16}"]
+SECRET_PATTERNS = [
+    r"sk-or-v1-[A-Za-z0-9]{20,}",
+    r"nvapi-[A-Za-z0-9_-]{20,}",
+    r"ghp_[A-Za-z0-9]{30,}",
+    r"AKIA[0-9A-Z]{16}",
+]
 
 
 def sh(*args: str, check: bool = False) -> str:
@@ -72,9 +96,15 @@ class Report:
         return "OK — loop is healthy"
 
     def render(self, since: str, head: str) -> str:
-        out = [f"# Supervisor audit — {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}", "",
-               f"Range: `{since[:8]}..{head[:8]}`  ", f"**Verdict: {self.verdict}**", "",
-               "| # | result | check | details |", "|---|--------|-------|---------|"]
+        out = [
+            f"# Supervisor audit — {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}",
+            "",
+            f"Range: `{since[:8]}..{head[:8]}`  ",
+            f"**Verdict: {self.verdict}**",
+            "",
+            "| # | result | check | details |",
+            "|---|--------|-------|---------|",
+        ]
         for cid, lvl, title, det in self.items:
             icon = {"PASS": "✅", "WARN": "⚠️", "FAIL": "❌"}[lvl]
             cell = "<br>".join(d.replace("|", "\\|") for d in det) or "—"
@@ -90,13 +120,22 @@ def read_ledger() -> dict[str, dict]:
         m = ROW.match(line)
         if m:
             sid, title, status, it, ver, ev, notes = (g.strip() for g in m.groups())
-            rows[sid] = {"title": title, "status": status, "iter": int(it or 0), "verified": ver, "evidence": ev, "notes": notes, "ln": ln, "line": line}
+            rows[sid] = {
+                "title": title,
+                "status": status,
+                "iter": int(it or 0),
+                "verified": ver,
+                "evidence": ev,
+                "notes": notes,
+                "ln": ln,
+                "line": line,
+            }
     return rows
 
 
 def ledger_rows_at(rev: str) -> dict[str, str]:
     txt = sh("git", "show", f"{rev}:docs/loop/04_LEDGER.md")
-    return {m.group(1): m.group(3).strip() for m in (ROW.match(l) for l in txt.splitlines()) if m}
+    return {m.group(1): m.group(3).strip() for m in (ROW.match(ln) for ln in txt.splitlines()) if m}
 
 
 def main() -> int:
@@ -111,7 +150,10 @@ def main() -> int:
     elif CHECKPOINT.exists():
         since = json.loads(CHECKPOINT.read_text())["head"]
     else:
-        since = sh("git", "merge-base", "HEAD", "origin/main").strip() or sh("git", "rev-list", "--max-parents=0", "HEAD").strip()
+        since = (
+            sh("git", "merge-base", "HEAD", "origin/main").strip()
+            or sh("git", "rev-list", "--max-parents=0", "HEAD").strip()
+        )
     if not sh("git", "cat-file", "-t", since).strip():
         since = sh("git", "rev-list", "--max-parents=0", "HEAD").strip()
 
@@ -120,12 +162,16 @@ def main() -> int:
 
     # C1 ledger integrity
     r = subprocess.run([sys.executable, "scripts/verify_ledger.py"], cwd=ROOT, capture_output=True, text=True)
-    watchdog = [l.replace("WATCHDOG: ", "") for l in r.stdout.splitlines() if l.startswith("WATCHDOG")]
-    R.add("C1", "PASS" if r.returncode == 0 else "FAIL", "Ledger integrity (verify_ledger.py)",
-          [] if r.returncode == 0 else [l.strip() for l in r.stdout.splitlines() if l.strip().startswith("-")])
+    watchdog = [ln.replace("WATCHDOG: ", "") for ln in r.stdout.splitlines() if ln.startswith("WATCHDOG")]
+    R.add(
+        "C1",
+        "PASS" if r.returncode == 0 else "FAIL",
+        "Ledger integrity (verify_ledger.py)",
+        [] if r.returncode == 0 else [ln.strip() for ln in r.stdout.splitlines() if ln.strip().startswith("-")],
+    )
 
     # C2 clean tree
-    dirty = [l for l in sh("git", "status", "--porcelain").splitlines() if l.strip()]
+    dirty = [ln for ln in sh("git", "status", "--porcelain").splitlines() if ln.strip()]
     R.add("C2", "PASS" if not dirty else "WARN", "Working tree clean", dirty[:10])
 
     # commits in range
@@ -138,7 +184,10 @@ def main() -> int:
 
     # C3 commit↔ledger
     det = []
-    is_meta = lambda c: c["subject"].startswith(("docs", "review", "chore(loop)", "supervisor", "fix(ai-engine): S-002 round"))
+
+    def is_meta(c):
+        return c["subject"].startswith(("docs", "review", "chore(loop)", "supervisor", "fix(ai-engine): S-002 round"))
+
     mentioned = {s for c in commits if not is_meta(c) for s in c["steps"]}
     for s in sorted(mentioned):
         if s not in rows:
@@ -155,7 +204,11 @@ def main() -> int:
     det4, det6 = [], []
     for c in commits:
         if "docs/loop/04_LEDGER.md" in sh("git", "show", "--name-only", "--format=", c["sha"]):
-            before = ledger_rows_at(f"{c['sha']}^") if sh("git", "rev-parse", "--verify", "-q", f"{c['sha']}^").strip() else {}
+            before = (
+                ledger_rows_at(f"{c['sha']}^")
+                if sh("git", "rev-parse", "--verify", "-q", f"{c['sha']}^").strip()
+                else {}
+            )
             after = ledger_rows_at(c["sha"])
             changed = [s for s in after if before.get(s, "TODO") != after[s] and s in before]
             if len(changed) > 1:
@@ -163,8 +216,12 @@ def main() -> int:
         if c["steps"] and not is_meta(c):
             body = c["body"]
             if "AC-" not in body or "Other behavior changes" not in body:
-                det6.append(f"{c['sha'][:8]} {c['subject'][:60]} — missing scope ledger (AC-n / Other behavior changes)")
-    R.add("C4", "PASS" if not det4 else "WARN", "One step per commit (history is not rewritten; fix going forward)", det4)
+                det6.append(
+                    f"{c['sha'][:8]} {c['subject'][:60]} — missing scope ledger (AC-n / Other behavior changes)"
+                )
+    R.add(
+        "C4", "PASS" if not det4 else "WARN", "One step per commit (history is not rewritten; fix going forward)", det4
+    )
     R.add("C6", "PASS" if not det6 else "WARN", "Scope ledger present in step commits", det6)
 
     # C5 evidence completeness
@@ -186,10 +243,30 @@ def main() -> int:
     # C7 test weakening
     det = []
     for c in commits:
-        diff = sh("git", "show", "--format=", "--unified=0", c["sha"], "--", "tests", "apps/desktop/e2e", "*.test.ts", "*.test.tsx", "*.spec.ts", "*.spec.tsx", "test_*.py")
+        diff = sh(
+            "git",
+            "show",
+            "--format=",
+            "--unified=0",
+            c["sha"],
+            "--",
+            "tests",
+            "apps/desktop/e2e",
+            "*.test.ts",
+            "*.test.tsx",
+            "*.spec.ts",
+            "*.spec.tsx",
+            "test_*.py",
+        )
         removed = len(re.findall(r"^-\s*(assert\b|expect\()", diff, re.M))
         added = len(re.findall(r"^\+\s*(assert\b|expect\()", diff, re.M))
-        skips = len(re.findall(r"^\+.*(pytest\.mark\.skip|\bit\.skip\(|\btest\.skip\(|\bdescribe\.skip\(|\bxit\(|\bxdescribe\(|\bxtest\()", diff, re.M))
+        skips = len(
+            re.findall(
+                r"^\+.*(pytest\.mark\.skip|\bit\.skip\(|\btest\.skip\(|\bdescribe\.skip\(|\bxit\(|\bxdescribe\(|\bxtest\()",
+                diff,
+                re.M,
+            )
+        )
         if removed > added:
             det.append(f"{c['sha'][:8]} removed {removed - added} net assertions — verify not weakening")
         if skips:
@@ -243,12 +320,26 @@ def main() -> int:
 
     # C11 CI
     branch = sh("git", "rev-parse", "--abbrev-ref", "HEAD").strip()
-    ci = subprocess.run(["gh", "run", "list", "--branch", branch, "--limit", "3", "--json", "status,conclusion,name,headSha,url"], cwd=ROOT, capture_output=True, text=True)
+    ci = subprocess.run(
+        ["gh", "run", "list", "--branch", branch, "--limit", "3", "--json", "status,conclusion,name,headSha,url"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
     if ci.returncode != 0 or not ci.stdout.strip():
-        R.add("C11", "WARN", "CI status", ["gh unavailable or no runs for this branch — until S-009 lands, CI evidence is absent (Skip ≠ Pass)"])
+        R.add(
+            "C11",
+            "WARN",
+            "CI status",
+            ["gh unavailable or no runs for this branch — until S-009 lands, CI evidence is absent (Skip ≠ Pass)"],
+        )
     else:
         runs = json.loads(ci.stdout)
-        bad = [f"{r['name']}: {r['conclusion'] or r['status']} {r['url']}" for r in runs if r.get("conclusion") not in ("success", None) or r.get("status") not in ("completed",)]
+        bad = [
+            f"{r['name']}: {r['conclusion'] or r['status']} {r['url']}"
+            for r in runs
+            if r.get("conclusion") not in ("success", None) or r.get("status") not in ("completed",)
+        ]
         head_runs = [r for r in runs if r["headSha"] == head]
         det = bad[:3]
         if not head_runs:
@@ -263,27 +354,38 @@ def main() -> int:
             blame = sh("git", "blame", "-L", f"{row['ln']},{row['ln']}", "--porcelain", "docs/loop/04_LEDGER.md")
             m = re.search(r"^committer-time (\d+)", blame, re.M)
             if m and now - int(m.group(1)) > 72 * 3600:
-                det.append(f"{s} has been {row['status']} for > 72h — {'ask user for U2/U1' if row['status']=='AMBER' else 'run a Reviewer session'}")
+                det.append(
+                    f"{s} has been {row['status']} for > 72h — {'ask user for U2/U1' if row['status']=='AMBER' else 'run a Reviewer session'}"
+                )
     R.add("C12", "PASS" if not det else "WARN", "Stall watchdog", det)
 
     # C13 learnings entry per builder session (ECC "remember"; enforced from S-101)
     det = []
     step_commits = [c for c in commits if c["steps"] and not is_meta(c)]
-    learn_dir = ROOT / "docs" / "learnings"
+    ROOT / "docs" / "learnings"
     if step_commits:
         touched = sh("git", "diff", "--name-only", f"{since}..{head}").splitlines()
-        new_learn = [f for f in touched if f.startswith("docs/learnings/") and not f.endswith(("README.md", "TEMPLATE.md"))]
+        new_learn = [
+            f for f in touched if f.startswith("docs/learnings/") and not f.endswith(("README.md", "TEMPLATE.md"))
+        ]
         if not new_learn:
-            det.append(f"{len(step_commits)} step commit(s) since {since[:8]} but no new docs/learnings/ entry (remember)")
+            det.append(
+                f"{len(step_commits)} step commit(s) since {since[:8]} but no new docs/learnings/ entry (remember)"
+            )
         for f in new_learn:
             fp = ROOT / f
             if fp.exists():
                 body = fp.read_text(encoding="utf-8")
-                n = len([l for l in body.splitlines() if l.strip()])
+                n = len([ln for ln in body.splitlines() if ln.strip()])
                 if n > 24 or not all(k in body for k in ("## What broke", "## Root cause", "## Rule")):
                     det.append(f"{f}: must be ≤ 20 lines with sections What broke / Root cause / Rule")
     enforced = rows.get("S-101", {}).get("status") == "GREEN"
-    R.add("C13", "PASS" if not det else ("FAIL" if enforced else "WARN"), "Learnings entry per builder session (remember)", det)
+    R.add(
+        "C13",
+        "PASS" if not det else ("FAIL" if enforced else "WARN"),
+        "Learnings entry per builder session (remember)",
+        det,
+    )
 
     # C14 design-token drift (DESIGN.md ⇄ globals.css ⇄ tokens.ts; enforced from S-099)
     det = []
@@ -294,20 +396,35 @@ def main() -> int:
             det.append((r14.stdout + r14.stderr).strip()[-400:] or "check-design-tokens.js failed")
         R.add("C14", "PASS" if not det else "FAIL", "Design tokens in sync (check-design-tokens.js)", det)
     else:
-        R.add("C14", "WARN", "Design tokens in sync", ["not enforced until S-099 is GREEN (DESIGN.md is an imported draft)"])
+        R.add(
+            "C14",
+            "WARN",
+            "Design tokens in sync",
+            ["not enforced until S-099 is GREEN (DESIGN.md is an imported draft)"],
+        )
 
     # C15 Stack-Fit: any new runtime dependency must belong to the locked stack (extends C8 to manifests)
     det = []
-    manifests = ["ai-engine/pyproject.toml", "ai-engine/requirements.txt", "apps/desktop/package.json", "package.json",
-                 "apps/desktop/src-tauri/Cargo.toml"]
-    foreign = re.compile(r"\b(nestjs|@nestjs|prisma|@prisma|sqlalchemy|alembic|sqlmodel|psycopg|asyncpg|redis|valkey|celery|arq|"
-                         r"trpc|@trpc|next-auth|better-auth|lucia|shadcn|@radix-ui|electron|langchain|ollama|litellm|langfuse|"
-                         r"@tanstack/react-query|react-hook-form|mongoose|typeorm|drizzle)\b", re.I)
+    manifests = [
+        "ai-engine/pyproject.toml",
+        "ai-engine/requirements.txt",
+        "apps/desktop/package.json",
+        "package.json",
+        "apps/desktop/src-tauri/Cargo.toml",
+    ]
+    foreign = re.compile(
+        r"\b(nestjs|@nestjs|prisma|@prisma|sqlalchemy|alembic|sqlmodel|psycopg|asyncpg|redis|valkey|celery|arq|"
+        r"trpc|@trpc|next-auth|better-auth|lucia|shadcn|@radix-ui|electron|langchain|ollama|litellm|langfuse|"
+        r"@tanstack/react-query|react-hook-form|mongoose|typeorm|drizzle)\b",
+        re.I,
+    )
     for mf in manifests:
         diff = sh("git", "diff", f"{since}..{head}", "--", mf)
         for line in diff.splitlines():
             if line.startswith("+") and not line.startswith("+++") and foreign.search(line):
-                det.append(f"{mf}: {line.strip()[:80]} — outside the locked stack (AGENTS.md §1); needs ADR + steps.json change first")
+                det.append(
+                    f"{mf}: {line.strip()[:80]} — outside the locked stack (AGENTS.md §1); needs ADR + steps.json change first"
+                )
     R.add("C15", "PASS" if not det else "FAIL", "Stack-Fit (new deps belong to the locked stack)", det)
 
     # C16 License-Fit: free-forever guarantee (enforced by scripts/license_check.py from S-086)
@@ -317,7 +434,9 @@ def main() -> int:
         det = [] if r16.returncode == 0 else [(r16.stdout + r16.stderr).strip()[-400:] or "license_check.py failed"]
         R.add("C16", "PASS" if not det else "FAIL", "License-Fit (OSI allow-list)", det)
     else:
-        R.add("C16", "WARN", "License-Fit (OSI allow-list)", ["not enforced until S-086 ships scripts/license_check.py"])
+        R.add(
+            "C16", "WARN", "License-Fit (OSI allow-list)", ["not enforced until S-086 ships scripts/license_check.py"]
+        )
 
     # Next step suggestion
     nxt = next((s for s, r_ in rows.items() if r_["status"] in ("TODO", "RED")), None)
@@ -333,8 +452,8 @@ def main() -> int:
     if a.write:
         out_dir = LOOP / "evidence" / "SUPERVISOR"
         out_dir.mkdir(parents=True, exist_ok=True)
-        (out_dir / f"{datetime.now(timezone.utc).strftime('%Y-%m-%d_%H%M')}.md").write_text(text, encoding="utf-8")
-        CHECKPOINT.write_text(json.dumps({"head": head, "at": datetime.now(timezone.utc).isoformat()}, indent=2))
+        (out_dir / f"{datetime.now(UTC).strftime('%Y-%m-%d_%H%M')}.md").write_text(text, encoding="utf-8")
+        CHECKPOINT.write_text(json.dumps({"head": head, "at": datetime.now(UTC).isoformat()}, indent=2))
     return 1 if "STOP" in R.verdict else 0
 
 

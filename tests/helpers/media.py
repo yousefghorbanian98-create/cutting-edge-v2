@@ -4,6 +4,7 @@
 (the ffprobe-equivalent over `ffmpeg -i`) plus light OpenCV frame validation,
 so it works in a sandbox/CI that only has the bundled imageio-ffmpeg binary.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -41,14 +42,10 @@ def assert_playable(
 
     if min_dur is not None:
         d = _parse_duration_seconds(info["duration"])
-        assert d is not None and d >= min_dur - 0.05, (
-            f"duration {info['duration']} < {min_dur}s for {path.name}"
-        )
+        assert d is not None and d >= min_dur - 0.05, f"duration {info['duration']} < {min_dur}s for {path.name}"
 
     if has_audio is not None:
-        assert info["audio"] == has_audio, (
-            f"audio={info['audio']}, expected {has_audio} for {path.name}"
-        )
+        assert info["audio"] == has_audio, f"audio={info['audio']}, expected {has_audio} for {path.name}"
 
     if width is not None and info["width"] is not None:
         assert abs(info["width"] - width) <= 2, f"width {info['width']} != {width}"
@@ -105,7 +102,5 @@ def ssim_region(a: np.ndarray, b: np.ndarray) -> float:
 
     c1 = (0.01 * 255) ** 2
     c2 = (0.03 * 255) ** 2
-    ssim_map = ((2 * mu1_mu2 + c1) * (2 * sigma12 + c2)) / (
-        (mu1_sq + mu2_sq + c1) * (sigma1_sq + sigma2_sq + c2)
-    )
+    ssim_map = ((2 * mu1_mu2 + c1) * (2 * sigma12 + c2)) / ((mu1_sq + mu2_sq + c1) * (sigma1_sq + sigma2_sq + c2))
     return float(ssim_map.mean())

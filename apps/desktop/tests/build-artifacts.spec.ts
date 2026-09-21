@@ -1,6 +1,6 @@
-import { test, expect } from '@playwright/test';
-import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { expect, test } from '@playwright/test';
 
 /**
  * S-007 — build-artifact assertions over the real `next build` output.
@@ -43,8 +43,8 @@ function compiledCss(): string {
 function themeBlock(): string {
   const css = readFileSync(GLOBALS_CSS, 'utf8');
   const m = css.match(/@theme static\s*\{([\s\S]*?)\n\}/);
-  expect(m, 'globals.css has no `@theme static { … }` block').not.toBeNull();
-  return m![1];
+  if (!m) throw new Error('globals.css has no `@theme static { … }` block');
+  return m[1];
 }
 
 // ── AC-1 ──────────────────────────────────────────────────────────────────────
@@ -99,7 +99,10 @@ test('fonts are bundled offline (no external font host)', () => {
   const woff2 = walk(OUT_DIR).filter((f) => f.endsWith('.woff2'));
   expect(woff2.length, 'no woff2 emitted — @fontsource import missing').toBeGreaterThan(0);
   for (const family of ['vazirmatn', 'inter', 'jetbrains-mono']) {
-    expect(woff2.some((f) => f.includes(family)), `no bundled woff2 for ${family}`).toBe(true);
+    expect(
+      woff2.some((f) => f.includes(family)),
+      `no bundled woff2 for ${family}`
+    ).toBe(true);
   }
   // Every font URL in the CSS must be a local, hashed bundle path.
   const urls = [...css.matchAll(/url\(([^)]*woff2?)\)/g)].map((m) => m[1]);
@@ -130,9 +133,9 @@ test('exported HTML is Persian + RTL', () => {
 test('tokens.ts cssTheme map matches the @theme block exactly', () => {
   const tokens = readFileSync(TOKENS_TS, 'utf8');
   const mapBlock = tokens.match(/export const cssTheme = \{([\s\S]*?)\n\} as const;/);
-  expect(mapBlock, 'tokens.ts has no `export const cssTheme` map').not.toBeNull();
+  if (!mapBlock) throw new Error('tokens.ts has no `export const cssTheme` map');
 
-  const mapped = [...mapBlock![1].matchAll(/'(--[a-z0-9-]+)'/g)].map((m) => m[1]);
+  const mapped = [...mapBlock[1].matchAll(/'(--[a-z0-9-]+)'/g)].map((m) => m[1]);
   expect(mapped.length).toBeGreaterThan(20);
 
   const declared = [...themeBlock().matchAll(/^\s*(--[a-z0-9-]+):/gm)].map((m) => m[1]);
@@ -149,11 +152,11 @@ test('tokens.ts cssTheme map matches the @theme block exactly', () => {
   // Font stacks must be byte-identical between the TS tokens and the CSS.
   const sans = tokens.match(/sans:\s*"([^"]+)"\s*,?\s*\n?\s*mono/);
   const mono = tokens.match(/mono:\s*"([^"]+)"\s*\n\s*\}/);
-  expect(sans, 'tokens.ts typography.sans not found').not.toBeNull();
-  expect(mono, 'tokens.ts typography.mono not found').not.toBeNull();
+  if (!sans) throw new Error('tokens.ts typography.sans not found');
+  if (!mono) throw new Error('tokens.ts typography.mono not found');
   const block = themeBlock();
-  expect(block).toContain(`--font-sans: ${sans![1]}`);
-  expect(block).toContain(`--font-mono: ${mono![1]}`);
+  expect(block).toContain(`--font-sans: ${sans[1]}`);
+  expect(block).toContain(`--font-mono: ${mono[1]}`);
 });
 
 // ── guard: the export must not be committed ──────────────────────────────────

@@ -3,8 +3,10 @@
 `fixtures_dir` builds the real-media fixture set once per session (into a
 gitignored cache dir) and the `fixture` helper resolves a fixture by name.
 """
+
 from __future__ import annotations
 
+import contextlib
 import os
 import tempfile
 from pathlib import Path
@@ -112,8 +114,8 @@ def live_api(fixtures_dir: Path):
             if requests.get(base + "/health", timeout=1.0).status_code == 200:
                 ok = True
                 break
-        except Exception:
-            pass
+        except requests.RequestException:  # server not up yet — keep polling until deadline
+            continue
         time.sleep(0.1)
     if not ok:
         proc.kill()
@@ -122,8 +124,5 @@ def live_api(fixtures_dir: Path):
     try:
         os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
     except Exception:
-        try:
+        with contextlib.suppress(Exception):
             proc.kill()
-        except Exception:
-            pass
-

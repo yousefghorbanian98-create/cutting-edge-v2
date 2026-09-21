@@ -1,0 +1,23 @@
+# Ruff — ai-engine (S-008). Extended by the repo-root ruff.toml.
+target-version = "py311"
+line-length = 120
+src = ["src", "../tests", "../scripts"]
+extend-exclude = [".venv", "venv", "build", "dist"]
+
+[lint]
+select = ["E", "F", "W", "I", "B", "S", "UP", "SIM"]
+ignore = [
+  "E501",   # line length handled by the formatter
+  "B008",   # FastAPI `File(...)`/`Form(...)` defaults are the framework idiom
+  "S603",   # subprocess with a list argv and no shell is the intended FFmpeg path (core/ffmpeg.py)
+]
+
+[lint.per-file-ignores]
+"src/main.py" = ["B904"]      # HTTPException re-raise style inside handlers
+
+[lint.isort]
+known-first-party = ["ai_engine"]
+
+[format]
+quote-style = "double"
+line-ending = "lf"

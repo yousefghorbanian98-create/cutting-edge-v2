@@ -5,6 +5,7 @@ the `verbose=False` kwarg no longer exists, so audio extraction always fell into
 `except` and returned "". The reliable path is an FFmpeg subprocess with a
 binary found in the standard places.
 """
+
 from __future__ import annotations
 
 import os
@@ -80,9 +81,7 @@ def extract_audio(
         return _extract_audio_moviepy(video_path, str(out_path), sample_rate, mono)
 
 
-def _extract_audio_moviepy(
-    video_path: str, out_path: str, sample_rate: int, mono: bool
-) -> str:
+def _extract_audio_moviepy(video_path: str, out_path: str, sample_rate: int, mono: bool) -> str:
     """MoviePy 2.0 fallback (correct import; no `verbose=` kwarg)."""
     try:
         from moviepy import VideoFileClip  # MoviePy 2.x location
@@ -94,9 +93,7 @@ def _extract_audio_moviepy(
         try:
             if clip.audio is None:
                 return ""
-            clip.audio.write_audiofile(
-                out_path, fps=sample_rate, nbytes=2, logger=None
-            )
+            clip.audio.write_audiofile(out_path, fps=sample_rate, nbytes=2, logger=None)
             return out_path
         finally:
             clip.close()
@@ -114,8 +111,7 @@ def probe_duration_and_streams(video_path: str | Path) -> dict:
     ff = find_ffmpeg()
     proc = subprocess.run([ff, "-i", str(video_path)], capture_output=True, text=True)
     info = proc.stderr or ""
-    result: dict = {"duration": None, "video_codec": None, "audio": False,
-                    "width": None, "height": None}
+    result: dict = {"duration": None, "video_codec": None, "audio": False, "width": None, "height": None}
     for line in info.splitlines():
         line = line.strip()
         if line.startswith("Duration:"):

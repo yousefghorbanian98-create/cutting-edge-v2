@@ -7,6 +7,7 @@ Usage:
 
 The ledger is append-only per step: existing rows are preserved, new steps get a `TODO` row.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -51,8 +52,10 @@ def render_steps_md(data: dict) -> str:
     codes = data["user_intervention_codes"]
     out: list[str] = []
     out.append("# 03 — Numbered Steps (تولیدشده‌ی خودکار — ویرایش نکنید)\n")
-    out.append(f"> منبع: `docs/loop/steps.json` — {len(data['steps'])} مرحله در {len(data['phases'])} فاز. "
-               "برای تغییر، JSON را ویرایش و `python scripts/loop/render_steps.py` را اجرا کنید.\n")
+    out.append(
+        f"> منبع: `docs/loop/steps.json` — {len(data['steps'])} مرحله در {len(data['phases'])} فاز. "
+        "برای تغییر، JSON را ویرایش و `python scripts/loop/render_steps.py` را اجرا کنید.\n"
+    )
     out.append("## کدهای دخالت کاربر\n")
     for k, v in codes.items():
         out.append(f"- **{k}** — {v}")
@@ -134,7 +137,9 @@ def main() -> int:
 
     LOOP.mkdir(parents=True, exist_ok=True)
     STEPS_MD.write_text(steps_md, encoding="utf-8")
-    new_ledger = existing_ledger.rstrip("\n") + "\n" + "\n".join(ledger_row(s) for s in missing) + ("\n" if missing else "")
+    new_ledger = (
+        existing_ledger.rstrip("\n") + "\n" + "\n".join(ledger_row(s) for s in missing) + ("\n" if missing else "")
+    )
     LEDGER_MD.write_text(new_ledger, encoding="utf-8")
     print(f"rendered {STEPS_MD.relative_to(ROOT)} ({len(ids)} steps); ledger rows added: {len(missing)}")
     return 0

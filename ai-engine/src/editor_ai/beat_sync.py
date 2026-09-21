@@ -1,10 +1,13 @@
 """Beat Sync Engine — FFmpeg-first audio extraction + beat detection (S-004)."""
-import os
-import numpy as np
-from dataclasses import dataclass
-from typing import List, Tuple
 
-from ai_engine.core.ffmpeg import extract_audio, FFmpegNotFoundError
+import contextlib
+import os
+from dataclasses import dataclass
+
+import numpy as np
+
+from ai_engine.core.ffmpeg import FFmpegNotFoundError, extract_audio
+
 
 @dataclass
 class BeatMarker:
@@ -12,9 +15,10 @@ class BeatMarker:
     strength: float
     is_downbeat: bool
 
+
 class BeatSyncEngine:
     def __init__(self):
-        self.beats: List[BeatMarker] = []
+        self.beats: list[BeatMarker] = []
         self.tempo_bpm: float = 120.0
 
     def extract_audio_from_video(self, video_path: str) -> str:
@@ -30,7 +34,7 @@ class BeatSyncEngine:
             print(f"Audio extraction failed: {e}")
             return ""
 
-    def analyze_audio(self, audio_or_video_path: str) -> List[BeatMarker]:
+    def analyze_audio(self, audio_or_video_path: str) -> list[BeatMarker]:
         """تحلیل ضرب — اگر MP4 باشد، ابتدا صدا را استخراج می‌کند"""
         path = audio_or_video_path
 
@@ -83,22 +87,18 @@ class BeatSyncEngine:
         for i, t in enumerate(beat_times):
             fi = min(int(t * sr / 512), len(onset_env) - 1)
             strength = float(onset_env[max(fi, 0)]) / max_onset if max_onset > 0 else 0.5
-            self.beats.append(BeatMarker(
-                time=float(t),
-                strength=min(max(strength, 0.0), 1.0),
-                is_downbeat=(i % 4 == 0)
-            ))
+            self.beats.append(
+                BeatMarker(time=float(t), strength=min(max(strength, 0.0), 1.0), is_downbeat=(i % 4 == 0))
+            )
 
         # پاکسازی فایل صوتی موقت
         if path != audio_or_video_path and os.path.exists(path):
-            try:
+            with contextlib.suppress(Exception):
                 os.remove(path)
-            except:
-                pass
 
         return self.beats
 
-    def sync_clips(self, clip_durations: List[float]) -> List[Tuple[float, float]]:
+    def sync_clips(self, clip_durations: list[float]) -> list[tuple[float, float]]:
         if not self.beats:
             return []
         cuts = []

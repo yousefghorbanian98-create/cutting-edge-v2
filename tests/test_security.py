@@ -12,8 +12,10 @@ Security properties verified:
   (d) disallowed extension (.exe) returns 415,
   (e) CORS origin allow-list excludes arbitrary origins.
 """
+
 from __future__ import annotations
 
+import contextlib
 import os
 import re
 import signal
@@ -58,8 +60,12 @@ def _provision_venv() -> Path:
     )
     if probe.returncode != 0:
         for pkg in (
-            "fastapi==0.115.6", "uvicorn[standard]==0.32.1", "python-multipart==0.0.18",
-            "pydantic==2.10.4", "python-dotenv==1.0.1", "psutil==6.1.0",
+            "fastapi==0.115.6",
+            "uvicorn[standard]==0.32.1",
+            "python-multipart==0.0.18",
+            "pydantic==2.10.4",
+            "python-dotenv==1.0.1",
+            "psutil==6.1.0",
             "requests==2.32.3",
         ):
             subprocess.run([str(py), "-m", "pip", "install", "--quiet", pkg], check=True)
@@ -90,23 +96,17 @@ def _start_server(port: int) -> subprocess.Popen:
 
 
 def _stop_server(proc: subprocess.Popen) -> None:
-    try:
+    with contextlib.suppress(Exception):
         os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-    except Exception:
-        pass
     try:
         proc.wait(timeout=5)
     except Exception:
-        try:
+        with contextlib.suppress(Exception):
             os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-        except Exception:
-            pass
     log = getattr(proc, "_ce_log", None)
     if log and os.path.exists(log):
-        try:
+        with contextlib.suppress(Exception):
             os.unlink(log)
-        except Exception:
-            pass
 
 
 def _wait_for_health(port: int, timeout: float = 15.0) -> None:
@@ -118,16 +118,14 @@ def _wait_for_health(port: int, timeout: float = 15.0) -> None:
         try:
             if requests.get(url, timeout=1.0).status_code == 200:
                 return
-        except Exception:
-            pass
+        except requests.RequestException:  # server not up yet — keep polling until deadline
+            continue
         time.sleep(0.05)
     raise AssertionError(f"/health did not answer 200 within {timeout}s (port {port})")
 
 
 @pytest.fixture(scope="module")
 def live_server():
-    import requests
-
     _provision_venv()
     port = _free_port()
     proc = _start_server(port)
@@ -187,16 +185,16 @@ def test_sanitize_filename_strips_separators_and_dotdot():
 def test_download_traversal_returns_404(live_server):
     import requests
 
-    r = requests.get(live_server["base"] + "/muscle/download/..%2F..%2Fetc%2Fpasswd")
+    r = requests.get(live_server["base"] + "/muscle/download/..%2F..%2Fetc%2Fpasswd", timeout=30)
     assert r.status_code == 404, f"expected 404, got {r.status_code}: {r.text}"
-    r2 = requests.get(live_server["base"] + "/muscle/download/../../../etc/passwd")
+    r2 = requests.get(live_server["base"] + "/muscle/download/../../../etc/passwd", timeout=30)
     assert r2.status_code == 404, f"expected 404, got {r2.status_code}"
     # SECURITY: embedded null byte must be rejected as traversal (→ 404, not 500)
-    r3 = requests.get(live_server["base"] + "/muscle/download/x%00.mp4")
+    r3 = requests.get(live_server["base"] + "/muscle/download/x%00.mp4", timeout=30)
     assert r3.status_code == 404, f"expected 404 for null byte, got {r3.status_code}: {r3.text}"
     # URL-encoded %00 (double-encoded) and literal % in name
     for enc in ("%2500", "%00", "a%00b.mp4"):
-        r = requests.get(live_server["base"] + f"/muscle/download/{enc}")
+        r = requests.get(live_server["base"] + f"/muscle/download/{enc}", timeout=30)
         assert r.status_code == 404, f"expected 404 for {enc!r}, got {r.status_code}: {r.text}"
 
 
@@ -226,6 +224,7 @@ def test_disallowed_extension_returns_415(live_server):
     r = requests.post(
         live_server["base"] + "/editor/beat-sync",
         files={"file": ("malware.exe", b"MZ\x90\x00", "application/octet-stream")},
+        timeout=30,
     )
     assert r.status_code == 415, f"expected 415, got {r.status_code}: {r.text[:200]}"
 
@@ -243,6 +242,7 @@ def test_cors_origin_allowlist(live_server):
             "Origin": "http://evil.example.com",
             "Access-Control-Request-Method": "GET",
         },
+        timeout=30,
     )
     # A disallowed origin must be rejected (Starlette answers 400 for a
     # non-allowlisted preflight) and must NEVER be reflected in ACAO.
@@ -257,6 +257,7 @@ def test_cors_origin_allowlist(live_server):
             "Origin": "http://localhost:3000",
             "Access-Control-Request-Method": "GET",
         },
+        timeout=30,
     )
     assert ok.headers.get("access-control-allow-origin") == "http://localhost:3000"
 
@@ -300,12 +301,12 @@ def _run_all() -> int:
 
 
 def _check_404(requests, base):
-    r = requests.get(base + "/muscle/download/..%2F..%2Fetc%2Fpasswd")
+    r = requests.get(base + "/muscle/download/..%2F..%2Fetc%2Fpasswd", timeout=30)
     assert r.status_code == 404, f"got {r.status_code}"
-    r3 = requests.get(base + "/muscle/download/x%00.mp4")
+    r3 = requests.get(base + "/muscle/download/x%00.mp4", timeout=30)
     assert r3.status_code == 404, f"null byte got {r3.status_code}"
     for enc in ("%2500", "%00", "a%00b.mp4"):
-        r = requests.get(base + f"/muscle/download/{enc}")
+        r = requests.get(base + f"/muscle/download/{enc}", timeout=30)
         assert r.status_code == 404, f"{enc!r} got {r.status_code}"
 
 
@@ -316,7 +317,11 @@ def _check_413(requests, base):
 
 
 def _check_415(requests, base):
-    r = requests.post(base + "/editor/beat-sync", files={"file": ("malware.exe", b"MZ\x90\x00", "application/octet-stream")})
+    r = requests.post(
+        base + "/editor/beat-sync",
+        files={"file": ("malware.exe", b"MZ\x90\x00", "application/octet-stream")},
+        timeout=30,
+    )
     assert r.status_code == 415, f"got {r.status_code}"
 
 
@@ -324,12 +329,14 @@ def _check_cors(requests, base):
     r = requests.options(
         base + "/health",
         headers={"Origin": "http://evil.example.com", "Access-Control-Request-Method": "GET"},
+        timeout=30,
     )
     assert r.status_code in (200, 400)
     assert r.headers.get("access-control-allow-origin") != "http://evil.example.com"
     ok = requests.options(
         base + "/health",
         headers={"Origin": "http://localhost:3000", "Access-Control-Request-Method": "GET"},
+        timeout=30,
     )
     assert ok.headers.get("access-control-allow-origin") == "http://localhost:3000"
 

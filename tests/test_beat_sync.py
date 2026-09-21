@@ -6,6 +6,7 @@ Fixtures are generated on the fly with real FFmpeg (discovered via
 ai_engine.core.ffmpeg, which falls back to the imageio-ffmpeg bundled binary).
 This exercises the exact code path used by the app, not mocked arrays.
 """
+
 from __future__ import annotations
 
 import subprocess
@@ -46,12 +47,25 @@ def _make_click_wav(path: Path, bpm: float = 120.0, dur: float = 10.0, sr: int =
 def _make_mp4(out: Path, audio_wav: Path, dur: float, audio_sr: int) -> None:
     ff = find_ffmpeg()
     cmd = [
-        ff, "-y",
-        "-f", "lavfi", "-i", f"color=c=black:s=320x240:d={dur}",
-        "-i", str(audio_wav),
+        ff,
+        "-y",
+        "-f",
+        "lavfi",
+        "-i",
+        f"color=c=black:s=320x240:d={dur}",
+        "-i",
+        str(audio_wav),
         "-shortest",
-        "-c:v", "libx264", "-pix_fmt", "yuv420p",
-        "-c:a", "aac", "-ar", str(audio_sr), "-b:a", "128k",
+        "-c:v",
+        "libx264",
+        "-pix_fmt",
+        "yuv420p",
+        "-c:a",
+        "aac",
+        "-ar",
+        str(audio_sr),
+        "-b:a",
+        "128k",
         str(out),
     ]
     proc = subprocess.run(cmd, capture_output=True, text=True)
@@ -61,12 +75,27 @@ def _make_mp4(out: Path, audio_wav: Path, dur: float, audio_sr: int) -> None:
 def _make_silent_mp4(out: Path, dur: float = 5.0) -> None:
     ff = find_ffmpeg()
     cmd = [
-        ff, "-y",
-        "-f", "lavfi", "-i", f"color=c=black:s=320x240:d={dur}",
-        "-f", "lavfi", "-i", "anullsrc=r=48000:cl=mono",
+        ff,
+        "-y",
+        "-f",
+        "lavfi",
+        "-i",
+        f"color=c=black:s=320x240:d={dur}",
+        "-f",
+        "lavfi",
+        "-i",
+        "anullsrc=r=48000:cl=mono",
         "-shortest",
-        "-c:v", "libx264", "-pix_fmt", "yuv420p",
-        "-c:a", "aac", "-ar", "48000", "-b:a", "64k",
+        "-c:v",
+        "libx264",
+        "-pix_fmt",
+        "yuv420p",
+        "-c:a",
+        "aac",
+        "-ar",
+        "48000",
+        "-b:a",
+        "64k",
         str(out),
     ]
     proc = subprocess.run(cmd, capture_output=True, text=True)

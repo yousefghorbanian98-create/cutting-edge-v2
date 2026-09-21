@@ -1,6 +1,10 @@
 """Reheal Loop — Auto Fixer"""
-import gc, logging
+
+import gc
+import logging
+
 logger = logging.getLogger("reheal.fixer")
+
 
 class AutoFixer:
     def fix_memory(self):
@@ -8,24 +12,34 @@ class AutoFixer:
         gc.collect()
         try:
             import torch
-            if torch.cuda.is_available(): torch.cuda.empty_cache()
-        except ImportError: pass
+
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        except ImportError:
+            pass
         try:
-            import cv2; cv2.destroyAllWindows()
-        except: pass
+            import cv2
+
+            cv2.destroyAllWindows()
+        except Exception as exc:  # cv2 missing or headless build
+            logging.getLogger(__name__).debug("cv2 window cleanup skipped: %s", exc)
         return True
 
     def fix_gpu(self):
         logger.info("Auto-fixing GPU...")
         try:
             import torch
+
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
                 torch.cuda.synchronize()
-        except ImportError: pass
+        except ImportError:
+            pass
         return True
 
     def fix(self, component: str) -> bool:
-        if component == "RAM": return self.fix_memory()
-        if component == "GPU": return self.fix_gpu()
+        if component == "RAM":
+            return self.fix_memory()
+        if component == "GPU":
+            return self.fix_gpu()
         return False

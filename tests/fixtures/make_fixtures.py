@@ -24,6 +24,7 @@ emits an EXPLICIT warning (never a silent skip). The committed manifest.json
 describes the expected synthetic set; the SHA256 pins for the optional assets
 live in manifest.json and only match when the assets were actually downloaded.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -79,11 +80,15 @@ def _click_wav(path: Path, bpm: float = 120.0, dur: float = 10.0, sr: int = 4800
         w.writeframes(pcm.tobytes())
 
 
-def _mux(audio_wav: str | None, out: Path,
-         size: tuple[int, int] = (1280, 720), fps: int = 30, dur: float = 10.0,
-         vcodec: str = "libx264") -> None:
-    cmd = [_ff(), "-y",
-           "-f", "lavfi", "-i", f"testsrc2=size={size[0]}x{size[1]}:rate={fps}:duration={dur}"]
+def _mux(
+    audio_wav: str | None,
+    out: Path,
+    size: tuple[int, int] = (1280, 720),
+    fps: int = 30,
+    dur: float = 10.0,
+    vcodec: str = "libx264",
+) -> None:
+    cmd = [_ff(), "-y", "-f", "lavfi", "-i", f"testsrc2=size={size[0]}x{size[1]}:rate={fps}:duration={dur}"]
     if audio_wav:
         cmd += ["-i", audio_wav]
     cmd += ["-shortest", "-c:v", vcodec, "-pix_fmt", "yuv420p"]
@@ -93,12 +98,33 @@ def _mux(audio_wav: str | None, out: Path,
 
 
 def _silent(size: tuple[int, int] = (1280, 720), fps: int = 30, dur: float = 5.0) -> Path:
-    out = Path(tempfile.mktemp(suffix=".mp4"))
-    _run([_ff(), "-y",
-          "-f", "lavfi", "-i", f"color=c=black:s={size[0]}x{size[1]}:r={fps}:d={dur}",
-          "-f", "lavfi", "-i", "anullsrc=r=48000:cl=mono",
-          "-shortest", "-c:v", "libx264", "-pix_fmt", "yuv420p",
-          "-c:a", "aac", "-ar", "48000", "-b:a", "64k", str(out)])
+    out = Path(tempfile.mkdtemp(prefix="ce_fx_")) / "clip.mp4"
+    _run(
+        [
+            _ff(),
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            f"color=c=black:s={size[0]}x{size[1]}:r={fps}:d={dur}",
+            "-f",
+            "lavfi",
+            "-i",
+            "anullsrc=r=48000:cl=mono",
+            "-shortest",
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            "-c:a",
+            "aac",
+            "-ar",
+            "48000",
+            "-b:a",
+            "64k",
+            str(out),
+        ]
+    )
     return out
 
 
@@ -106,7 +132,7 @@ def _silent(size: tuple[int, int] = (1280, 720), fps: int = 30, dur: float = 5.0
 def build_synthetic(out_dir: Path) -> dict[str, Path]:
     """Build the full synthetic fixture set into `out_dir`. Returns name→path."""
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_dir_s = str(out_dir)
+    str(out_dir)
 
     def tmp(name: str) -> Path:
         return out_dir / name
@@ -147,9 +173,19 @@ def build_synthetic(out_dir: Path) -> dict[str, Path]:
     h = tmp("کلیپ تمرین ۱.mp4")
     _mux(None, h, size=(640, 360), fps=30, dur=2.0)
 
-    return {p.name: p for p in [
-        a, b, c, d, e, f, g, h,
-    ]}
+    return {
+        p.name: p
+        for p in [
+            a,
+            b,
+            c,
+            d,
+            e,
+            f,
+            g,
+            h,
+        ]
+    }
 
 
 def sha256(path: Path) -> str:

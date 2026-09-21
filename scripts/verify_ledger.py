@@ -16,6 +16,7 @@ Rules enforced (exit 1 on any violation):
 
 Used by: scripts/gate.py --stage static, CI static job, and the loop protocol (docs/loop/02_LOOP_PROTOCOL.md).
 """
+
 from __future__ import annotations
 
 import json
@@ -84,8 +85,9 @@ def main() -> int:
         if r["status"] == "BLOCKED" and not r["notes"]:
             errors.append(f"{p}: BLOCKED without a note")
 
-    chk = subprocess.run([sys.executable, str(ROOT / "scripts" / "loop" / "render_steps.py"), "--check"],
-                         capture_output=True, text=True)
+    chk = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "loop" / "render_steps.py"), "--check"], capture_output=True, text=True
+    )
     if chk.returncode != 0:
         errors.append("render_steps --check failed: " + (chk.stderr.strip() or chk.stdout.strip()))
 

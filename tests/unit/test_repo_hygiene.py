@@ -51,7 +51,7 @@ def test_license_is_mit() -> None:
     text = license_path.read_text(encoding="utf-8")
     assert "MIT License" in text, "LICENSE does not look like MIT"
     assert "Permission is hereby granted, free of charge" in text
-    assert "THE SOFTWARE IS PROVIDED \"AS IS\"" in text
+    assert 'THE SOFTWARE IS PROVIDED "AS IS"' in text
     assert re.search(r"Copyright \(c\) \d{4} .+", text), "LICENSE lacks a Copyright (c) <year> <holder> line"
 
 
@@ -94,9 +94,7 @@ def test_docs_tree_and_ledger_intact() -> None:
         capture_output=True,
         text=True,
     )
-    assert result.returncode == 0, (
-        f"verify_ledger.py failed:\nstdout={result.stdout}\nstderr={result.stderr}"
-    )
+    assert result.returncode == 0, f"verify_ledger.py failed:\nstdout={result.stdout}\nstderr={result.stderr}"
     assert "ledger OK" in result.stdout
 
 

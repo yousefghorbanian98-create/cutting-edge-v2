@@ -7,6 +7,7 @@ real FFmpeg-generated media over HTTP, and asserts on the actual response (JSON
 schema + non-empty clips) and on the enhanced download output via
 `assert_playable` + mean-abs pixel diff vs the input (> 2.0).
 """
+
 from __future__ import annotations
 
 import sys
@@ -136,7 +137,9 @@ def test_muscle_enhance_live_http(fixture, live_api):
     # nothing at all — this proves the harness isolates the enhancement.
     noop_path = _enhance_over_http(live_api["base"], clip, "0", "__none__")
     noop_diff = mean_abs_pixel_diff(ctrl_frame, _read_first_frame(noop_path))
-    assert noop_diff == 0.0, f"intensity=0 changed pixels vs control ({noop_diff}) — harness is not isolating the enhancement"
+    assert (
+        noop_diff == 0.0
+    ), f"intensity=0 changed pixels vs control ({noop_diff}) — harness is not isolating the enhancement"
 
     # Positive signal: isolated enhancement must be clearly non-zero
     # (measured 1.2662, identical with and without mediapipe).

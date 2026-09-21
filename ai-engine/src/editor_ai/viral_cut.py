@@ -1,14 +1,12 @@
 """One-Click Viral Cut — Finds the best segment for Reels/Shorts"""
+
 import numpy as np
-from typing import List, Tuple
+
 
 class ViralCutFinder:
     def find_best_segment(
-        self,
-        motion_energies: List[float],
-        fps: float = 30.0,
-        target_duration_sec: int = 30
-    ) -> Tuple[int, int]:
+        self, motion_energies: list[float], fps: float = 30.0, target_duration_sec: int = 30
+    ) -> tuple[int, int]:
         """
         پیدا کردن پرانرژی‌ترین بخش ویدیو
         Edge cases:
@@ -36,7 +34,7 @@ class ViralCutFinder:
         # Moving window sum
         energies = np.array(motion_energies, dtype=np.float32)
         kernel = np.ones(window_size, dtype=np.float32)
-        sums = np.convolve(energies, kernel, mode='valid')
+        sums = np.convolve(energies, kernel, mode="valid")
 
         if len(sums) == 0:
             return (0, n)
@@ -46,13 +44,7 @@ class ViralCutFinder:
 
         return (best_start, best_end)
 
-    def calculate_virality_score(
-        self,
-        energies: List[float],
-        start: int,
-        end: int,
-        fps: float = 30.0
-    ) -> dict:
+    def calculate_virality_score(self, energies: list[float], start: int, end: int, fps: float = 30.0) -> dict:
         """محاسبه امتیاز وایرال بر اساس بخش انتخاب‌شده"""
         if not energies:
             return {"score": 50, "hook": 0, "sustain": 0}
@@ -73,13 +65,13 @@ class ViralCutFinder:
 
         # Score calculation
         score = 40
-        score += min(hook_energy * 40, 25)      # قلاب قوی = +25
-        score += min(sustain_energy * 30, 20)    # انرژی پایدار = +20
-        score += min(variance * 50, 15)          # تنوع = +15
+        score += min(hook_energy * 40, 25)  # قلاب قوی = +25
+        score += min(sustain_energy * 30, 20)  # انرژی پایدار = +20
+        score += min(variance * 50, 15)  # تنوع = +15
 
         return {
             "score": min(98, max(15, int(score))),
             "hook": round(hook_energy, 2),
             "sustain": round(sustain_energy, 2),
-            "variance": round(variance, 2)
+            "variance": round(variance, 2),
         }

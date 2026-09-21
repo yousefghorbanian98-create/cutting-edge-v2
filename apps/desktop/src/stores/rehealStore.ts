@@ -27,8 +27,9 @@ export const useRehealStore = create<RehealState>((set) => ({
   fixesCount: 0,
   recentFixes: [],
   setHealth: (health) => set({ health }),
-  addFixEvent: (fix) => set((s) => ({
-    fixesCount: s.fixesCount + 1,
-    recentFixes: [fix, ...s.recentFixes].slice(0, 10),
-  })),
+  addFixEvent: (fix) =>
+    set((s) => ({
+      fixesCount: s.fixesCount + 1,
+      recentFixes: [fix, ...s.recentFixes].slice(0, 10),
+    })),
 }));

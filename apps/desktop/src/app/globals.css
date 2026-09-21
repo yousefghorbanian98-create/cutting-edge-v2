@@ -10,19 +10,20 @@
  * generates the utilities).
  */
 
-@import 'tailwindcss';
+@import "tailwindcss";
 
 /* Offline, self-hosted fonts (@fontsource → woff2 files inside the bundle).
    No fonts.googleapis.com / fonts.gstatic.com anywhere: the desktop app must
    work with no network at all. */
-@import '@fontsource-variable/inter';
-@import '@fontsource/vazirmatn/400.css';
-@import '@fontsource/vazirmatn/700.css';
-@import '@fontsource/jetbrains-mono/400.css';
+@import "@fontsource-variable/inter";
+@import "@fontsource/vazirmatn/400.css";
+@import "@fontsource/vazirmatn/700.css";
+@import "@fontsource/jetbrains-mono/400.css";
 
 /* DaisyUI 5 — the only DaisyUI line that works with Tailwind 4 (DaisyUI 4 is a
    Tailwind 3 plugin; see 02_LOOP_PROTOCOL.md §5 "clarifications"). */
 @plugin 'daisyui' {
+  /* biome-ignore lint/correctness/noUnknownProperty: DaisyUI 5 @plugin option, not a CSS property */
   themes: dark --default;
 }
 
@@ -63,8 +64,8 @@
   --color-energy-peak: #ef4444;
 
   /* typography */
-  --font-sans: 'Inter Variable', 'Vazirmatn', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-sans: "Inter Variable", "Vazirmatn", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   /* radius */
   --radius-sm: 6px;

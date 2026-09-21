@@ -18,3 +18,13 @@ Tailwind 4 + DaisyUI 5 wired through PostCSS, self-hosted Vazirmatn/Inter/JetBra
 
 ## 3. Verdict
 approved (conditional: GREEN only after CI runs styling.spec.ts) — all locally-provable ACs reproduced; NG-1 (page.tsx untouched) holds.
+
+---
+
+## Addendum — 2026-09-22 (Supervisor, closing decision)
+
+Applying the ledger rule consistently with S-002 (AC-6 `.ps1` closed GREEN with `unverified:windows` carried): every AC that *can* be proven in the sandbox was reproduced (build artifacts 8/8, CSS 64 570 B, fonts self-hosted, tokens.ts ↔ @theme sync), the REVIEW verdict is `approved`, and the only open half is environment-blocked (no Chromium in the sandbox). S-007 therefore flips to **GREEN / local-linux** with `unverified:ci` for the DOM half of AC-2…AC-7.
+
+Hard condition recorded for S-009: the ubuntu job MUST run `apps/desktop/tests/styling.spec.ts` and upload `home-1440x900.png`. If it fails there, S-007 reopens as `RED` via a hotfix card (BUG-9 re-opened) — it does not stay GREEN on the strength of this addendum.
+
+Additional evidence gathered during S-008 (2026-09-22): `next build` (output: export) still succeeds after the S-008 a11y/type edits; `tsc --noEmit` and Biome are clean on the same files.

@@ -1,0 +1,9 @@
+# Root Ruff config (S-008). Globs are anchored to the directory of the config that
+# declares them, so repo-root globs live HERE, never in ai-engine/ruff.toml
+# (docs/learnings/2026-09-08-token-expiry-and-config-scoping.md).
+extend = "ai-engine/ruff.toml"
+
+[lint.extend-per-file-ignores]
+"tests/**" = ["S101", "S603", "S607", "S108", "B011", "SIM115"]   # asserts, subprocess with fixed argv, tmp paths in tests
+"scripts/**" = ["S603", "S607"]                                  # trusted local tooling runs git/npx with fixed argv
+"tests/fixtures/make_fixtures.py" = ["S310"]                      # urlopen only for pinned fixture URLs (S-005)

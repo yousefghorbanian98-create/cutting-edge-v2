@@ -3,12 +3,13 @@
 # it so `pip install -r requirements.txt` produces the same environment.
 
 # Web / API
-fastapi==0.115.6
+fastapi==0.141.1
+starlette==1.3.1
 uvicorn[standard]==0.32.1
-python-multipart==0.0.18
+python-multipart==0.0.32
 pydantic==2.10.4
-python-dotenv==1.0.1
-requests==2.32.3
+python-dotenv==1.2.3
+requests==2.34.2
 psutil==6.1.0
 
 # AI / media processing

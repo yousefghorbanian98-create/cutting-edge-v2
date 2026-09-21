@@ -20,3 +20,4 @@ playwright-report/
 test-results/
 .turbo/
 next-env.d.ts
+*.tsbuildinfo

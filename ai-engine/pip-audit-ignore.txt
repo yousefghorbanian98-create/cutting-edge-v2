@@ -1,0 +1,24 @@
+# pip-audit exceptions (S-008). Each line: <ID>  <reason>  <owner step>. Reviewed at every milestone (U2 checklist).
+# pillow 10.4 is a TRANSITIVE pin: moviepy==2.1.1 requires pillow<11 and every fixed version is >=12.1.
+# The runtime never opens untrusted images with PIL (FFmpeg-first pipeline, core/ffmpeg.py); MoviePy is fallback-only.
+# Closing path: S-037 (FFmpeg mux) drops the MoviePy fallback → pillow leaves the bundle → exceptions deleted.
+PYSEC-2026-165  pillow transitive via moviepy<12 upper bound  S-037
+PYSEC-2026-2249 pillow transitive via moviepy<12 upper bound  S-037
+PYSEC-2026-2250 pillow transitive via moviepy<12 upper bound  S-037
+PYSEC-2026-2252 pillow transitive via moviepy<12 upper bound  S-037
+PYSEC-2026-2253 pillow transitive via moviepy<12 upper bound  S-037
+PYSEC-2026-2254 pillow transitive via moviepy<12 upper bound  S-037
+PYSEC-2026-2255 pillow transitive via moviepy<12 upper bound  S-037
+PYSEC-2026-2256 pillow transitive via moviepy<12 upper bound  S-037
+PYSEC-2026-2257 pillow transitive via moviepy<12 upper bound  S-037
+PYSEC-2026-2874 pillow transitive via moviepy<12 upper bound  S-037
+PYSEC-2026-3451 pillow transitive via moviepy<12 upper bound  S-037
+PYSEC-2026-3453 pillow transitive via moviepy<12 upper bound  S-037
+PYSEC-2026-3454 pillow transitive via moviepy<12 upper bound  S-037
+PYSEC-2026-3493 pillow transitive via moviepy<12 upper bound  S-037
+PYSEC-2026-3494 pillow transitive via moviepy<12 upper bound  S-037
+PYSEC-2026-3495 pillow transitive via moviepy<12 upper bound  S-037
+PYSEC-2026-3496 pillow transitive via moviepy<12 upper bound  S-037
+# protobuf 4.25 is pinned by mediapipe==0.10.14 (protobuf<5). Local IPC only, no untrusted protobuf parsing.
+# Closing path: S-035 (478-pt Face Mesh) re-pins mediapipe to a release that allows protobuf>=5.29.6.
+PYSEC-2026-1805 protobuf transitive via mediapipe<5 upper bound  S-035

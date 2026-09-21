@@ -1,6 +1,6 @@
-import { test, expect, type Page } from '@playwright/test';
-import { readdirSync, statSync, mkdirSync } from 'node:fs';
+import { mkdirSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { type Page, expect, test } from '@playwright/test';
 
 /**
  * S-007 — real test for the frontend styling fix.
@@ -20,7 +20,6 @@ const OUT_DIR = join(APP_DIR, 'out');
 const EVIDENCE_DIR = resolve(APP_DIR, '../../docs/loop/evidence/S-007');
 
 /** The backend health endpoint page.tsx polls on load (hardcoded in page.tsx). */
-const HEALTH_URL = 'http://127.0.0.1:8001/health';
 const HEALTH_BODY = JSON.stringify({ status: 'healthy', ram: 41.0, cpu: 7.5, gpu: null });
 
 function walk(dir: string, acc: string[] = []): string[] {
@@ -43,7 +42,7 @@ async function stubHealthPoll(page: Page): Promise<void> {
       contentType: 'application/json',
       headers: { 'access-control-allow-origin': '*' },
       body: HEALTH_BODY,
-    }),
+    })
   );
 }
 
@@ -56,12 +55,17 @@ test('build emits CSS > 10KB', () => {
     files = [];
   }
   const css = files.filter((f) => f.endsWith('.css'));
-  expect(css.length, `no .css found under ${OUT_DIR} — did 'next build' run with output:'export'?`).toBeGreaterThan(0);
+  expect(
+    css.length,
+    `no .css found under ${OUT_DIR} — did 'next build' run with output:'export'?`
+  ).toBeGreaterThan(0);
 
   const sized = css.map((f) => ({ f: f.replace(OUT_DIR, 'out'), size: statSync(f).size }));
   const largest = sized.reduce((a, b) => (b.size > a.size ? b : a));
   // Card done-when: "next build emits out/ with CSS > 10KB".
-  expect(largest.size, `largest stylesheet ${largest.f} is only ${largest.size} B`).toBeGreaterThan(10 * 1024);
+  expect(largest.size, `largest stylesheet ${largest.f} is only ${largest.size} B`).toBeGreaterThan(
+    10 * 1024
+  );
 });
 
 // ── shared page setup for the DOM assertions ──────────────────────────────────
@@ -169,7 +173,9 @@ test('daisyui 5 is compiled', async ({ page }) => {
   expect(btn.display, '.btn did not resolve — DaisyUI plugin not compiled').toBe('inline-flex');
   expect(btn.borderRadius).not.toBe('0px');
 
-  const token = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--color-base-100'));
+  const token = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--color-base-100')
+  );
   expect(token.trim(), 'DaisyUI theme token --color-base-100 missing').not.toBe('');
 });
 

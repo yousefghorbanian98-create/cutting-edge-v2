@@ -8,6 +8,7 @@ commits media. Probes streams/duration/resolution per fixture using
 imageio-ffmpeg ships ffmpeg only). Offline run degrades to synthetic-only with
 an EXPLICIT warning (never a silent skip).
 """
+
 from __future__ import annotations
 
 import sys
@@ -23,7 +24,7 @@ if str(Path(__file__).resolve().parents[1]) not in sys.path:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from ai_engine.core.ffmpeg import probe_duration_and_streams  # noqa: E402
-from tests.fixtures.make_fixtures import build_synthetic, make_fixtures, sha256  # noqa: E402
+from tests.fixtures.make_fixtures import build_synthetic, make_fixtures  # noqa: E402
 
 MANIFEST_EXPECTED = [
     ("tone_120bpm_720p.mp4", "video_with_audio", 1280, 720),
@@ -93,9 +94,16 @@ def test_offline_degrades_explicitly_not_silent() -> None:
 def test_manifest_describes_every_synthetic_fixture() -> None:
     mf = res_manifest()
     synthetic_names = {e["name"] for e in mf["synthetic"]}
-    generated = {"tone_120bpm_720p.mp4", "silent_720p.mp4", "short_2s.mp4",
-                 "empty_0byte.mp4", "broken_header.mp4", "vertical_9x16.mp4",
-                 "wide_4k_3s.mp4", "کلیپ تمرین ۱.mp4"}
+    generated = {
+        "tone_120bpm_720p.mp4",
+        "silent_720p.mp4",
+        "short_2s.mp4",
+        "empty_0byte.mp4",
+        "broken_header.mp4",
+        "vertical_9x16.mp4",
+        "wide_4k_3s.mp4",
+        "کلیپ تمرین ۱.mp4",
+    }
     assert synthetic_names == generated, "manifest synthetic set != generated set"
     # every generated fixture (except the two synthetic-only specials) has a probe spec
     for e in mf["synthetic"]:
