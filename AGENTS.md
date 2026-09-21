@@ -12,6 +12,7 @@
 ## 2. Where to look (in this order)
 | # | File | Why |
 |---|------|-----|
+| 0 | `docs/ONBOARDING.md` | Full orientation for a newcomer (product, status, file map, inspection steps) |
 | 1 | `docs/loop/00_INDEX.md` | Entry point of the delivery loop |
 | 2 | `docs/loop/02_LOOP_PROTOCOL.md` | The 10-stage loop every step runs (contract → real test → build → static → review → evidence) |
 | 3 | `docs/loop/04_LEDGER.md` | Status of every numbered step; machine-checked |

@@ -34,6 +34,7 @@ pnpm dev
 |---|---|
 | `AGENTS.md` | Agent operating manual (entry point for every AI session) |
 | `DESIGN.md` | Design system authority — tokens mirrored in code and gated in CI |
+| `docs/ONBOARDING.md` | **Start here if you are new**: what this is, where we are, file map, how to inspect and continue |
 | `docs/loop/00_INDEX.md` | Delivery loop: numbered steps, ledger, protocol, supervisor |
 | `docs/loop/12_SIXTEEN_LAYER_MAP.md` | How the 16-layer production plan maps onto this desktop product |
 | `docs/loop/13_INTEGRATIONS_ADOPTION.md` | What was adopted from ECC / Web Interface Guidelines / awesome-design-md |
