@@ -6,7 +6,7 @@
 ## 1. What this project is
 - **Product:** Persian-first (RTL) Windows desktop video editor for sports/fitness creators, with AI Style Match, AI Assistant and a 100 %-natural Muscle Enhancer. Ships as an NSIS `.exe` via GitHub Releases.
 - **Locked stack (do not change):** Tauri 2 (Rust) · Next.js 15 / React 19 / TypeScript 5.5 strict · Tailwind 4 + DaisyUI 5 · Framer Motion 11 · Zustand 5 · FastAPI (Python 3.11) · MediaPipe · OpenCV · MoviePy 2 · librosa · faster-whisper small · edge-tts · OpenRouter `:free` models + Nvidia NIM · Turborepo + pnpm · Vitest / Playwright / pytest · Biome / Ruff.
-- **Not this project:** no NestJS, Prisma, PostgreSQL, Redis, shadcn/ui, Geist fonts, SaaS multi-tenant, RAG chat. Those words appear in `docs/16-LAYER-PRODUCTION-PLAN.md` and `docs/ROADMAP-v2-WITH-INTEGRATIONS.md`, which are **generic reference inputs**, mapped onto this product in `docs/loop/12_SIXTEEN_LAYER_MAP.md`.
+- **Not this project:** no NestJS, Prisma, SQLAlchemy, PostgreSQL, Redis/Valkey, Celery, auth libraries, shadcn/ui, Geist fonts, Ollama/local LLM, hosting/IaC, telemetry, SaaS multi-tenant, RAG chat. Adding any of these fails supervisor check C15 unless an ADR exists first (see ADR-0002 for why). Those words appear in `docs/16-LAYER-PRODUCTION-PLAN.md` and `docs/ROADMAP-v2-WITH-INTEGRATIONS.md`, which are **generic reference inputs**, mapped onto this product in `docs/loop/12_SIXTEEN_LAYER_MAP.md`.
 - **Hardware budget:** 16 GB RAM, GTX 1650 4 GB, CUDA 11.8, float16. App RAM < 1.5 GB, model VRAM < 800 MB. Budget $0.
 
 ## 2. Where to look (in this order)

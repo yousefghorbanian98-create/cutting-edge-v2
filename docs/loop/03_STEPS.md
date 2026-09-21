@@ -131,7 +131,7 @@ _ریپو را واقعاً قابل build/test/ship کردن؛ بدون این 
 
 ### S-008 — Toolchain: Biome, Ruff, tsc strict, Turbo 2 tasks, pinned versions, pre-commit
 
-**هدف:** پیکربندی Biome و Ruff، `tsc --noEmit` سخت‌گیرانه، turbo.json از `pipeline` به `tasks` (Turbo 2)، حذف همه‌ی `latest`، pre-commit با lefthook (lint + secret scan)، اسکریپت‌های `pnpm gate:*`
+**هدف:** پیکربندی Biome و Ruff، `tsc --noEmit` سخت‌گیرانه، turbo.json از `pipeline` به `tasks` (Turbo 2)، حذف همه‌ی `latest`، pre-commit با lefthook (lint + secret scan)، اسکریپت‌های `pnpm gate:*`؛ امنیت پایتون در gate static: `bandit -r ai-engine/src -ll` و `pip-audit -r ai-engine/requirements.txt` (خطا = توقف)؛ همچنین `pnpm audit --audit-level=high`
 
 **فایل‌ها:** `biome.json`, `ai-engine/ruff.toml`, `turbo.json`, `package.json`, `lefthook.yml`, `scripts/gate.py`
 
@@ -145,7 +145,7 @@ _ریپو را واقعاً قابل build/test/ship کردن؛ بدون این 
 
 ### S-009 — CI overhaul: matrix (ubuntu lint/unit/e2e + windows heavy/tauri), caching, artifacts, all branches
 
-**هدف:** CI فعلی فقط روی main و فقط pytest سنگین روی ویندوز بدون کش. ماتریس: ubuntu (static+unit+frontend build+Playwright)، windows (pytest real + cargo check + tauri build → آپلود .exe)، کش pnpm/pip/cargo، اجرای روی همه‌ی شاخه‌ها و PRها، gitleaks، آپلود junit و اسکرین‌شات‌ها؛ جاب ubuntu همچنین `check-design-tokens` و `design_audit --strict` (وقتی S-099/S-100 سبز شدند) و `verify_ledger` را اجرا می‌کند؛ trigger روی push به `arena/**` و `main`؛ junit + playwright-report + screenshot baseline به‌عنوان artifact
+**هدف:** CI فعلی فقط روی main و فقط pytest سنگین روی ویندوز بدون کش. ماتریس: ubuntu (static+unit+frontend build+Playwright)، windows (pytest real + cargo check + tauri build → آپلود .exe)، کش pnpm/pip/cargo، اجرای روی همه‌ی شاخه‌ها و PRها، gitleaks، آپلود junit و اسکرین‌شات‌ها؛ جاب ubuntu همچنین `check-design-tokens` و `design_audit --strict` (وقتی S-099/S-100 سبز شدند) و `verify_ledger` را اجرا می‌کند؛ trigger روی push به `arena/**` و `main`؛ junit + playwright-report + screenshot baseline به‌عنوان artifact؛ CodeQL (python + javascript) و Dependabot (`.github/dependabot.yml` برای pip، npm، cargo، github-actions) فعال می‌شوند — روی ریپوی public رایگان؛ `verify_ledger.py` و `supervise.py` (حالت read-only) به‌عنوان جاب `loop-audit` اجرا می‌شوند
 
 **فایل‌ها:** `.github/workflows/ci.yml`, `.github/workflows/release.yml`, `.gitleaks.toml`
 
@@ -187,7 +187,7 @@ _ریپو را واقعاً قابل build/test/ship کردن؛ بدون این 
 
 ### S-012 — Non-blocking processing: job model + thread pool so /health stays alive
 
-**هدف:** اندپوینت‌های سنگین (muscle/enhance) داخل `async def` به‌صورت همزمان اجرا می‌شوند و کل event loop را قفل می‌کنند. مدل Job حداقلی: POST → job_id، اجرای در ThreadPool، GET /jobs/{id} با progress/percent/eta/error، لغو؛ نسخه‌ی کامل صف در S-072
+**هدف:** اندپوینت‌های سنگین (muscle/enhance) داخل `async def` به‌صورت همزمان اجرا می‌شوند و کل event loop را قفل می‌کنند. مدل Job حداقلی: POST → job_id، اجرای در ThreadPool، GET /jobs/{id} با progress/percent/eta/error، لغو؛ نسخه‌ی کامل صف در S-072؛ کلاینت TS در `apps/desktop/src/lib/api.ts` از OpenAPI خودِ FastAPI تولید می‌شود (`@hey-api/openapi-ts`، خروجی کامیت‌شده + چک drift در gate static) تا هیچ اندپوینتی دستی تایپ نشود
 
 **فایل‌ها:** `ai-engine/src/core/jobs.py`, `ai-engine/src/main.py`, `apps/desktop/src/lib/api.ts`, `tests/test_jobs.py`
 
@@ -229,7 +229,7 @@ _ریپو را واقعاً قابل build/test/ship کردن؛ بدون این 
 
 ### S-101 — ADR log + session learnings (ECC remember/improve) with hygiene tests
 
-**هدف:** docs/adr/ با ADR-0001…000N برای تصمیم‌های از قبل گرفته‌شده (استک قفل، Tailwind 4→DaisyUI 5، FFmpeg-first، PyInstaller sidecar، فقط مدل‌های :free، بدون telemetry، DESIGN.md مرجع، لوپ ناظر/سازنده) با قالب ثابت (Status/Context/Decision/Consequences) و فهرست؛ docs/learnings/ با قالب ≤ ۲۰ خطی (چه شکست، ریشه، قاعده‌ی بعدی) که هر سشن سازنده در پایان یک ورودی می‌نویسد؛ ناظر در ممیزی آن‌ها را به قاعده/چک تبدیل می‌کند (improve)
+**هدف:** docs/adr/ با ADR-0001…000N برای تصمیم‌های از قبل گرفته‌شده (استک قفل، Tailwind 4→DaisyUI 5، FFmpeg-first، PyInstaller sidecar، فقط مدل‌های :free، بدون telemetry، DESIGN.md مرجع، لوپ ناظر/سازنده) با قالب ثابت (Status/Context/Decision/Consequences) و فهرست؛ docs/learnings/ با قالب ≤ ۲۰ خطی (چه شکست، ریشه، قاعده‌ی بعدی) که هر سشن سازنده در پایان یک ورودی می‌نویسد؛ ناظر در ممیزی آن‌ها را به قاعده/چک تبدیل می‌کند (improve)؛ قالب ADR از joelparkerhenderson/architecture-decision-record (MADR کوتاه)؛ ADR-0002 = تریاژ ممیزی خارجی ابزارها
 
 **فایل‌ها:** `docs/adr/README.md`, `docs/adr/0001-locked-stack.md`, `docs/learnings/README.md`, `docs/learnings/TEMPLATE.md`, `tests/unit/test_repo_hygiene.py`, `docs/loop/07_SESSION_HANDOFF.md`
 
@@ -1229,7 +1229,7 @@ _پوشش تست، کارایی روی GTX 1650، دسترس‌پذیری، i18n
 
 ### S-080 — Integration tests for every endpoint with real fixtures + OpenAPI contract check
 
-**هدف:** هر اندپوینت حداقل یک تست موفق + یک تست خطا با فیکسچر واقعی، بررسی OpenAPI با کلاینت TS تولیدشده (openapi-typescript) تا فرانت و بک هم‌قرارداد بمانند
+**هدف:** هر اندپوینت حداقل یک تست موفق + یک تست خطا با فیکسچر واقعی، بررسی OpenAPI با کلاینت TS تولیدشده (openapi-typescript) تا فرانت و بک هم‌قرارداد بمانند؛ fuzz قرارداد با `schemathesis run` روی `/openapi.json` سرور زنده (stateless، ۲۰۰ مثال هر اندپوینت، هیچ ۵۰۰ مجاز نیست)
 
 **فایل‌ها:** `tests/test_api_*.py`, `apps/desktop/src/lib/api.generated.ts`, `scripts/gen-api-client.sh`
 
@@ -1299,7 +1299,7 @@ _پوشش تست، کارایی روی GTX 1650، دسترس‌پذیری، i18n
 
 ### S-085 — i18n: fa + en with runtime switch, all strings externalized, RTL/LTR, number/date locale
 
-**هدف:** استخراج همه‌ی رشته‌ها به فایل‌های پیام، سوئیچ زبان بدون ری‌لود، جهت خودکار، اعداد فارسی اختیاری، ترجمه‌ی پیام‌های خطای بک‌اند
+**هدف:** استخراج همه‌ی رشته‌ها به فایل‌های پیام، سوئیچ زبان بدون ری‌لود، جهت خودکار، اعداد فارسی اختیاری، ترجمه‌ی پیام‌های خطای بک‌اند؛ کتابخانه‌ی i18n در CONTRACT همین مرحله انتخاب می‌شود (کاندیدای مجاز: next-intl؛ شرط: سازگار با static export و بدون سرور)؛ ویژگی‌های منطقی Tailwind (ms-/me-/ps-/pe-) به‌جای left/right در کل کدبیس با تست grep
 
 **فایل‌ها:** `apps/desktop/src/i18n/`, `ai-engine/src/core/i18n.py`, `scripts/check-i18n.py`
 
@@ -1313,7 +1313,7 @@ _پوشش تست، کارایی روی GTX 1650، دسترس‌پذیری، i18n
 
 ### S-086 — Security audit: secrets in OS keyring, CSP, capabilities, dependency audits, path/ssrf review
 
-**هدف:** کلید OpenRouter در Settings برنامه و ذخیره در keyring ویندوز (نه .env)، CSP سخت‌گیرانه، حداقل capabilities، pnpm/pip/cargo audit در CI، gitleaks، بازبینی مسیرها و SSRF، threat model کوتاه
+**هدف:** کلید OpenRouter در Settings برنامه و ذخیره در keyring ویندوز (نه .env)، CSP سخت‌گیرانه، حداقل capabilities، pnpm/pip/cargo audit در CI، gitleaks، بازبینی مسیرها و SSRF، threat model کوتاه؛ گیت لایسنس «رایگان برای همیشه»: `pip-licenses` + `license-checker` (npm) + `cargo-license` با allow-list OSI (MIT/BSD/Apache-2.0/ISC/MPL-2.0/OFL/LGPL فقط برای FFmpeg) در `scripts/license_check.py` → supervise C16
 
 **فایل‌ها:** `apps/desktop/src-tauri/src/secrets.rs`, `apps/desktop/src/components/settings/ApiKeys.tsx`, `docs/SECURITY.md`
 

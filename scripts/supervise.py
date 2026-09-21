@@ -296,6 +296,29 @@ def main() -> int:
     else:
         R.add("C14", "WARN", "Design tokens in sync", ["not enforced until S-099 is GREEN (DESIGN.md is an imported draft)"])
 
+    # C15 Stack-Fit: any new runtime dependency must belong to the locked stack (extends C8 to manifests)
+    det = []
+    manifests = ["ai-engine/pyproject.toml", "ai-engine/requirements.txt", "apps/desktop/package.json", "package.json",
+                 "apps/desktop/src-tauri/Cargo.toml"]
+    foreign = re.compile(r"\b(nestjs|@nestjs|prisma|@prisma|sqlalchemy|alembic|sqlmodel|psycopg|asyncpg|redis|valkey|celery|arq|"
+                         r"trpc|@trpc|next-auth|better-auth|lucia|shadcn|@radix-ui|electron|langchain|ollama|litellm|langfuse|"
+                         r"@tanstack/react-query|react-hook-form|mongoose|typeorm|drizzle)\b", re.I)
+    for mf in manifests:
+        diff = sh("git", "diff", f"{since}..{head}", "--", mf)
+        for line in diff.splitlines():
+            if line.startswith("+") and not line.startswith("+++") and foreign.search(line):
+                det.append(f"{mf}: {line.strip()[:80]} — outside the locked stack (AGENTS.md §1); needs ADR + steps.json change first")
+    R.add("C15", "PASS" if not det else "FAIL", "Stack-Fit (new deps belong to the locked stack)", det)
+
+    # C16 License-Fit: free-forever guarantee (enforced by scripts/license_check.py from S-086)
+    lic = ROOT / "scripts" / "license_check.py"
+    if lic.exists():
+        r16 = subprocess.run([sys.executable, str(lic)], capture_output=True, text=True, cwd=ROOT)
+        det = [] if r16.returncode == 0 else [(r16.stdout + r16.stderr).strip()[-400:] or "license_check.py failed"]
+        R.add("C16", "PASS" if not det else "FAIL", "License-Fit (OSI allow-list)", det)
+    else:
+        R.add("C16", "WARN", "License-Fit (OSI allow-list)", ["not enforced until S-086 ships scripts/license_check.py"])
+
     # Next step suggestion
     nxt = next((s for s, r_ in rows.items() if r_["status"] in ("TODO", "RED")), None)
     rev = [s for s, r_ in rows.items() if r_["status"] == "REVIEW"]

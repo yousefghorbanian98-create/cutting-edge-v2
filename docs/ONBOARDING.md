@@ -42,7 +42,7 @@ Tooling       : Turborepo + pnpm · Vitest / Playwright / pytest · Biome / Ruff
 ### دو نقش، دو چت
 | نقش | چت/شاخه | کار |
 |---|---|---|
-| **ناظر (Supervisor)** | چت ثابت، شاخهٔ `arena/01a06951-cutting-edge-v2` | ممیزی با ۱۴ چک خودکار، بازبینی مستقل هر مرحله (تست‌ها را خودش دوباره اجرا می‌کند)، ادغام شاخهٔ سازنده، به‌روزرسانی لوپ |
+| **ناظر (Supervisor)** | چت ثابت، شاخهٔ `arena/01a06951-cutting-edge-v2` | ممیزی با ۱۶ چک خودکار، بازبینی مستقل هر مرحله (تست‌ها را خودش دوباره اجرا می‌کند)، ادغام شاخهٔ سازنده، به‌روزرسانی لوپ |
 | **سازنده (Builder)** | چت دسته‌ای، شاخهٔ خودش `arena/<id>-cutting-edge-v2` | ساخت مراحل شماره‌دار به ترتیب دفترچه، هر مرحله: قرارداد → تست واقعی قرمز → کد → گیت ایستا → تست → کامیت با Scope Ledger → push |
 
 ### لوپ ۱۰ گامی هر مرحله
@@ -127,7 +127,7 @@ P7 Release             S-091…S-098                 v1.0.0
 | [`08_FINN_LOOP_ADOPTION.md`](loop/08_FINN_LOOP_ADOPTION.md) | چه چیزی از الگوی Finn-loop گرفتیم (بازبین تازه، AC/NG، Scope Ledger) |
 | [`09_UI_COMPONENT_PROMPT.md`](loop/09_UI_COMPONENT_PROMPT.md) | پرامپت تولید کامپوننت UI کلاس جهانی |
 | [`10_OPERATING_GUIDE.md`](loop/10_OPERATING_GUIDE.md) | راهنمای اپراتور انسانی: دو چت، پیام «Sync and continue»، انقضای توکن |
-| [`11_SUPERVISOR.md`](loop/11_SUPERVISOR.md) | نقش ناظر، ۱۴ چک، حلقهٔ improve |
+| [`11_SUPERVISOR.md`](loop/11_SUPERVISOR.md) | نقش ناظر، ۱۶ چک، حلقهٔ improve |
 | [`12_SIXTEEN_LAYER_MAP.md`](loop/12_SIXTEEN_LAYER_MAP.md) | نگاشت نقشهٔ ۱۶ لایهٔ تولید روی این محصول |
 | [`13_INTEGRATIONS_ADOPTION.md`](loop/13_INTEGRATIONS_ADOPTION.md) | سه ادغام (ECC، Web Interface Guidelines، awesome-design-md): پذیرفته/رد/گیت |
 | [`evidence/`](loop/evidence/) | هر مرحله: `CONTRACT.md` + `REVIEW.md` (+ artifacts)؛ `SESSIONS.md` لاگ سشن‌ها؛ `SUPERVISOR/` گزارش‌های ممیزی |
@@ -160,7 +160,7 @@ P7 Release             S-091…S-098                 v1.0.0
 | [`apps/desktop/src-tauri/`](../apps/desktop/src-tauri/) | پوستهٔ Tauri | **کامپایل نمی‌شود** (S-010) |
 | [`packages/design-system/tokens.ts`](../packages/design-system/tokens.ts) | توکن‌های طراحی (آینهٔ `@theme`) | GREEN |
 | [`tests/`](../tests/) | `conftest.py` (فیکسچرها + `live_api`)، `fixtures/make_fixtures.py`، `helpers/media.py`، `test_security.py`، `test_beat_sync.py`، `test_fixtures.py`، `test_api_live.py`، `real/test_backend_boot.py`، `unit/test_repo_hygiene.py` | ۳۲ تست سبز |
-| [`scripts/`](../scripts/) | `verify_ledger.py` (سلامت دفترچه)، `supervise.py` (۱۴ چک ناظر)، `loop/render_steps.py`، `dev-backend.{sh,ps1}`، `check-design-tokens.js` (placeholder تا S-099) | — |
+| [`scripts/`](../scripts/) | `verify_ledger.py` (سلامت دفترچه)، `supervise.py` (۱۶ چک ناظر)، `loop/render_steps.py`، `dev-backend.{sh,ps1}`، `check-design-tokens.js` (placeholder تا S-099) | — |
 | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) | CI قدیمی (فقط main) — در S-009 بازنویسی می‌شود | ناکافی |
 
 ---
@@ -176,7 +176,7 @@ git log --oneline -1          # باید c9f90d0 یا جدیدتر باشد
 
 # 2) سلامت دفترچه و ممیزی ناظر (بدون وابستگی)
 python3 scripts/verify_ledger.py          # انتظار: ledger OK — 6/101 GREEN
-python3 scripts/supervise.py              # ۱۴ چک؛ verdict OK/ATTENTION/STOP
+python3 scripts/supervise.py              # ۱۶ چک؛ verdict OK/ATTENTION/STOP
 
 # 3) بک‌اند + کل تست‌های واقعی (≈ ۳ دقیقه؛ فیکسچرها با imageio-ffmpeg ساخته می‌شوند)
 cd ai-engine && python3 -m venv .venv && . .venv/bin/activate

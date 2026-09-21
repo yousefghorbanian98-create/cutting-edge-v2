@@ -6,3 +6,4 @@ Decisions taken before this log existed are back-filled in S-101 from `docs/loop
 | # | Title | Status |
 |---|-------|--------|
 | 0001 | Locked stack (Tauri 2 · Next 15 · FastAPI · Tailwind 4 + DaisyUI 5) and what the 16-layer plan is *not* | Accepted |
+| 0002 | Triage of the external tool audit (adopt Stack-Fit/License-Fit/Bandit/CodeQL/Hey API/Schemathesis; reject SaaS tooling) | Accepted |

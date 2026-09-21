@@ -17,7 +17,7 @@
 | 08 | `08_FINN_LOOP_ADOPTION.md` | بررسی Finn-loop: چه گرفتیم (بازبین تازه، AC/NG، scope ledger) و چه نگرفتیم (merge انسانی، Linear) |
 | 09 | `09_UI_COMPONENT_PROMPT.md` | پرامپت آماده برای دادن به یک AI دیگر جهت تولید کامپوننت‌های UI کلاس جهانی |
 | 10 | `10_OPERATING_GUIDE.md` | راهنمای **شما** برای اجرای لوپ با کمترین خطا: راه‌اندازی یک‌باره، یک سشن = یک نقش = یک مرحله، پیام‌های آماده، چک ۶۰ ثانیه‌ای، نشانه‌های انحراف |
-| 11 | `11_SUPERVISOR.md` | نقش سوم: ناظر روند ساخت (این سشن Arena) — `scripts/supervise.py` با ۱۴ چک، verdict OK/ATTENTION/STOP؛ §7 حلقه‌ی improve |
+| 11 | `11_SUPERVISOR.md` | نقش سوم: ناظر روند ساخت (این سشن Arena) — `scripts/supervise.py` با ۱۶ چک، verdict OK/ATTENTION/STOP؛ §7 حلقه‌ی improve |
 | 12 | `12_SIXTEEN_LAYER_MAP.md` | نگاشت نقشه‌ی ۱۶ لایه‌ی تولید روی این محصول: کدام لایه در کدام مرحله؛ چه چیزی عمداً حذف شد |
 | 13 | `13_INTEGRATIONS_ADOPTION.md` | سه ادغام (ECC، Web Interface Guidelines، awesome-design-md): چه پذیرفته شد، چگونه گیت شد، چه رد شد |
 | — | `../../AGENTS.md` | نقطه‌ی ورود هر ایجنت (ریشه‌ی ریپو) — به این پوشه لینک می‌دهد |
