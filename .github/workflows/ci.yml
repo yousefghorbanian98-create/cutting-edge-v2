@@ -197,12 +197,12 @@ jobs:
       - name: cargo clippy -D warnings (src-tauri, all targets)
         working-directory: apps/desktop/src-tauri
         shell: pwsh
-        run: cargo clippy --all-targets -- -D warnings
+        run: cargo clippy --locked --all-targets -- -D warnings
 
       - name: cargo test (src-tauri, health rules)
         working-directory: apps/desktop/src-tauri
         shell: pwsh
-        run: cargo test -- --nocapture
+        run: cargo test --locked -- --nocapture
 
       - name: Icons match the deterministic generator (scripts/make_icons.py --check)
         shell: pwsh
@@ -215,13 +215,10 @@ jobs:
         shell: pwsh
         env:
           CI: 'true'
-        run: pnpm exec tauri build --ci --verbose
+        run: pnpm exec tauri build --ci --verbose -- --locked
 
-      # The sandbox that authors this repo has no cargo, so the first resolved
-      # Cargo.lock is captured from the runner. Blob-hosted logs/artifacts are not
-      # reachable from the sandbox, therefore the lock also goes to the job summary
-      # (readable through the API) as gzip+base64; the follow-up commit adds it and
-      # switches to `--locked`.
+      # Kept so a reviewer can still see the lock digest without a token.
+      # The file itself is committed (BUG-17); cargo/tauri steps above use --locked.
       - name: Cargo.lock → job summary (gzip+base64) for the lockfile commit
         if: hashFiles('apps/desktop/src-tauri/Cargo.lock') != ''
         working-directory: apps/desktop/src-tauri

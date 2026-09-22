@@ -284,7 +284,7 @@ def check_cargo() -> Check:
     if rc1 != 0:
         # S-010: report rustfmt on its own — the clippy compile log would otherwise bury the diff.
         return Check("cargo-clippy", "FAIL", "cargo fmt --check failed:\n" + out1.strip()[-4000:])
-    rc2, out2 = _run([cargo, "clippy", "--all-targets", "--", "-D", "warnings"], cwd=tauri, timeout=1800)
+    rc2, out2 = _run([cargo, "clippy", "--locked", "--all-targets", "--", "-D", "warnings"], cwd=tauri, timeout=1800)
     return Check("cargo-clippy", "PASS" if rc2 == 0 else "FAIL", ("cargo clippy:\n" + out2.strip())[-4000:])
 
 

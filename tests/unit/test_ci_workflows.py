@@ -97,8 +97,9 @@ def test_windows_job_steps():
     assert "dtolnay/rust-toolchain" in uses
     assert "Swatinem/rust-cache" in uses
     assert "cargo fmt" in runs and "--check" in runs
-    assert "cargo clippy" in runs and "-D warnings" in runs
-    assert "cargo test" in runs
+    assert "cargo clippy --locked" in runs and "-D warnings" in runs
+    assert "cargo test --locked" in runs
+    assert "tauri build --ci --verbose -- --locked" in runs
     assert "src-tauri" in dump
     assert "actions/upload-artifact" in uses
     # S-010: cargo checks are hard (BUG-16 closed) and every push ships an installer.
