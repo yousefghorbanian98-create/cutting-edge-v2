@@ -281,9 +281,11 @@ def check_cargo() -> Check:
         return Check("cargo-clippy", "MISSING", "cargo not found — CI windows job runs fmt/clippy (S-009/S-010)")
     tauri = DESKTOP / "src-tauri"
     rc1, out1 = _run([cargo, "fmt", "--check"], cwd=tauri)
-    rc2, out2 = _run([cargo, "clippy", "--", "-D", "warnings"], cwd=tauri, timeout=1800)
-    ok = rc1 == 0 and rc2 == 0
-    return Check("cargo-clippy", "PASS" if ok else "FAIL", (out1 + out2).strip()[-4000:])
+    if rc1 != 0:
+        # S-010: report rustfmt on its own — the clippy compile log would otherwise bury the diff.
+        return Check("cargo-clippy", "FAIL", "cargo fmt --check failed:\n" + out1.strip()[-4000:])
+    rc2, out2 = _run([cargo, "clippy", "--all-targets", "--", "-D", "warnings"], cwd=tauri, timeout=1800)
+    return Check("cargo-clippy", "PASS" if rc2 == 0 else "FAIL", ("cargo clippy:\n" + out2.strip())[-4000:])
 
 
 def check_icons() -> Check:
