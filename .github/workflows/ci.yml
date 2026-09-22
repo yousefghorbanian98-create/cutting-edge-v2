@@ -213,9 +213,11 @@ jobs:
         run: pnpm exec tauri build --ci --verbose
 
       # The sandbox that authors this repo has no cargo, so the first resolved
-      # Cargo.lock is captured from the runner (gzip+base64 in the log and as an
-      # artifact) and committed in the follow-up; afterwards `--locked` is enforced.
-      - name: Cargo.lock → log (gzip+base64) for the lockfile commit
+      # Cargo.lock is captured from the runner. Blob-hosted logs/artifacts are not
+      # reachable from the sandbox, therefore the lock also goes to the job summary
+      # (readable through the API) as gzip+base64; the follow-up commit adds it and
+      # switches to `--locked`.
+      - name: Cargo.lock → job summary (gzip+base64) for the lockfile commit
         if: hashFiles('apps/desktop/src-tauri/Cargo.lock') != ''
         working-directory: apps/desktop/src-tauri
         shell: pwsh
@@ -225,13 +227,30 @@ jobs:
           $gz = New-Object IO.Compression.GzipStream($ms, [IO.Compression.CompressionLevel]::Optimal)
           $gz.Write($bytes, 0, $bytes.Length); $gz.Close()
           $b64 = [Convert]::ToBase64String($ms.ToArray())
-          Write-Output "::group::CARGO_LOCK_B64 ($($bytes.Length) bytes, sha256 $((Get-FileHash Cargo.lock).Hash))"
-          for ($i = 0; $i -lt $b64.Length; $i += 1000) { Write-Output $b64.Substring($i, [Math]::Min(1000, $b64.Length - $i)) }
-          Write-Output "::endgroup::"
+          $sha = (Get-FileHash Cargo.lock).Hash
+          Write-Output "::notice title=Cargo.lock::$($bytes.Length) bytes sha256 $sha (gzip+base64 in job summary)"
+          $summary = @("## Cargo.lock ($($bytes.Length) bytes, sha256 $sha)", "", '```text')
+          for ($i = 0; $i -lt $b64.Length; $i += 76) { $summary += $b64.Substring($i, [Math]::Min(76, $b64.Length - $i)) }
+          $summary += '```'
+          $summary -join "`n" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
       - name: Installer smoke — silent install, launch, window title, silent uninstall
         shell: pwsh
         run: pwsh -NoProfile -File scripts/ci/installer_smoke.ps1 -Report reports/installer-smoke.jsonl
+
+      - name: Installer smoke → annotations + job summary (evidence readable via API)
+        if: always() && hashFiles('reports/installer-smoke.jsonl') != ''
+        shell: pwsh
+        run: |
+          $lines = Get-Content reports/installer-smoke.jsonl
+          $ok = @($lines | ConvertFrom-Json | Where-Object { $_.ok }).Count
+          Write-Output "::notice title=installer smoke::$ok/$($lines.Count) checks ok"
+          $summary = @("## Installer smoke ($ok/$($lines.Count) ok)", "", "| check | ok | detail |", "|---|---|---|")
+          foreach ($l in $lines) { $o = $l | ConvertFrom-Json; $summary += "| $($o.check) | $($o.ok) | $($o.detail -replace '\|', '/') |" }
+          $summary -join "`n" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          $bundle = Join-Path "apps/desktop/src-tauri" "target/release/bundle/nsis"
+          $setup = Get-ChildItem -Path $bundle -Filter "*_x64-setup.exe" | Select-Object -First 1
+          if ($setup) { Write-Output "::notice title=installer::$($setup.Name) $([math]::Round($setup.Length / 1MB, 2)) MB sha256 $((Get-FileHash $setup.FullName).Hash)" }
 
       - name: Upload installer (downloadable .exe on every push)
         if: always()
