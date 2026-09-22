@@ -3,6 +3,7 @@
 
 Usage:
     python scripts/gate.py --stage static [--staged] [--only <check>]... [--json]
+    python scripts/gate.py --stage all [--json]
     python scripts/gate.py --commit-msg-check "<subject>"
     python scripts/gate.py --list
 
@@ -103,7 +104,7 @@ def _npx() -> list[str]:
     return ["npx.cmd" if IS_WIN else "npx", "--yes", "--prefer-offline"]
 
 
-def _run(cmd: list[str], cwd: Path = ROOT, timeout: int = 600) -> tuple[int, str]:
+def _run(cmd: list[str], cwd: Path = ROOT, timeout: int = 600, env: dict[str, str] | None = None) -> tuple[int, str]:
     try:
         p = subprocess.run(
             cmd,
@@ -114,6 +115,7 @@ def _run(cmd: list[str], cwd: Path = ROOT, timeout: int = 600) -> tuple[int, str
             errors="replace",
             timeout=timeout,
             check=False,
+            env=env,
         )  # explicit UTF-8: Windows runners default to cp1252 and the tools print Persian/emoji
         return p.returncode, (p.stdout + p.stderr)
     except FileNotFoundError as exc:
@@ -344,9 +346,17 @@ STAGES = {
     "static": "static analysis, secrets, versions, ledger (S-008)",
     "unit": "vitest + pytest -m unit + cargo test (S-011)",
     "real": "pytest -m real against a live uvicorn (S-011)",
-    "e2e": "playwright / tauri-driver (S-011)",
+    "e2e": "playwright / tauri-driver (S-079; web e2e already in ci/ubuntu, S-009)",
     "perf": "budgets on GTX 1650 / CI CPU (S-082)",
     "chaos": "reheal probes (S-077)",
+    "all": "every stage, each reported PASS/FAIL/MISSING (S-011)",
+}
+STAGE_ORDER = ("static", "unit", "real", "e2e", "perf", "chaos")
+# Stages that are intentionally not a pass until a later step owns them.
+STAGE_OWNERS = {
+    "e2e": "S-079",
+    "perf": "S-082",
+    "chaos": "S-077",
 }
 
 
@@ -363,31 +373,145 @@ def commit_msg_ok(subject: str) -> tuple[bool, str]:
 
 
 # ── main ──────────────────────────────────────────────────────────────────────
-def run_stage(stage: str, staged: bool, only: list[str], strict_missing: bool, skip: list[str] | None = None) -> Report:
+def _strict(chk: Check, strict_missing: bool) -> Check:
+    if strict_missing and chk.status == "MISSING":
+        chk.status = "FAIL"
+        chk.detail = "[strict-missing] " + chk.detail
+    return chk
+
+
+def _rollup(checks: list[Check]) -> str:
+    """PASS only when something actually passed and nothing failed or is missing."""
+    statuses = {c.status for c in checks}
+    if "FAIL" in statuses:
+        return "FAIL"
+    if not checks or "MISSING" in statuses or statuses <= {"SKIP"}:
+        return "MISSING"
+    if "PASS" in statuses and statuses <= {"PASS", "SKIP"}:
+        return "PASS"
+    return "MISSING"
+
+
+def _pytest_marker(marker: str, paths: list[str]) -> Check:
+    name = f"pytest-{marker}"
+    probe, _ = _run([sys.executable, "-c", "import pytest"], timeout=30)
+    if probe != 0:
+        return Check(name, "MISSING", "pytest is not installed")
+    env = os.environ.copy()
+    env["CE_INSIDE_GATE"] = "1"  # nested unit tests must not re-enter --stage all
+    # tests/unit only: `pytest -m unit` still imports real modules (cv2) at collection.
+    rc, out = _run(
+        [sys.executable, "-m", "pytest", *paths, "-m", marker, "-q", "-p", "no:cacheprovider", "--tb=line"],
+        timeout=900,
+        env=env,
+    )
+    tail = out.strip()[-1500:]
+    if rc == 0:
+        return Check(name, "PASS", tail or f"pytest -m {marker}")
+    if rc == 5:
+        return Check(name, "MISSING", f"pytest -m {marker} collected no tests")
+    if "FAILED" not in out and ("ModuleNotFoundError" in out or "ImportError" in out):
+        missing = "not installed"
+        found = re.search(r"No module named '([^']+)'", out)
+        if found:
+            missing = f"ModuleNotFoundError: {found.group(1)} not installed"
+        return Check(name, "MISSING", missing + "\n" + tail)
+    return Check(name, "FAIL", tail or f"pytest -m {marker} exit {rc}")
+
+
+def check_vitest() -> Check:
+    pkg_text = ""
+    for pkg in (DESKTOP / "package.json", ROOT / "package.json"):
+        if pkg.exists():
+            pkg_text += pkg.read_text(encoding="utf-8")
+    if "vitest" not in pkg_text:
+        return Check(
+            "vitest",
+            "MISSING",
+            "vitest is not a dependency and no script runs it; pytest -m unit is the unit runner until a vitest suite lands",
+        )
+    local = ROOT / "node_modules" / ".bin" / ("vitest.cmd" if IS_WIN else "vitest")
+    cmd = [str(local), "run"] if local.exists() else ["pnpm", "exec", "vitest", "run"]
+    rc, out = _run(cmd, timeout=600)
+    if rc == 127:
+        return Check("vitest", "MISSING", out.strip()[-500:] or "vitest binary not found")
+    return Check("vitest", "PASS" if rc == 0 else "FAIL", out.strip()[-1500:])
+
+
+def check_cargo_test() -> Check:
+    cargo = shutil.which("cargo")
+    if not cargo:
+        return Check("cargo-test", "MISSING", "cargo not found — cargo test --locked runs on ci/windows (S-010)")
+    rc, out = _run([cargo, "test", "--locked", "--all-targets"], cwd=DESKTOP / "src-tauri", timeout=1800)
+    return Check("cargo-test", "PASS" if rc == 0 else "FAIL", out.strip()[-1500:])
+
+
+def check_e2e() -> Check:
+    return Check(
+        "playwright",
+        "MISSING",
+        "S-079 owns tauri-driver; web e2e already runs in ci/ubuntu (S-009). gate does not launch browsers",
+    )
+
+
+def check_perf() -> Check:
+    return Check("budgets", "MISSING", "S-082 owns performance budgets; none are wired, so this stage is not a pass")
+
+
+def check_chaos() -> Check:
+    return Check("reheal", "MISSING", "S-077 owns chaos probes; none are wired, so this stage is not a pass")
+
+
+def _run_named(stage: str, staged: bool, only: list[str], skip: list[str]) -> list[Check]:
     import time
 
-    rep = Report(stage)
-    if stage != "static":
-        rep.checks.append(Check(stage, "MISSING", f"stage `{stage}` is wired in S-011 — {STAGES[stage]}"))
+    if stage == "static":
+        checks: list[Check] = []
+        names = only or list(STATIC_CHECKS)
+        for name in names:
+            if name not in STATIC_CHECKS:
+                checks.append(Check(name, "FAIL", f"unknown check; known: {', '.join(STATIC_CHECKS)}"))
+                continue
+            if staged and name in STAGED_SKIP and not only:
+                checks.append(Check(name, "SKIP", "skipped in --staged mode (runs in full gate / CI)"))
+                continue
+            if name in skip:
+                checks.append(Check(name, "SKIP", "skipped by --skip (owned by another CI job)"))
+                continue
+            t0 = time.monotonic()
+            chk = STATIC_CHECKS[name](staged)  # type: ignore[operator]
+            chk.seconds = round(time.monotonic() - t0, 2)
+            checks.append(chk)
+        return checks
+    if stage == "unit":
+        return [_pytest_marker("unit", ["tests/unit"]), check_vitest(), check_cargo_test()]
+    if stage == "real":
+        return [_pytest_marker("real", ["tests"])]
+    if stage == "e2e":
+        return [check_e2e()]
+    if stage == "perf":
+        return [check_perf()]
+    if stage == "chaos":
+        return [check_chaos()]
+    return [Check(stage, "FAIL", f"unknown stage; known: {', '.join(STAGES)}")]
+
+
+def run_stage(stage: str, staged: bool, only: list[str], strict_missing: bool, skip: list[str] | None = None) -> Report:
+    skip = skip or []
+    if stage == "all":
+        rep = Report("all")
+        for name in STAGE_ORDER:
+            children = [
+                _strict(c, strict_missing) for c in _run_named(name, staged, only if name == "static" else [], skip)
+            ]
+            status = _rollup(children)
+            bits = ", ".join(f"{c.name}={c.status}" for c in children) or "no checks"
+            detail = f"{STAGE_OWNERS[name]} — {bits}" if name in STAGE_OWNERS else bits
+            rep.checks.append(Check(f"stage:{name}", status, detail))
+            rep.checks.extend(children)
         return rep
-    names = only or list(STATIC_CHECKS)
-    for name in names:
-        if name not in STATIC_CHECKS:
-            rep.checks.append(Check(name, "FAIL", f"unknown check; known: {', '.join(STATIC_CHECKS)}"))
-            continue
-        if staged and name in STAGED_SKIP and not only:
-            rep.checks.append(Check(name, "SKIP", "skipped in --staged mode (runs in full gate / CI)"))
-            continue
-        if name in (skip or []):
-            rep.checks.append(Check(name, "SKIP", "skipped by --skip (owned by another CI job)"))
-            continue
-        t0 = time.monotonic()
-        chk = STATIC_CHECKS[name](staged)  # type: ignore[operator]
-        chk.seconds = round(time.monotonic() - t0, 2)
-        if strict_missing and chk.status == "MISSING":
-            chk.status = "FAIL"
-            chk.detail = "[strict-missing] " + chk.detail
-        rep.checks.append(chk)
+    rep = Report(stage)
+    rep.checks.extend(_strict(c, strict_missing) for c in _run_named(stage, staged, only, skip))
     return rep
 
 

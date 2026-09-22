@@ -172,6 +172,20 @@ jobs:
         with:
           workspaces: apps/desktop/src-tauri
 
+      # Contract probe only. A real GPU pass is the user machine (S-027), not this runner.
+      - name: smoke-gpu.ps1 dry-run (contract only, not a GPU pass)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path reports | Out-Null
+          $raw = pwsh -NoProfile -File scripts/smoke-gpu.ps1 -DryRun
+          $raw | Set-Content -Encoding utf8 reports/smoke-gpu-dry.json
+          $doc = $raw | ConvertFrom-Json
+          foreach ($k in @("ok", "dry_run", "app_launch", "backend_health", "import_ok", "checks")) {
+            if (-not ($doc.PSObject.Properties.Name -contains $k)) { throw "smoke-gpu JSON missing $k" }
+          }
+          if (-not $doc.dry_run) { throw "dry-run must set dry_run=true" }
+          if ($doc.ok) { throw "dry-run must not claim the machine passed" }
+
       - name: pytest (real media + live server, no GPU) → junit
         shell: pwsh
         env:

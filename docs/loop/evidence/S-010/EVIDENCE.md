@@ -53,6 +53,6 @@ Artifacts of run 35711041909: `cutting-edge-windows-x64-setup` (2 MB, digest `sh
 ## Carried / open
 | item | owner |
 |------|-------|
-| AC-7 second half: commit `apps/desktop/src-tauri/Cargo.lock` (sha256 `01B0A06D…34A6`, 114995 B — identical to run 35711041909) | committed by ci/windows via contents API as `40efd7b` (blob + job-summary body unreachable from the sandbox). `--locked` is the follow-up commit; proof is the next `ci / windows` clippy/test/tauri build. BUG-17 stays OPEN until that run is green. |
+| AC-7 second half + BUG-17 | CLOSED. Lock `40efd7b` (114995 B, sha256 `01B0A06DCC1724B91A5C27F60CD98A5BD1EEFB53ECFD37ED81C96BAE4E6E34A6`). `--locked` proof: [35734652629](https://github.com/yousefghorbanian98-create/cutting-edge-v2/actions/runs/35734652629) @ `390b6ca`, windows job `106768677907` — clippy/test/tauri `--locked` ✅, smoke 17/17, installer sha256 `70A3A74142A53F6F11DDEB91209C32E1BAA969277FA77F1453980C18EDA7E1E1`. S-010 stays REVIEW until Overseer `approved`. |
 | `.app` identifier warning | S-063 |
 | Node-20 action pin deprecation warnings (checkout/setup-node/setup-python/upload-artifact/pnpm) | Dependabot → S-009 follow-up |

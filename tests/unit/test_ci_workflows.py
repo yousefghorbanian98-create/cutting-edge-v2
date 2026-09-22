@@ -108,6 +108,7 @@ def test_windows_job_steps():
             assert not step.get("continue-on-error"), f"cargo step is advisory again: {step.get('name')}"
     assert "tauri build" in runs
     assert "scripts/ci/installer_smoke.ps1" in runs
+    assert "scripts/smoke-gpu.ps1 -DryRun" in runs, "S-011: windows must execute the smoke contract"
     assert "scripts/ci/publish_cargo_lock.ps1" in runs
     assert "make_icons.py --check" in runs
     # BUG-17: only this job may write, and only to commit the runner lockfile.

@@ -63,3 +63,5 @@
 - Ledger: 12/101 GREEN.
 - Steps in REVIEW: S-010 (CI run 35711041909 green, installer smoke 17/17) awaiting Overseer verdict. Open BUG-17: Cargo.lock not committed.
 - Next step: commit `apps/desktop/src-tauri/Cargo.lock` and switch cargo steps to `--locked` (BUG-17), then start S-011.
+- (same chat, cont.) BUG-17 CLOSED: lock `40efd7b`, `--locked` green on CI run 35734652629 (`390b6ca`, windows job 106768677907, smoke 17/17, installer sha256 `70A3A741…E1E1`). S-010 stays REVIEW.
+- (same chat, cont.) S-011 REVIEW: `gate.py --stage all`, ledger negative tests, `scripts/smoke-gpu.ps1`. Learnings: `docs/learnings/2026-09-22-s011-unit-marker-collects-real.md`. Next TODO: S-012. S-010 and S-011 await Overseer.

@@ -19,6 +19,7 @@ Used by: scripts/gate.py --stage static, CI static job, and the loop protocol (d
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import subprocess
@@ -31,10 +32,19 @@ VALID = {"TODO", "RED", "REVIEW", "AMBER", "GREEN", "BLOCKED"}
 ROW = re.compile(r"^\|\s*(S-\d{3})\s*\|(.*?)\|\s*(\w+)\s*\|\s*(\d*)\s*\|(.*?)\|(.*?)\|(.*?)\|\s*$")
 
 
-def main() -> int:
-    data = json.loads((LOOP / "steps.json").read_text(encoding="utf-8"))
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description="Fail if the ledger and steps.json disagree.")
+    ap.add_argument("--ledger", type=Path, default=LOOP / "04_LEDGER.md")
+    ap.add_argument("--steps", type=Path, default=LOOP / "steps.json")
+    ap.add_argument(
+        "--skip-render-check",
+        action="store_true",
+        help="skip the 01_STEPS.md drift check (temp-file tests; the default path still checks)",
+    )
+    args = ap.parse_args(argv)
+    data = json.loads(args.steps.read_text(encoding="utf-8"))
     steps = {s["id"]: s for s in data["steps"]}
-    text = (LOOP / "04_LEDGER.md").read_text(encoding="utf-8")
+    text = args.ledger.read_text(encoding="utf-8")
 
     rows: dict[str, dict] = {}
     errors: list[str] = []
@@ -85,11 +95,14 @@ def main() -> int:
         if r["status"] == "BLOCKED" and not r["notes"]:
             errors.append(f"{p}: BLOCKED without a note")
 
-    chk = subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "loop" / "render_steps.py"), "--check"], capture_output=True, text=True
-    )
-    if chk.returncode != 0:
-        errors.append("render_steps --check failed: " + (chk.stderr.strip() or chk.stdout.strip()))
+    if not args.skip_render_check:
+        chk = subprocess.run(
+            [sys.executable, str(ROOT / "scripts" / "loop" / "render_steps.py"), "--check"],
+            capture_output=True,
+            text=True,
+        )
+        if chk.returncode != 0:
+            errors.append("render_steps --check failed: " + (chk.stderr.strip() or chk.stdout.strip()))
 
     warnings = []
     for sid, r in rows.items():

@@ -21,7 +21,7 @@
 | BUG-15 | **(جدید)** `turbo.json` فرمت Turbo 1 با `turbo@latest` (=2) | FIXED (S-008) | `turbo.json` | S-008 | `pnpm turbo run build` در CI |
 | BUG-16 | **(جدید)** `src-tauri` بدون `tauri-build`/`build.rs`/آیکون/capabilities کامپایل نمی‌شود؛ `cargo fmt --check` + `cargo clippy` در CI ویندوز فعلاً advisory (`continue-on-error` + `::warning`)؛ `tests/unit/test_gate.py::test_cargo_clippy_green` با `xfail(strict=True)` | **CLOSED (S-010, fadbe2d)** — `continue-on-error` و `::warning` حذف، `xfail` در `test_gate.py` حذف؛ fmt/clippy(-D warnings)/test هر سه hard و سبز | `apps/desktop/src-tauri` | S-010 | جاب `ci / windows`: clippy با `-D warnings` سبز و `continue-on-error` حذف‌شده |
 
-| BUG-17 | **(جدید)** `apps/desktop/src-tauri/Cargo.lock` هنوز commit نشده (sandbox بدون cargo)؛ build هنوز `--locked` نیست | OPEN — قفل commit شد (`40efd7b`, 114995 B, sha256 `01B0A06D…34A6` = run 35711041909)؛ `--locked` در کامیت بعدی، اثبات = `cargo clippy --locked` سبز در `ci / windows` | `src-tauri` | S-010 (AC-7 نیمهٔ دوم) | `git ls-files apps/desktop/src-tauri/Cargo.lock` + `cargo clippy --locked` سبز در `ci / windows` |
+| BUG-17 | **(جدید)** `apps/desktop/src-tauri/Cargo.lock` هنوز commit نشده (sandbox بدون cargo)؛ build هنوز `--locked` نیست | **CLOSED (S-010, 390b6ca)** — قفل `40efd7b` (114995 B, sha256 `01B0A06D…34A6`)؛ `cargo clippy --locked`، `cargo test --locked` و `tauri build -- --locked` در `ci / windows` سبز | `src-tauri` | S-010 (AC-7 نیمهٔ دوم) | CI run 35734652629 job 106768677907: clippy `--locked` ✅، smoke 17/17، installer sha256 `70A3A741…E1E1` |
 
 ## پروتکل باگ جدید
 1. شناسه‌ی بعدی بگیر (`BUG-18` …).
