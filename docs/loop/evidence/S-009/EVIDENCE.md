@@ -30,3 +30,26 @@ Builder: Supervisor session (autonomous chain). Local: `local-linux`. Real runs:
 
 ## Open for GREEN (AC-9)
 Run #2 (`325b5a1`) must show `ubuntu` ✅ (incl. `styling.spec.ts` in real Chromium + `home-1440x900.png` artifact — this also finalises S-007) and `windows` ✅ (pytest real-media on Windows + cargo advisory warning). Any new failure → round 3 via public annotations.
+
+
+## Run #2 — `a9d0f4a` — https://github.com/yousefghorbanian98-create/cutting-edge-v2/actions/runs/35672699922
+
+| Job | Result | Detail |
+|-----|--------|--------|
+| `ci / windows` | ✅ success | pytest `tests -m "not gpu"` on `windows-latest` (real media + live uvicorn, nt branch) — 33 tests, 0 failed (junit summary annotation); cargo steps advisory (BUG-16) |
+| `ci / ubuntu` | ❌ failure | gate static ✅, unit tests ✅ (junit summary `0 failed / 33 total`), `next build` ✅, Playwright **13/15**: `build-artifacts.spec.ts:133` (`typography.mono not found`) and `styling.spec.ts:84` (`rules 79 > 100`); `home-1440x900.png` + `playwright-report/` uploaded as `ubuntu-evidence` (artifact 10671348714, 28 files) |
+| `ci / loop-audit` | ❌ failure | `verify_ledger` ✅; `supervise.py` C11 FAIL because run #1 (older commit `e966162`) was red |
+| `codeql` | ✅ success | both commits |
+
+Diagnosis source: signed job-log URL from `gh api repos/…/actions/jobs/106572502285/logs`, read via `fetch_page` (blob storage unreachable from the sandbox; artifact download also `EOF`).
+
+### Round-3 fixes (this commit)
+1. `apps/desktop/tests/build-artifacts.spec.ts` — font-stack comparison normalises quotes/whitespace (S-008 Biome format had rewritten `tokens.ts` `"…"` → `'…'`; byte-for-byte match was formatter-fragile).
+2. `apps/desktop/tests/styling.spec.ts` — CSS rule count is recursive over `@layer`/`@media` grouping rules (Tailwind 4 emits 5 top-level layers; flat count = 79). Local re-run after `next build`: `build-artifacts.spec.ts` 8/8 (no Chromium in sandbox for `styling.spec.ts` — `unverified:ci` until run #3).
+3. `scripts/supervise.py` C11 — verdict from runs for **HEAD** only; older red runs reported as context.
+4. `scripts/ci/junit_annotate.py` — workflow-command grammar fixed (`::error file=…,line=…,title=…::`; previously `::error,title=` → silently dropped by GitHub, proven by run #2 having zero test annotations). Locked by `tests/unit/test_ci_workflows.py::test_junit_annotate_emits_valid_workflow_commands`.
+5. Learnings: `docs/learnings/2026-09-22-ci-run2-formatter-drift-and-annotation-grammar.md`.
+
+Local re-verification: `pytest tests/unit` → 37 passed, 1 skipped; `gate.py --stage static --skip cargo-clippy` → 10 pass / 0 fail / 0 missing / 3 skip; `biome check` + `tsc --noEmit` clean.
+
+Open for GREEN (AC-9): run #3 on the round-3 commit must show `ubuntu` ✅ (Playwright 15/15 → S-007 DOM half verified), `windows` ✅, `loop-audit` ✅.

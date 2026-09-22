@@ -338,18 +338,29 @@ def main() -> int:
         # A run that is still queued/in progress (e.g. the very run executing this
         # script inside the `loop-audit` job) is *pending*, not a failure.
         pending = [r for r in runs if r.get("status") != "completed"]
+        # Only runs for HEAD decide the verdict: an older commit's red run is
+        # history the ledger already records, and would otherwise make the
+        # `loop-audit` job fail forever after any single red push.
+        head_runs = [r for r in runs if r["headSha"] == head]
+        head_done = [r for r in head_runs if r.get("status") == "completed"]
         bad = [
-            f"{r['name']}: {r['conclusion'] or r['status']} {r['url']}"
-            for r in runs
-            if r.get("status") == "completed" and r.get("conclusion") not in ("success", "skipped")
+            f"{r['name']}: {r['conclusion']} {r['url']}"
+            for r in head_done
+            if r.get("conclusion") not in ("success", "skipped")
         ]
-        head_done = [r for r in runs if r["headSha"] == head and r.get("status") == "completed"]
-        det = bad[:3]
+        older_bad = [
+            f"{r['name']}: {r['conclusion']} {r['url']} (older commit {r['headSha'][:7]})"
+            for r in runs
+            if r["headSha"] != head
+            and r.get("status") == "completed"
+            and r.get("conclusion") not in ("success", "skipped")
+        ]
+        det = bad[:3] + older_bad[:2]
         if pending:
             det.append(f"{len(pending)} run(s) still in progress — re-check before citing CI as evidence")
         if not head_done:
             det.append("no completed CI run for HEAD yet — CI evidence absent (Skip ≠ Pass)")
-        R.add("C11", "FAIL" if bad else ("WARN" if not head_done else "PASS"), "CI status (latest runs on branch)", det)
+        R.add("C11", "FAIL" if bad else ("WARN" if not head_done else "PASS"), "CI status (runs for HEAD)", det)
 
     # C12 stall watchdog
     det = list(watchdog)
@@ -367,7 +378,6 @@ def main() -> int:
     # C13 learnings entry per builder session (ECC "remember"; enforced from S-101)
     det = []
     step_commits = [c for c in commits if c["steps"] and not is_meta(c)]
-    ROOT / "docs" / "learnings"
     if step_commits:
         touched = sh("git", "diff", "--name-only", f"{since}..{head}").splitlines()
         new_learn = [
@@ -377,13 +387,11 @@ def main() -> int:
             det.append(
                 f"{len(step_commits)} step commit(s) since {since[:8]} but no new docs/learnings/ entry (remember)"
             )
-        for f in new_learn:
-            fp = ROOT / f
-            if fp.exists():
-                body = fp.read_text(encoding="utf-8")
-                n = len([ln for ln in body.splitlines() if ln.strip()])
-                if n > 24 or not all(k in body for k in ("## What broke", "## Root cause", "## Rule")):
-                    det.append(f"{f}: must be ≤ 20 lines with sections What broke / Root cause / Rule")
+    # Shared validator (S-101): same rules as tests/unit/test_repo_hygiene.py — ADR log + every learnings entry.
+    sys.path.insert(0, str(ROOT / "scripts" / "loop"))
+    import hygiene  # noqa: PLC0415
+
+    det += hygiene.validate_learnings_dir() + hygiene.validate_adr_dir()
     enforced = rows.get("S-101", {}).get("status") == "GREEN"
     R.add(
         "C13",

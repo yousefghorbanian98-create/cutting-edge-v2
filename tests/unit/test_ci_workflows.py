@@ -185,3 +185,34 @@ def test_referenced_paths_exist(wf: Path):
                 ):
                     continue  # build outputs are produced during the run
                 assert (base / path).exists(), f"{wf.name}/{jid}: `{path}` (cwd {base.relative_to(ROOT)}) not in tree"
+
+
+# ── AC-9 (round 3): annotations must be well-formed workflow commands ─────────
+def test_junit_annotate_emits_valid_workflow_commands(tmp_path: Path):
+    """CI run #2 printed `::error,title=…` (leading comma) — GitHub silently dropped
+    every annotation. Lock the exact `::error file=…,line=…,title=…::msg` grammar."""
+    import subprocess  # noqa: PLC0415
+    import sys  # noqa: PLC0415
+
+    junit = tmp_path / "j.xml"
+    junit.write_text(
+        '<testsuites><testsuite name="s">'
+        '<testcase classname="styling.spec.ts" name="body, bg::x"><failure message="m">d</failure></testcase>'
+        '<testcase classname="t.py" name="ok" file="tests/unit/t.py" line="7"><error message="e">b</error></testcase>'
+        '<testcase classname="a" name="pass"/>'
+        "</testsuite></testsuites>",
+        encoding="utf-8",
+    )
+    out = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "ci" / "junit_annotate.py"), str(junit)],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.splitlines()
+    errors = [ln for ln in out if ln.startswith("::error")]
+    assert len(errors) == 2, out
+    cmd = re.compile(r"^::error (?:file=[^,]+,(?:line=\d+,)?)?title=[^,:]+(?: › [^,:]+)*::.+$")
+    for ln in errors:
+        assert cmd.match(ln), f"malformed workflow command: {ln}"
+    assert "file=tests/unit/t.py,line=7," in errors[1]
+    assert any(ln.startswith("::notice title=junit summary::2 failed / 3 total") for ln in out), out

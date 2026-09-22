@@ -149,14 +149,22 @@ test('tokens.ts cssTheme map matches the @theme block exactly', () => {
     expect(css, `${name} is missing from the compiled CSS`).toContain(`${name}:`);
   }
 
-  // Font stacks must be byte-identical between the TS tokens and the CSS.
-  const sans = tokens.match(/sans:\s*"([^"]+)"\s*,?\s*\n?\s*mono/);
-  const mono = tokens.match(/mono:\s*"([^"]+)"\s*\n\s*\}/);
+  // Font stacks must be identical between the TS tokens and the CSS.
+  // Formatter-agnostic: Biome rewrites the TS string quotes (`"` vs `'`) and
+  // may drop the trailing comma — S-008's format pass did exactly that and
+  // broke the previous byte-for-byte match (CI run #2). Compare with quotes
+  // normalised; the family *list* is what must match.
+  const stack = (raw: string): string => raw.replace(/["']/g, '').replace(/\s+/g, ' ').trim();
+  const sans = tokens.match(/\bsans:\s*(["'])(.+?)\1\s*,?\s*\n?\s*mono/);
+  const mono = tokens.match(/\bmono:\s*(["'])(.+?)\1\s*,?\s*\n\s*\}/);
   if (!sans) throw new Error('tokens.ts typography.sans not found');
   if (!mono) throw new Error('tokens.ts typography.mono not found');
   const block = themeBlock();
-  expect(block).toContain(`--font-sans: ${sans[1]}`);
-  expect(block).toContain(`--font-mono: ${mono[1]}`);
+  const cssSans = block.match(/--font-sans:\s*([^;]+);/);
+  const cssMono = block.match(/--font-mono:\s*([^;]+);/);
+  if (!cssSans || !cssMono) throw new Error('globals.css @theme lacks --font-sans / --font-mono');
+  expect(stack(cssSans[1])).toBe(stack(sans[2]));
+  expect(stack(cssMono[1])).toBe(stack(mono[2]));
 });
 
 // ── guard: the export must not be committed ──────────────────────────────────

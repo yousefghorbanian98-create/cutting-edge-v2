@@ -22,6 +22,26 @@ def _one_line(s: str, limit: int = 900) -> str:
     return s[:limit] + ("…" if len(s) > limit else "")
 
 
+def _params(tc: ET.Element, name: str) -> str:
+    """Workflow-command parameters: `::error file=…,line=…,title=…::msg`.
+
+    A leading comma (`::error,title=…`) is silently ignored by GitHub — CI run #2
+    proved it: the errors printed but no annotation was recorded. Build the list
+    and join with commas so the shape is right with or without `file`.
+    """
+    parts = []
+    file_attr = tc.get("file") or ""
+    if file_attr:
+        parts.append(f"file={file_attr}")
+        line = tc.get("line") or ""
+        if line.isdigit():
+            parts.append(f"line={line}")
+    # `::` and `,` inside a title terminate the parameter parser — strip them.
+    title = name[:120].replace("::", " › ").replace(",", " ")
+    parts.append(f"title={title}")
+    return ",".join(parts)
+
+
 def main(paths: list[str]) -> int:
     emitted = 0
     total = failed = 0
@@ -42,9 +62,7 @@ def main(paths: list[str]) -> int:
             name = f"{tc.get('classname', '')}::{tc.get('name', '')}"
             msg = problems[0].get("message") or ""
             body = problems[0].text or ""
-            file_attr = tc.get("file") or ""
-            loc = f" file={file_attr}" if file_attr else ""
-            print(f"::error{loc},title={name[:120]}::{_one_line(msg + ' | ' + body)}")
+            print(f"::error {_params(tc, name)}::{_one_line(msg + ' | ' + body)}")
             emitted += 1
     print(f"::notice title=junit summary::{failed} failed / {total} total across {len(paths)} report(s)")
     return 0

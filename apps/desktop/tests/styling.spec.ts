@@ -87,9 +87,16 @@ test('body background comes from the stylesheet', async ({ page }) => {
     inline: document.body.style.backgroundColor,
     computed: getComputedStyle(document.body).backgroundColor,
     sheets: document.styleSheets.length,
+    // Tailwind 4 nests utilities inside `@layer` / `@media` groups, so a flat
+    // `cssRules.length` sees only ~80 top-level rules — count recursively.
     rules: Array.from(document.styleSheets).reduce((n, s) => {
+      const count = (list: CSSRuleList): number =>
+        Array.from(list).reduce(
+          (acc, rule) => acc + 1 + ('cssRules' in rule ? count((rule as CSSGroupingRule).cssRules) : 0),
+          0
+        );
       try {
-        return n + s.cssRules.length;
+        return n + count(s.cssRules);
       } catch {
         return n;
       }
