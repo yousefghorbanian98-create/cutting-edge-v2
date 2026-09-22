@@ -9,13 +9,13 @@
 
 | چت | شاخه | می‌کند | نمی‌کند |
 |----|------|--------|---------|
-| **Builder** (چت فعلی/اول) | `arena/01a06951-cutting-edge-v2` | گام‌های ①–⑦ و ⑨–⑩ هر مرحله؛ push؛ GREEN کردن **فقط بعد از** `approved` ناظر | نوشتن `REVIEW.md`؛ خودتأییدی |
+| **Builder** (چت فعلی/اول) | `arena/01a0c936-cutting-edge-v2` | گام‌های ①–⑦ و ⑨–⑩ هر مرحله؛ push؛ GREEN کردن **فقط بعد از** `approved` ناظر | نوشتن `REVIEW.md`؛ خودتأییدی |
 | **Overseer** (چت دوم) | شاخهٔ خودش `arena/<id>-cutting-edge-v2` (کپی از شاخهٔ سازنده + کامیت‌های `review(...)`) | گام ⑧ (بازبینی تازه با اجرای دوبارهٔ تست‌ها)، `supervise.py`، ممیزی گذشته‌نگر، برگرداندن GREEN مشکوک به REVIEW، کارت hotfix | نوشتن/تغییر کد محصول یا تست؛ push به شاخهٔ سازنده؛ GREEN زدن؛ تصمیم U3 به‌جای کاربر |
 
 اگر چت سازنده به نشست جدید منتقل شد (`10_OPERATING_GUIDE.md` §B2)، کاربر پیام `شاخهٔ سازنده عوض شد: arena/<id>-cutting-edge-v2 @ <sha>` را به ناظر می‌دهد و ناظر از آن به بعد همان شاخه را fetch می‌کند (شاخهٔ مرجع فعلی در بالای `00_INDEX.md`).
 
 هیچ‌کدام از دو چت به شاخهٔ دیگری push نمی‌کند (قاعدهٔ Arena: هر نشست فقط به شاخهٔ خودش). تبادل فقط از طریق **fetch** است:
-- ناظر: `git fetch origin arena/01a06951-cutting-edge-v2 && git reset --hard FETCH_HEAD` (شاخهٔ خودش را با سازنده هم‌تراز می‌کند)، سپس فقط `REVIEW.md` را کامیت و push می‌کند.
+- ناظر: `git fetch origin arena/01a0c936-cutting-edge-v2 && git reset --hard FETCH_HEAD` (شاخهٔ خودش را با سازنده هم‌تراز می‌کند)، سپس فقط `REVIEW.md` را کامیت و push می‌کند.
 - سازنده: `git fetch origin <overseer-branch> && git checkout FETCH_HEAD -- docs/loop/evidence/S-xxx/REVIEW.md` و آن را در کامیت ⑩ می‌آورد.
 
 ## ۲. چرخهٔ یک مرحله با دو چت (سه پیام کوتاه از کاربر)
@@ -46,7 +46,7 @@ Builder ──(fetch REVIEW.md, ledger GREEN, commit, push, next step)──▶ 
 1. `python scripts/verify_ledger.py`
 2. `ai-engine/.venv/bin/python scripts/gate.py --stage static --skip cargo-clippy`
 3. تست‌های نام‌برده در جدول AC همان مرحله (`pytest tests/unit/<file>`, Playwright `build-artifacts.spec.ts`, …)
-4. CI روی همان SHA: `gh run list --branch arena/01a06951-cutting-edge-v2 --limit 3` → هر جاب؛ برای لاگ/آرتیفکت (که با توکن Arena دانلود نمی‌شود) از `gh api repos/<o>/<r>/check-runs/<job>/annotations` یا URL امضاشدهٔ `gh api …/actions/jobs/<id>/logs` با ابزار fetch.
+4. CI روی همان SHA: `gh run list --branch arena/01a0c936-cutting-edge-v2 --limit 3` → هر جاب؛ برای لاگ/آرتیفکت (که با توکن Arena دانلود نمی‌شود) از `gh api repos/<o>/<r>/check-runs/<job>/annotations` یا URL امضاشدهٔ `gh api …/actions/jobs/<id>/logs` با ابزار fetch.
 5. برای مراحل با AC «فقط روی CI ویندوز» (cargo/tauri/installer): **نبود run سبز = تأیید نکن** (`missing CI ≠ green`).
 
 اگر چیزی قابل بازتولید نبود، در `REVIEW.md` می‌نویسد `Evidence re-produced: partially (<what>)` و اگر AC اصلی بود → `changes-requested` یا `needs-human`؛ هرگز approved با شواهد بازتولیدنشده.

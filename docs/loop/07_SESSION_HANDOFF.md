@@ -153,12 +153,12 @@ At the end report: branch name, last commit SHA, steps touched with final status
 
 ```
 git fetch --unshallow origin 2>/dev/null || git fetch --deepen=200 origin
-git fetch origin arena/01a06951-cutting-edge-v2 && git reset --hard FETCH_HEAD
+git fetch origin arena/01a0c936-cutting-edge-v2 && git reset --hard FETCH_HEAD
 
 Role: OVERSEER for Cutting Edge v2 — independent supervisor + fresh reviewer. You did NOT build anything.
 Read first: docs/loop/14_OVERSEER.md, docs/loop/11_SUPERVISOR.md, docs/loop/02_LOOP_PROTOCOL.md (§1-⑧, §4),
 docs/loop/templates/REVIEW.md, docs/learnings/README.md. The builder works on branch
-arena/01a06951-cutting-edge-v2; you work ONLY on your own Arena branch and never push to the builder's.
+arena/01a0c936-cutting-edge-v2; you work ONLY on your own Arena branch and never push to the builder's.
 
 Set up: python3 -m venv ai-engine/.venv && ai-engine/.venv/bin/pip install -r ai-engine/requirements-tooling.txt
 && ai-engine/.venv/bin/pip install --no-deps -e ai-engine ; corepack enable ;

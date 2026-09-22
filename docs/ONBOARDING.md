@@ -1,10 +1,10 @@
 # راهنمای ورود مهندس جدید — Cutting Edge v2
 
 > این سند برای کسی است که **هیچ چیزی** از این پروژه نمی‌داند و باید (الف) بفهمد چیست، (ب) بفهمد کجای تولید هستیم، (پ) آنچه ساخته شده را بازرسی کند، (ت) ادامه دهد.
-> تاریخ: ۲۰۲۶-۰۹-۰۸ · شاخهٔ مرجع: `arena/01a06951-cutting-edge-v2` · آخرین کامیت ناظر: `c9f90d0`
+> تاریخ: ۲۰۲۶-۰۹-۰۸ · شاخهٔ مرجع: `arena/01a0c936-cutting-edge-v2` · آخرین کامیت ناظر: `c9f90d0`
 >
 > همهٔ لینک‌ها به همین شاخه روی GitHub اشاره می‌کنند:
-> `https://github.com/yousefghorbanian98-create/cutting-edge-v2/tree/arena/01a06951-cutting-edge-v2`
+> `https://github.com/yousefghorbanian98-create/cutting-edge-v2/tree/arena/01a0c936-cutting-edge-v2`
 
 ---
 
@@ -42,7 +42,7 @@ Tooling       : Turborepo + pnpm · Vitest / Playwright / pytest · Biome / Ruff
 ### دو نقش، دو چت
 | نقش | چت/شاخه | کار |
 |---|---|---|
-| **ناظر (Supervisor)** | چت ثابت، شاخهٔ `arena/01a06951-cutting-edge-v2` | ممیزی با ۱۶ چک خودکار، بازبینی مستقل هر مرحله (تست‌ها را خودش دوباره اجرا می‌کند)، ادغام شاخهٔ سازنده، به‌روزرسانی لوپ |
+| **ناظر (Supervisor)** | چت ثابت، شاخهٔ `arena/01a0c936-cutting-edge-v2` | ممیزی با ۱۶ چک خودکار، بازبینی مستقل هر مرحله (تست‌ها را خودش دوباره اجرا می‌کند)، ادغام شاخهٔ سازنده، به‌روزرسانی لوپ |
 | **سازنده (Builder)** | چت دسته‌ای، شاخهٔ خودش `arena/<id>-cutting-edge-v2` | ساخت مراحل شماره‌دار به ترتیب دفترچه، هر مرحله: قرارداد → تست واقعی قرمز → کد → گیت ایستا → تست → کامیت با Scope Ledger → push |
 
 ### لوپ ۱۰ گامی هر مرحله
@@ -110,7 +110,7 @@ P7 Release             S-091…S-098                 v1.0.0
 ## ۴. نقشهٔ فایل‌ها (چه چیزی کجاست و چرا)
 
 پیشوند همهٔ لینک‌ها:
-`https://github.com/yousefghorbanian98-create/cutting-edge-v2/blob/arena/01a06951-cutting-edge-v2/`
+`https://github.com/yousefghorbanian98-create/cutting-edge-v2/blob/arena/01a0c936-cutting-edge-v2/`
 
 ### نقطه‌های ورود (به ترتیب خواندن)
 | فایل | چیست |
@@ -176,7 +176,7 @@ P7 Release             S-091…S-098                 v1.0.0
 # 1) کلون و شاخهٔ درست
 git clone https://github.com/yousefghorbanian98-create/cutting-edge-v2.git
 cd cutting-edge-v2
-git checkout arena/01a06951-cutting-edge-v2
+git checkout arena/01a0c936-cutting-edge-v2
 git log --oneline -1          # باید c9f90d0 یا جدیدتر باشد
 
 # 2) سلامت دفترچه و ممیزی ناظر (بدون وابستگی)
@@ -205,7 +205,7 @@ npx playwright test tests/build-artifacts.spec.ts    # انتظار: 8 passed
 ## ۶. چگونه ادامه دهید
 
 ### اگر با ایجنت در Arena ادامه می‌دهید
-1. چت جدید روی مخزن، شاخهٔ مبدأ `arena/01a06951-cutting-edge-v2`.
+1. چت جدید روی مخزن، شاخهٔ مبدأ `arena/01a0c936-cutting-edge-v2`.
 2. پرامپت «BATCH BUILDER» را از `docs/loop/07_SESSION_HANDOFF.md` بفرستید؛ جای `<SUPERVISOR_HEAD>` سر فعلی شاخهٔ ناظر و جای `<FROM>–<TO>` مثلاً `S-008` تا `S-012`.
 3. گزارش پایانی سازنده را به چت ناظر ببرید و بنویسید «چک کن». ناظر ادغام، بازبینی و پیام بعدی را می‌دهد. جزئیات در `10_OPERATING_GUIDE.md`.
 

@@ -66,6 +66,6 @@ plan (CONTRACT: AC-n / NG-n) → red real test → implement → static → real
 - Only OpenRouter `:free` models with the fallback chain in S-053/S-056; offline mode must degrade gracefully with a Persian message.
 
 ## 8. Roles in Arena
-- **Supervisor chat** (fixed): audits with `python scripts/supervise.py --write`, reviews, merges builder branches fast-forward into `arena/01a06951-cutting-edge-v2`.
+- **Supervisor chat** (fixed): audits with `python scripts/supervise.py --write`, reviews, merges builder branches fast-forward into `arena/01a0c936-cutting-edge-v2`.
 - **Builder chat** (batch mode): builds numbered steps from `04_LEDGER.md`, pushes to its own branch, reports SHAs. Prompt: `docs/loop/07_SESSION_HANDOFF.md` → "BATCH BUILDER".
 - Humans do: OpenRouter key (U1), Windows/GPU smoke at milestones (U2), product decisions (U3, defaults apply on silence).
