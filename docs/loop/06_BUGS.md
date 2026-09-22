@@ -19,7 +19,7 @@
 | BUG-13 | **(جدید)** `.env` خوانده نمی‌شود (بدون dotenv) | OPEN | `main.py` | S-002 | `test_config.py` |
 | BUG-14 | **(جدید)** CORS `*` روی سرویس محلی | OPEN | `main.py` | S-003 | `test_security.py::test_cors_origin` |
 | BUG-15 | **(جدید)** `turbo.json` فرمت Turbo 1 با `turbo@latest` (=2) | FIXED (S-008) | `turbo.json` | S-008 | `pnpm turbo run build` در CI |
-| BUG-16 | **(جدید)** `src-tauri` بدون `tauri-build`/`build.rs`/آیکون/capabilities کامپایل نمی‌شود؛ `cargo clippy` در CI ویندوز فعلاً advisory (`continue-on-error` + `::warning`) | OPEN | `apps/desktop/src-tauri` | S-010 | جاب `ci / windows`: clippy با `-D warnings` سبز و `continue-on-error` حذف‌شده |
+| BUG-16 | **(جدید)** `src-tauri` بدون `tauri-build`/`build.rs`/آیکون/capabilities کامپایل نمی‌شود؛ `cargo fmt --check` + `cargo clippy` در CI ویندوز فعلاً advisory (`continue-on-error` + `::warning`)؛ `tests/unit/test_gate.py::test_cargo_clippy_green` با `xfail(strict=True)` | OPEN | `apps/desktop/src-tauri` | S-010 | جاب `ci / windows`: clippy با `-D warnings` سبز و `continue-on-error` حذف‌شده |
 
 ## پروتکل باگ جدید
 1. شناسه‌ی بعدی بگیر (`BUG-17` …).

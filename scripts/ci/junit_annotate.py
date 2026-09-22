@@ -1,0 +1,54 @@
+"""Emit GitHub Actions annotations for failed junit test cases (S-009).
+
+Why: job logs and artifacts need an authenticated token, but check-run
+annotations are public. Running this `if: always()` after pytest/Playwright
+makes the first failures visible to the loop even when logs are not.
+
+Usage: python scripts/ci/junit_annotate.py reports/junit-unit.xml [more.xml ...]
+Exit code is always 0 (the test step already failed the job).
+"""
+
+from __future__ import annotations
+
+import sys
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+MAX_ANNOTATIONS = 10  # GitHub keeps at most 10 error annotations per step
+
+
+def _one_line(s: str, limit: int = 900) -> str:
+    s = " ".join(s.split())
+    return s[:limit] + ("…" if len(s) > limit else "")
+
+
+def main(paths: list[str]) -> int:
+    emitted = 0
+    total = failed = 0
+    for raw in paths:
+        p = Path(raw)
+        if not p.exists():
+            print(f"::notice title=junit_annotate::{p} not found (step may have been skipped)")
+            continue
+        root = ET.parse(p).getroot()  # noqa: S314 — junit written by our own pytest/Playwright run, not untrusted input
+        for tc in root.iter("testcase"):
+            total += 1
+            problems = list(tc.findall("failure")) + list(tc.findall("error"))
+            if not problems:
+                continue
+            failed += 1
+            if emitted >= MAX_ANNOTATIONS:
+                continue
+            name = f"{tc.get('classname', '')}::{tc.get('name', '')}"
+            msg = problems[0].get("message") or ""
+            body = problems[0].text or ""
+            file_attr = tc.get("file") or ""
+            loc = f" file={file_attr}" if file_attr else ""
+            print(f"::error{loc},title={name[:120]}::{_one_line(msg + ' | ' + body)}")
+            emitted += 1
+    print(f"::notice title=junit summary::{failed} failed / {total} total across {len(paths)} report(s)")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

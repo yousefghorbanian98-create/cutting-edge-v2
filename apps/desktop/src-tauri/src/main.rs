@@ -2,7 +2,11 @@
 use std::sync::{Arc, Mutex};
 use sysinfo::System;
 
-struct AppState { healthy: bool, ram: f32, cpu: f32 }
+struct AppState {
+    healthy: bool,
+    ram: f32,
+    cpu: f32,
+}
 
 #[tauri::command]
 fn get_system_status(state: tauri::State<Arc<Mutex<AppState>>>) -> String {

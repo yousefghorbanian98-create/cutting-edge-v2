@@ -105,7 +105,16 @@ def _npx() -> list[str]:
 
 def _run(cmd: list[str], cwd: Path = ROOT, timeout: int = 600) -> tuple[int, str]:
     try:
-        p = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout, check=False)
+        p = subprocess.run(
+            cmd,
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout,
+            check=False,
+        )  # explicit UTF-8: Windows runners default to cp1252 and the tools print Persian/emoji
         return p.returncode, (p.stdout + p.stderr)
     except FileNotFoundError as exc:
         return 127, str(exc)
@@ -421,6 +430,12 @@ def main() -> int:
 
     rep = run_stage(a.stage, a.staged, a.only, a.strict_missing, a.skip)
     print_table(rep)
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        # Public check-run annotations: visible even when job logs need a token.
+        for chk in rep.checks:
+            if chk.status == "FAIL":
+                detail = " ".join(chk.detail.split())[:900]
+                print(f"::error title=gate {chk.name}::{detail}")
     if a.json:
         print(rep.to_json())
     return 1 if rep.counts["fail"] else 0

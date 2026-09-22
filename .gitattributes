@@ -1,0 +1,10 @@
+# S-009: force LF on every checkout (Windows runners default to autocrlf=true,
+# which would make `ruff format --check` / `biome ci` flag CRLF files).
+* text=auto eol=lf
+*.ps1 text eol=lf
+*.png binary
+*.jpg binary
+*.woff2 binary
+*.ico binary
+*.mp4 binary
+*.wav binary
