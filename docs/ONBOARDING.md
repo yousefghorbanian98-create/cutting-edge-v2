@@ -94,12 +94,13 @@ P7 Release             S-091…S-098                 v1.0.0
 | S-101 | ADR 0001…0009 + validator مشترک ADR/learnings | GREEN | `scripts/loop/hygiene.py`؛ ناظر C13 حالا FAIL می‌دهد اگر سشنی درس ننویسد |
 | S-099 | DESIGN.md مرجع واحد + چک سه‌طرفهٔ توکن + AGENTS.md و فایل‌های هارنس نازک | GREEN | `check-design-tokens.js` در gate و C14؛ ADR-0010؛ `tests/unit/test_agent_docs.py` |
 | S-100 | چک‌کنندهٔ آفلاین Web Interface Guidelines (`design_audit.py`, ۸ قاعده) در gate | GREEN | ۱۷ یافتهٔ واقعی UI همان‌جا رفع شد؛ `pnpm design:audit`؛ فقط یک ignore دلیل‌دار (S-084) |
-| S-010 … S-012 | Tauri skeleton، ابزار لوپ، job model | TODO | ترتیب: S-010 → S-011 → S-012 |
+| S-010 | Tauri skeleton + اولین `.exe` | REVIEW (CI سبز، منتظر Overseer) | run 35711041909؛ نصاب در artifact `cutting-edge-windows-x64-setup` |
+| S-011 … S-012 | ابزار لوپ، job model | TODO | ترتیب: S-011 → S-012 |
 
-مجموعهٔ تست فعلی (CI run 35673944671): **ubuntu ۳۸ unit + ۱۵ Playwright، windows ۶۵ pytest با مدیای واقعی** — همه سبز؛ تنها skip: `cargo-clippy` خارج از ویندوز (مالک: جاب windows / S-010).
+مجموعهٔ تست فعلی (CI run 35711041909): **ubuntu ۶۵ unit + ۱۵ Playwright، windows ۹۲ pytest با مدیای واقعی + cargo fmt/clippy/test + `tauri build` + smoke نصاب ۱۷/۱۷** — همه سبز؛ تنها skip: `cargo-clippy` خارج از ویندوز (مالک: جاب windows).
 
 ### آنچه از قبل در کد هست ولی هنوز «ادعا» است (بازرسی لازم)
-پوشه‌های `ai-engine/src/{analyzer,assistant,captioner,editor_ai,muscle,reheal,style_match}` ماژول‌های اولیهٔ ۱۶ قابلیت را دارند اما فقط Beat Sync و Muscle Enhancer با تست واقعی سنجیده شده‌اند. ممیزی صادقانهٔ وضعیت اولیه (پیشرفت واقعی ۱۲–۱۵٪ در برابر ادعای ۳۰–۳۵٪) در `docs/loop/01_STATE_OF_REPO.md` است. فرانت‌اند فعلاً یک صفحهٔ نمایشی است (`page.tsx`)؛ تایم‌لاین واقعی در P1 ساخته می‌شود. پوشهٔ `src-tauri` هنوز کامپایل نمی‌شود (S-010).
+پوشه‌های `ai-engine/src/{analyzer,assistant,captioner,editor_ai,muscle,reheal,style_match}` ماژول‌های اولیهٔ ۱۶ قابلیت را دارند اما فقط Beat Sync و Muscle Enhancer با تست واقعی سنجیده شده‌اند. ممیزی صادقانهٔ وضعیت اولیه (پیشرفت واقعی ۱۲–۱۵٪ در برابر ادعای ۳۰–۳۵٪) در `docs/loop/01_STATE_OF_REPO.md` است. فرانت‌اند فعلاً یک صفحهٔ نمایشی است (`page.tsx`)؛ تایم‌لاین واقعی در P1 ساخته می‌شود. پوشهٔ `src-tauri` از S-010 روی `ci / windows` کامپایل و به نصاب NSIS تبدیل می‌شود (`Cargo.lock` هنوز commit نشده — BUG-17).
 
 ### باگ‌های شناخته‌شده
 ۱۵ باگ در `docs/loop/06_BUGS.md`؛ ۲ تا بسته (BUG-1، BUG-4)، بقیه به مراحل مشخص ارجاع دارند و هرکدام «تست اثبات» تعریف‌شده دارد.
@@ -161,7 +162,7 @@ P7 Release             S-091…S-098                 v1.0.0
 | [`apps/desktop/src/app/`](../apps/desktop/src/app/) | `layout.tsx` (fa/rtl)، `globals.css` (Tailwind 4 `@theme` + DaisyUI 5 + فونت آفلاین)، `page.tsx` (صفحهٔ نمایشی) | S-007 |
 | [`apps/desktop/src/stores/`](../apps/desktop/src/stores/) | Zustand: `editorStore.ts`, `rehealStore.ts` | اولیه |
 | [`apps/desktop/tests/`](../apps/desktop/tests/) | Playwright: `build-artifacts.spec.ts` (۸ تست، سبز)، `styling.spec.ts` (نیاز به مرورگر → CI) | S-007 |
-| [`apps/desktop/src-tauri/`](../apps/desktop/src-tauri/) | پوستهٔ Tauri | **کامپایل نمی‌شود** (S-010) |
+| [`apps/desktop/src-tauri/`](../apps/desktop/src-tauri/) | پوستهٔ Tauri 2 (`lib.rs` + `main.rs`، آیکون‌های تولیدی، `nsis/Farsi.nsh`) | کامپایل و بسته‌بندی فقط روی `ci / windows` (S-010) |
 | [`packages/design-system/tokens.ts`](../packages/design-system/tokens.ts) | توکن‌های طراحی (آینهٔ `@theme`) | GREEN |
 | [`tests/`](../tests/) | `conftest.py` (فیکسچرها + `live_api`)، `fixtures/make_fixtures.py`، `helpers/media.py`، `test_security.py`، `test_beat_sync.py`، `test_fixtures.py`، `test_api_live.py`، `real/test_backend_boot.py`، `unit/test_repo_hygiene.py` | ۳۲ تست سبز |
 | [`scripts/`](../scripts/) | `verify_ledger.py` (سلامت دفترچه)، `supervise.py` (۱۶ چک ناظر)، `loop/render_steps.py`، `dev-backend.{sh,ps1}`، `check-design-tokens.js` (چک سه‌طرفهٔ توکن‌ها، S-099)، `loop/hygiene.py` (ADR/learnings)، `ci/junit_annotate.py` | — |
@@ -197,7 +198,7 @@ npx playwright test tests/build-artifacts.spec.ts    # انتظار: 8 passed
 2. **ادعاهای ماژول‌های تست‌نشده** در `ai-engine/src` (style_match، assistant، captioner، reheal): تا وقتی مرحلهٔ مربوطه در P3/P5 با تست واقعی سبز نشده، «ساخته‌شده» محسوب نمی‌شوند.
 3. **DESIGN.md مرجع است** (S-099). تغییر هر توکن = یک کامیت که هر سه فایل (`DESIGN.md`، `globals.css`، `tokens.ts`) را با هم عوض می‌کند؛ در غیر این صورت gate نام متغیر و دو مقدار را چاپ می‌کند و CI قرمز می‌شود.
 4. **S-008 روی GitHub است** (بازسازی‌شده در شاخهٔ ناظر). قبل از هر کامیت `pnpm install` و سپس `pnpm lefthook install` را اجرا کنید تا هوک‌های pre-commit/commit-msg فعال شوند؛ `pnpm gate:static` همان چیزی است که CI اجرا می‌کند.
-5. **CI فعال است** (S-009). هر push به `arena/**` سه جاب را اجرا می‌کند؛ GREEN شدن مرحله‌ای که AC وابسته به محیط دارد باید لینک run سبز را در EVIDENCE بیاورد. اگر لاگ/آرتیفکت با توکن قابل دانلود نبود: annotation‌های عمومی check-run را بخوانید (`gh api repos/…/check-runs/<job>/annotations`) یا URL امضاشدهٔ `gh api …/actions/jobs/<id>/logs` را با ابزار fetch باز کنید. تنها برچسب باز: `unverified:windows` برای `cargo` (BUG-16 → S-010).
+5. **CI فعال است** (S-009). هر push به `arena/**` سه جاب را اجرا می‌کند؛ GREEN شدن مرحله‌ای که AC وابسته به محیط دارد باید لینک run سبز را در EVIDENCE بیاورد. اگر لاگ/آرتیفکت با توکن قابل دانلود نبود: annotation‌های عمومی check-run را بخوانید (`gh api repos/…/check-runs/<job>/annotations`) یا URL امضاشدهٔ `gh api …/actions/jobs/<id>/logs` را با ابزار fetch باز کنید. شواهد جاب windows بدون توکن هم خواندنی‌اند: annotationهای `installer smoke`، `installer` (sha256) و `Cargo.lock` (S-010).
 
 ---
 
@@ -210,7 +211,7 @@ npx playwright test tests/build-artifacts.spec.ts    # انتظار: 8 passed
 
 ### اگر خودتان (انسان) ادامه می‌دهید
 همان لوپ را اجرا کنید؛ چیزی در آن مخصوص ایجنت نیست:
-1. `04_LEDGER.md` → اولین `TODO` که وابستگی‌هایش GREEN است (ترتیب توصیه‌شدهٔ P0: S-010 → S-011 → S-012).
+1. `04_LEDGER.md` → اولین `TODO` که وابستگی‌هایش GREEN است (ترتیب توصیه‌شدهٔ P0: S-011 → S-012؛ S-010 منتظر Overseer).
 2. کارت مرحله در `03_STEPS.md` را بخوانید؛ `evidence/S-xxx/CONTRACT.md` را از قالب بنویسید (AC/NG).
 3. تست واقعی اول (قرمز)، بعد کد، بعد گیت‌ها، کامیت با Scope Ledger در بدنه، push، وضعیت `REVIEW`.
 4. یک نفر دیگر (یا چت ناظر) `REVIEW.md` می‌نویسد؛ فقط بعد از `approved` وضعیت `GREEN` با `verified_on` و `evidence`.
