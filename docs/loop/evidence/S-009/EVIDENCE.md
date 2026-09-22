@@ -53,3 +53,30 @@ Diagnosis source: signed job-log URL from `gh api repos/…/actions/jobs/1065725
 Local re-verification: `pytest tests/unit` → 37 passed, 1 skipped; `gate.py --stage static --skip cargo-clippy` → 10 pass / 0 fail / 0 missing / 3 skip; `biome check` + `tsc --noEmit` clean.
 
 Open for GREEN (AC-9): run #3 on the round-3 commit must show `ubuntu` ✅ (Playwright 15/15 → S-007 DOM half verified), `windows` ✅, `loop-audit` ✅.
+
+## Run #3 — `27e84a4` — https://github.com/yousefghorbanian98-create/cutting-edge-v2/actions/runs/35673883640
+`loop-audit` ❌ (`ModuleNotFoundError: hygiene` — `supervise.py` imported `scripts/loop/hygiene.py`, which was staged into the following S-101 commit); `ubuntu`/`windows` cancelled by the newer push (concurrency group). Root cause is commit-splitting, not the CI design — recorded in the learnings entry.
+
+## Run #4 — `1b7139f` — https://github.com/yousefghorbanian98-create/cutting-edge-v2/actions/runs/35673944671 — **success**
+
+| Job | Result | Duration | Public proof |
+|-----|--------|----------|--------------|
+| `ci / ubuntu` | ✅ | 2 m 44 s | gate static strict-missing ✅; unit junit `0 failed / 38 total`; `next build` ✅; Playwright junit `0 failed / 15 total` (build-artifacts 8 + **styling.spec.ts 7 — S-007 DOM half now verified in CI**); artifact `ubuntu-evidence` (id 10671264129, 235 817 B: junit, playwright-report, gate log, `docs/loop/evidence/S-007/home-1440x900.png`) |
+| `ci / windows` | ✅ | 5 m 40 s | pytest `tests -m "not gpu"` on `windows-latest` with real FFmpeg media + live uvicorn: junit `0 failed / 65 total`; advisory cargo step still exits 1 (BUG-16, `continue-on-error`) — its "exit code 1" annotation is the only non-notice mark; artifact `windows-evidence` (id 10671923861) |
+| `ci / loop-audit` | ✅ | 7 s | `verify_ledger.py` OK; `supervise.py` verdict not STOP (C11 now judges HEAD only) |
+| `codeql` | ✅ | — | JS/TS + Python analysis on `1b7139f`; `gitleaks-results.sarif` (6 838 B) uploaded from the ubuntu job |
+
+### AC closure
+| AC | Status | Proof |
+|----|--------|-------|
+| AC-1 matrix ubuntu/windows/loop-audit, `arena/**` + `main` + PRs | ✅ | run #4 triggered by push to `arena/01a06951-…`; three stable job ids |
+| AC-2 SHA-pinned actions + least privilege | ✅ | `test_ci_workflows.py` (11 tests) green in run #4 unit step |
+| AC-3 caching (pnpm store, pip, Rust) | ✅ | setup-node `cache: pnpm`, setup-python `cache: pip`, `Swatinem/rust-cache` on windows — run #4 ubuntu 2 m 44 s vs run #1 4 m+ |
+| AC-4 artifacts with `if-no-files-found: error` | ✅ | 3 artifacts listed above |
+| AC-5 CodeQL + Dependabot + gitleaks | ✅ | codeql run success; `.github/dependabot.yml`; SARIF artifact |
+| AC-6 Windows job runs the real-media suite | ✅ | 65 tests incl. live-server API tests (nt branch boots uvicorn directly) |
+| AC-7 loop-audit job (ledger + supervisor) | ✅ | 7 s, green |
+| AC-8 failures readable without a token | ✅ | junit annotations (`::error file=…,line=…,title=…`) + `notice [junit summary]` visible via public check-run API; verified by reading run #2/#3 diagnostics this way |
+| AC-9 all jobs green on the final commit | ✅ | run #4 `conclusion: success` |
+
+Carried: BUG-16 (`cargo` advisory until S-010 walking skeleton makes the crate build) — the only `unverified:windows` item left, owned by S-010.

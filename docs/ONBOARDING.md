@@ -88,11 +88,13 @@ P7 Release             S-091…S-098                 v1.0.0
 | S-004 | MoviePy 2 + FFmpeg-first | GREEN | `core/ffmpeg.py`؛ Beat Sync روی MP4 واقعی BPM ≈ 120 می‌دهد؛ باگ‌های ۱ و ۴ بسته |
 | S-005 | کارخانهٔ فیکسچر واقعی | GREEN | ۸ ویدیوی تستی با FFmpeg در زمان تست ساخته می‌شوند (هیچ مدیایی کامیت نمی‌شود) |
 | S-006 | هارنس تست زنده | GREEN | `live_api` (uvicorn واقعی روی پورت آزاد)، `assert_playable`، `frame_diff`، `ssim_region` |
-| S-007 | استایل فرانت (Tailwind 4 + DaisyUI 5 + فونت آفلاین) | GREEN (local-linux؛ تست مرورگری در CI S-009) | CSS ۶۴ کیلوبایتی تولید می‌شود؛ تست مرورگری منتظر CI است |
+| S-007 | استایل فرانت (Tailwind 4 + DaisyUI 5 + فونت آفلاین) | GREEN (local-linux + ci-ubuntu) | CSS ۶۴ کیلوبایتی؛ تست مرورگری `styling.spec.ts` ۷/۷ در CI سبز (run 35673944671) |
 | S-008 | ابزارها (Biome/Ruff/tsc/Turbo 2/lefthook/gate.py) | GREEN | ساخته‌شده در جلسهٔ ناظر (۲۲ سپتامبر ۲۰۲۶)؛ `scripts/gate.py --stage static` با ۱۳ چک؛ شواهد در `docs/loop/evidence/S-008/` |
-| S-009 … S-012, S-099 … S-101 | CI، Tauri skeleton، ابزار لوپ، job model، DESIGN/AGENTS، ممیزی UI، ADR | TODO | — |
+| S-009 | CI سه‌جابه (ubuntu / windows / loop-audit) با اکشن‌های SHA-pin، آرتیفکت شواهد، CodeQL/Dependabot/gitleaks | GREEN (ci-ubuntu; ci-windows) | ۴ اجرا تا سبز شدن؛ درس‌ها در `docs/learnings/2026-09-22-ci-*.md`؛ شکست‌ها بدون توکن از annotation خوانده می‌شوند |
+| S-101 | ADR 0001…0009 + validator مشترک ADR/learnings | GREEN | `scripts/loop/hygiene.py`؛ ناظر C13 حالا FAIL می‌دهد اگر سشنی درس ننویسد |
+| S-010 … S-012, S-099, S-100 | Tauri skeleton، ابزار لوپ، job model، DESIGN/AGENTS، ممیزی UI | TODO | ترتیب: S-099 → S-100 → S-010 → S-011 → S-012 |
 
-مجموعهٔ تست فعلی: **۳۲ تست، همه سبز، صفر skip** (بک‌اند واقعی، مدیای واقعی). زمان اجرا ≈ ۳ دقیقه.
+مجموعهٔ تست فعلی (CI run 35673944671): **ubuntu ۳۸ unit + ۱۵ Playwright، windows ۶۵ pytest با مدیای واقعی** — همه سبز؛ تنها skip: `cargo-clippy` خارج از ویندوز (مالک: جاب windows / S-010).
 
 ### آنچه از قبل در کد هست ولی هنوز «ادعا» است (بازرسی لازم)
 پوشه‌های `ai-engine/src/{analyzer,assistant,captioner,editor_ai,muscle,reheal,style_match}` ماژول‌های اولیهٔ ۱۶ قابلیت را دارند اما فقط Beat Sync و Muscle Enhancer با تست واقعی سنجیده شده‌اند. ممیزی صادقانهٔ وضعیت اولیه (پیشرفت واقعی ۱۲–۱۵٪ در برابر ادعای ۳۰–۳۵٪) در `docs/loop/01_STATE_OF_REPO.md` است. فرانت‌اند فعلاً یک صفحهٔ نمایشی است (`page.tsx`)؛ تایم‌لاین واقعی در P1 ساخته می‌شود. پوشهٔ `src-tauri` هنوز کامپایل نمی‌شود (S-010).
@@ -161,7 +163,7 @@ P7 Release             S-091…S-098                 v1.0.0
 | [`packages/design-system/tokens.ts`](../packages/design-system/tokens.ts) | توکن‌های طراحی (آینهٔ `@theme`) | GREEN |
 | [`tests/`](../tests/) | `conftest.py` (فیکسچرها + `live_api`)، `fixtures/make_fixtures.py`، `helpers/media.py`، `test_security.py`، `test_beat_sync.py`، `test_fixtures.py`، `test_api_live.py`، `real/test_backend_boot.py`، `unit/test_repo_hygiene.py` | ۳۲ تست سبز |
 | [`scripts/`](../scripts/) | `verify_ledger.py` (سلامت دفترچه)، `supervise.py` (۱۶ چک ناظر)، `loop/render_steps.py`، `dev-backend.{sh,ps1}`، `check-design-tokens.js` (placeholder تا S-099) | — |
-| [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) | CI قدیمی (فقط main) — در S-009 بازنویسی می‌شود | ناکافی |
+| [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) | CI سه‌جابه (S-009): `ubuntu` (gate + unit + build + Playwright)، `windows` (pytest مدیای واقعی + cargo advisory)، `loop-audit` (ledger + supervisor)؛ `codeql.yml`، `dependabot.yml` | GREEN |
 
 ---
 
@@ -193,7 +195,7 @@ npx playwright test tests/build-artifacts.spec.ts    # انتظار: 8 passed
 2. **ادعاهای ماژول‌های تست‌نشده** در `ai-engine/src` (style_match، assistant، captioner، reheal): تا وقتی مرحلهٔ مربوطه در P3/P5 با تست واقعی سبز نشده، «ساخته‌شده» محسوب نمی‌شوند.
 3. **DESIGN.md** فعلاً با کد ناسازگار است (فونت Geist و رنگ blurple در سند؛ Inter+Vazirmatn و بنفش AI در کد). S-099 آن را یکی می‌کند. هیچ رنگی از سند وارد کد نکنید.
 4. **S-008 روی GitHub است** (بازسازی‌شده در شاخهٔ ناظر). قبل از هر کامیت `pnpm install` و سپس `pnpm lefthook install` را اجرا کنید تا هوک‌های pre-commit/commit-msg فعال شوند؛ `pnpm gate:static` همان چیزی است که CI اجرا می‌کند.
-5. **CI هنوز وجود ندارد** (S-009). تا آن زمان همهٔ شواهد `local-linux` هستند و تست‌های مرورگری/ویندوزی برچسب `unverified:ci` / `unverified:windows` دارند — این برچسب‌ها باید در CI بسته شوند، نه نادیده گرفته.
+5. **CI فعال است** (S-009). هر push به `arena/**` سه جاب را اجرا می‌کند؛ GREEN شدن مرحله‌ای که AC وابسته به محیط دارد باید لینک run سبز را در EVIDENCE بیاورد. اگر لاگ/آرتیفکت با توکن قابل دانلود نبود: annotation‌های عمومی check-run را بخوانید (`gh api repos/…/check-runs/<job>/annotations`) یا URL امضاشدهٔ `gh api …/actions/jobs/<id>/logs` را با ابزار fetch باز کنید. تنها برچسب باز: `unverified:windows` برای `cargo` (BUG-16 → S-010).
 
 ---
 
@@ -206,7 +208,7 @@ npx playwright test tests/build-artifacts.spec.ts    # انتظار: 8 passed
 
 ### اگر خودتان (انسان) ادامه می‌دهید
 همان لوپ را اجرا کنید؛ چیزی در آن مخصوص ایجنت نیست:
-1. `04_LEDGER.md` → اولین `TODO` که وابستگی‌هایش GREEN است (ترتیب توصیه‌شدهٔ P0: S-009 → S-101 → S-099 → S-100 → S-010 → S-011 → S-012).
+1. `04_LEDGER.md` → اولین `TODO` که وابستگی‌هایش GREEN است (ترتیب توصیه‌شدهٔ P0، با S-009 و S-101 GREEN: S-099 → S-100 → S-010 → S-011 → S-012).
 2. کارت مرحله در `03_STEPS.md` را بخوانید؛ `evidence/S-xxx/CONTRACT.md` را از قالب بنویسید (AC/NG).
 3. تست واقعی اول (قرمز)، بعد کد، بعد گیت‌ها، کامیت با Scope Ledger در بدنه، push، وضعیت `REVIEW`.
 4. یک نفر دیگر (یا چت ناظر) `REVIEW.md` می‌نویسد؛ فقط بعد از `approved` وضعیت `GREEN` با `verified_on` و `evidence`.

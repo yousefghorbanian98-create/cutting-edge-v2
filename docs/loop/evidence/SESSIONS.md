@@ -46,3 +46,10 @@
 - Status: S-001 GREEN; S-002 GREEN; S-003 REVIEW iter 2; S-004 GREEN; S-005 REVIEW; S-006 REVIEW. verify_ledger green (3/98 GREEN). All pushed.
 - Blockers: none. Stopped at S-006 boundary (context long; S-007+ need pnpm/Playwright, S-008 toolchain, S-009 CI, S-010 rust/cargo, S-011 loop tooling, S-012 job model — sandbox-constrained).
 - Next step: S-007 (frontend styling).
+
+## 2026-09-22 — SUPERVISOR (autonomous chain, session 4): S-009 rounds 2–3 → GREEN, S-101 GREEN
+- S-009: run #2 (`a9d0f4a`) windows ✅ / ubuntu ❌ (2 Playwright asserts formatter-fragile) / loop-audit ❌ (C11 counted an older run); run #3 (`27e84a4`) loop-audit ❌ (hygiene.py landed in the next commit — non-atomic split); **run #4 (`1b7139f`) all green** → S-009 GREEN (ci-ubuntu; ci-windows), S-007 DOM half verified. Commits `27e84a4`, `1b7139f`, closing commit below.
+- S-101: ADR-0003…0009 + TEMPLATE, `scripts/loop/hygiene.py` shared validator, 4 hygiene tests (1 negative), supervise C13 wired + enforced. GREEN (local-linux).
+- Learnings: `2026-09-22-ci-run2-formatter-drift-and-annotation-grammar.md` (formatter-proof tests, C11 HEAD-only, `::error` grammar, signed-log URL via fetch, atomic commits). ADRs: 0003–0009.
+- Status: 10/101 GREEN. Blockers: none. BUG-16 (cargo advisory) owned by S-010.
+- Next step: S-099 (DESIGN.md single authority + token drift check), then S-100 → S-010 → S-011 → S-012.
