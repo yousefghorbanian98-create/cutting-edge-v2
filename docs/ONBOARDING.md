@@ -137,8 +137,8 @@ P7 Release             S-091…S-098                 v1.0.0
 | فایل | چیست |
 |---|---|
 | [`DESIGN.md`](../DESIGN.md) | مرجع بصری — **فعلاً پیش‌نویس وارداتی**؛ تا S-099 توکن‌های کد مرجع‌اند (بنر بالای فایل را بخوانید) |
-| [`docs/adr/`](adr/) | تصمیم‌های معماری؛ ADR-0001 توضیح می‌دهد چرا نقشهٔ ۱۶ لایه «ورودی مرجع» است نه معماری |
-| [`docs/learnings/`](learnings/) | درس‌های هر سشن (چه شکست / ریشه / قاعده) — قبل از تکرار اشتباه بخوانید |
+| [`docs/adr/`](adr/) | تصمیم‌های معماری (ADR-0001…0009، قالب MADR کوتاه، انگلیسی)؛ ADR جدید = کپی `TEMPLATE.md` + یک ردیف در `README.md`؛ اعتبارسنجی با `python scripts/loop/hygiene.py` |
+| [`docs/learnings/`](learnings/) | درس‌های هر سشن (≤ ۲۰ خط: چه شکست / ریشه / قاعده) — قبل از تکرار اشتباه بخوانید؛ همان validator بررسی‌شان می‌کند و ناظر (C13) نبودشان را FAIL می‌کند |
 | [`docs/DECISIONS.md`](DECISIONS.md) | تصمیم‌های محصولی (U3) و پیش‌فرض‌ها |
 | [`docs/16-LAYER-PRODUCTION-PLAN.md`](16-LAYER-PRODUCTION-PLAN.md) | ورودی مرجع (نقشهٔ عمومی؛ استکش با این پروژه فرق دارد) |
 | [`docs/ROADMAP-v2-WITH-INTEGRATIONS.md`](ROADMAP-v2-WITH-INTEGRATIONS.md) | ورودی مرجع (پیشنهاد سه ادغام) |

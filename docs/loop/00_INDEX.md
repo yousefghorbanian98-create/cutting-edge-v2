@@ -22,7 +22,7 @@
 | 13 | `13_INTEGRATIONS_ADOPTION.md` | سه ادغام (ECC، Web Interface Guidelines، awesome-design-md): چه پذیرفته شد، چگونه گیت شد، چه رد شد |
 | — | `../../AGENTS.md` | نقطه‌ی ورود هر ایجنت (ریشه‌ی ریپو) — به این پوشه لینک می‌دهد |
 | — | `../../DESIGN.md` | مرجع بصری (پیش‌نویس وارداتی تا S-099؛ سپس گیت‌شده) |
-| — | `../adr/`, `../learnings/` | تصمیم‌های معماری و درس‌های سشن‌ها (از S-101) |
+| — | `../adr/`, `../learnings/` | تصمیم‌های معماری (۹ ADR) و درس‌های سشن‌ها — قالب‌ها با `scripts/loop/hygiene.py` گیت‌شده (S-101 GREEN) |
 | — | `templates/` | `CONTRACT.md` (AC/NG هر مرحله) و `REVIEW.md` (verdict بازبین) |
 | — | `steps.json` | منبع حقیقت مراحل (ویرایش این؛ سپس `python scripts/loop/render_steps.py`) |
 | — | `evidence/` | هر مرحله: `S-xxx/CONTRACT.md`, `REVIEW.md`, artifacts + `SESSIONS.md` |

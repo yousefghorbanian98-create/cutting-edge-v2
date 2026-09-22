@@ -116,4 +116,4 @@
 | S-098 | Post-release loop: issue templates, triage labels, 1.0.x hotfix protocol, next-cycle backlog | TODO | 0 |  |  |  |
 | S-099 | Agent operating manual + DESIGN.md reconciled to the real design tokens (single source, gated) | TODO | 0 |  |  |  |
 | S-100 | UI guidelines audit gate (offline Web Interface Guidelines checker) wired into gate static | TODO | 0 |  |  |  |
-| S-101 | ADR log + session learnings (ECC remember/improve) with hygiene tests | TODO | 0 |  |  |  |
+| S-101 | ADR log + session learnings (ECC remember/improve) with hygiene tests | GREEN | 1 | local-linux | docs/loop/evidence/S-101/CONTRACT.md; EVIDENCE.md; REVIEW.md (approved r1); tests/unit/test_repo_hygiene.py::test_adr_or_learnings_* (4 tests, 1 negative); scripts/loop/hygiene.py; docs/adr/0003…0009 + TEMPLATE.md | C13 now enforced (WARN→FAIL); ADR-0010 (DESIGN.md authority) owed by S-099 |

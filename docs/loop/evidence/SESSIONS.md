@@ -1,5 +1,7 @@
 # Sessions Log
 
+> Each block links its learnings entry (`docs/learnings/YYYY-MM-DD-<slug>.md`) and any ADR it produced (`docs/adr/NNNN-<slug>.md`). Formats are enforced by `scripts/loop/hygiene.py` (S-101).
+
 ## 2026-09-03 — Loop design session
 - Steps touched: none (planning). Merged `arena/01a06904` (fast-forward) onto session branch to continue from latest code.
 - Produced: docs/loop/00–07, steps.json (98 steps), scripts/loop/render_steps.py, scripts/verify_ledger.py.

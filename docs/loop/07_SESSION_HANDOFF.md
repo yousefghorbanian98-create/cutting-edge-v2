@@ -41,8 +41,8 @@ RULES (non-negotiable):
   - Hardware budget: 16GB RAM, GTX 1650 4GB, CUDA 11.8; app RAM < 1.5GB, model VRAM < 800MB. Cost $0.
   - Persian-first UX (RTL), English second. World-class checklist in 02_LOOP_PROTOCOL.md §4 applies to every step.
 
-At session end: update 04_LEDGER.md, add evidence, write docs/learnings/YYYY-MM-DD-<slug>.md (what broke / root cause / rule),
-push, and append a 5-line summary to docs/loop/evidence/SESSIONS.md (date, steps touched, status, blockers, next step id).
+At session end: update 04_LEDGER.md, add evidence, write docs/learnings/YYYY-MM-DD-<slug>.md (copy docs/learnings/TEMPLATE.md; ≤ 20 lines: what broke / root cause / rule — validated by `python scripts/loop/hygiene.py`),
+record any new architectural decision as docs/adr/NNNN-<slug>.md (copy docs/adr/TEMPLATE.md, add the README row), push, and append a 5-line summary to docs/loop/evidence/SESSIONS.md (date, steps touched, status, blockers, next step id).
 ```
 
 ---
