@@ -92,7 +92,8 @@ P7 Release             S-091…S-098                 v1.0.0
 | S-008 | ابزارها (Biome/Ruff/tsc/Turbo 2/lefthook/gate.py) | GREEN | ساخته‌شده در جلسهٔ ناظر (۲۲ سپتامبر ۲۰۲۶)؛ `scripts/gate.py --stage static` با ۱۳ چک؛ شواهد در `docs/loop/evidence/S-008/` |
 | S-009 | CI سه‌جابه (ubuntu / windows / loop-audit) با اکشن‌های SHA-pin، آرتیفکت شواهد، CodeQL/Dependabot/gitleaks | GREEN (ci-ubuntu; ci-windows) | ۴ اجرا تا سبز شدن؛ درس‌ها در `docs/learnings/2026-09-22-ci-*.md`؛ شکست‌ها بدون توکن از annotation خوانده می‌شوند |
 | S-101 | ADR 0001…0009 + validator مشترک ADR/learnings | GREEN | `scripts/loop/hygiene.py`؛ ناظر C13 حالا FAIL می‌دهد اگر سشنی درس ننویسد |
-| S-010 … S-012, S-099, S-100 | Tauri skeleton، ابزار لوپ، job model، DESIGN/AGENTS، ممیزی UI | TODO | ترتیب: S-099 → S-100 → S-010 → S-011 → S-012 |
+| S-099 | DESIGN.md مرجع واحد + چک سه‌طرفهٔ توکن + AGENTS.md و فایل‌های هارنس نازک | GREEN | `check-design-tokens.js` در gate و C14؛ ADR-0010؛ `tests/unit/test_agent_docs.py` |
+| S-100, S-010 … S-012 | ممیزی UI آفلاین، Tauri skeleton، ابزار لوپ، job model | TODO | ترتیب: S-100 → S-010 → S-011 → S-012 |
 
 مجموعهٔ تست فعلی (CI run 35673944671): **ubuntu ۳۸ unit + ۱۵ Playwright، windows ۶۵ pytest با مدیای واقعی** — همه سبز؛ تنها skip: `cargo-clippy` خارج از ویندوز (مالک: جاب windows / S-010).
 
@@ -138,7 +139,7 @@ P7 Release             S-091…S-098                 v1.0.0
 ### اسناد مرجع و تصمیم‌ها
 | فایل | چیست |
 |---|---|
-| [`DESIGN.md`](../DESIGN.md) | مرجع بصری — **فعلاً پیش‌نویس وارداتی**؛ تا S-099 توکن‌های کد مرجع‌اند (بنر بالای فایل را بخوانید) |
+| [`DESIGN.md`](../DESIGN.md) | **مرجع بصری واحد** (S-099, ADR-0010): بلوک‌های `# tokens:` با `node scripts/check-design-tokens.js` سه‌طرفه با `globals.css` و `tokens.ts` مقایسه می‌شوند (۲۷ + ۱۹ توکن، drift = خطای gate) |
 | [`docs/adr/`](adr/) | تصمیم‌های معماری (ADR-0001…0009، قالب MADR کوتاه، انگلیسی)؛ ADR جدید = کپی `TEMPLATE.md` + یک ردیف در `README.md`؛ اعتبارسنجی با `python scripts/loop/hygiene.py` |
 | [`docs/learnings/`](learnings/) | درس‌های هر سشن (≤ ۲۰ خط: چه شکست / ریشه / قاعده) — قبل از تکرار اشتباه بخوانید؛ همان validator بررسی‌شان می‌کند و ناظر (C13) نبودشان را FAIL می‌کند |
 | [`docs/DECISIONS.md`](DECISIONS.md) | تصمیم‌های محصولی (U3) و پیش‌فرض‌ها |
@@ -162,7 +163,7 @@ P7 Release             S-091…S-098                 v1.0.0
 | [`apps/desktop/src-tauri/`](../apps/desktop/src-tauri/) | پوستهٔ Tauri | **کامپایل نمی‌شود** (S-010) |
 | [`packages/design-system/tokens.ts`](../packages/design-system/tokens.ts) | توکن‌های طراحی (آینهٔ `@theme`) | GREEN |
 | [`tests/`](../tests/) | `conftest.py` (فیکسچرها + `live_api`)، `fixtures/make_fixtures.py`، `helpers/media.py`، `test_security.py`، `test_beat_sync.py`، `test_fixtures.py`، `test_api_live.py`، `real/test_backend_boot.py`، `unit/test_repo_hygiene.py` | ۳۲ تست سبز |
-| [`scripts/`](../scripts/) | `verify_ledger.py` (سلامت دفترچه)، `supervise.py` (۱۶ چک ناظر)، `loop/render_steps.py`، `dev-backend.{sh,ps1}`، `check-design-tokens.js` (placeholder تا S-099) | — |
+| [`scripts/`](../scripts/) | `verify_ledger.py` (سلامت دفترچه)، `supervise.py` (۱۶ چک ناظر)، `loop/render_steps.py`، `dev-backend.{sh,ps1}`، `check-design-tokens.js` (چک سه‌طرفهٔ توکن‌ها، S-099)، `loop/hygiene.py` (ADR/learnings)، `ci/junit_annotate.py` | — |
 | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) | CI سه‌جابه (S-009): `ubuntu` (gate + unit + build + Playwright)، `windows` (pytest مدیای واقعی + cargo advisory)، `loop-audit` (ledger + supervisor)؛ `codeql.yml`، `dependabot.yml` | GREEN |
 
 ---
@@ -193,7 +194,7 @@ npx playwright test tests/build-artifacts.spec.ts    # انتظار: 8 passed
 ### چه چیزهایی را باید با شک بررسی کنید
 1. **هر مرحلهٔ GREEN** باید سه چیز داشته باشد: `evidence/S-xxx/CONTRACT.md`، `evidence/S-xxx/REVIEW.md` با verdict `approved`، و تستی که در کامیت مرحله اول قرمز بوده. `verify_ledger.py` این را مکانیکی چک می‌کند؛ شما محتوایش را بخوانید.
 2. **ادعاهای ماژول‌های تست‌نشده** در `ai-engine/src` (style_match، assistant، captioner، reheal): تا وقتی مرحلهٔ مربوطه در P3/P5 با تست واقعی سبز نشده، «ساخته‌شده» محسوب نمی‌شوند.
-3. **DESIGN.md** فعلاً با کد ناسازگار است (فونت Geist و رنگ blurple در سند؛ Inter+Vazirmatn و بنفش AI در کد). S-099 آن را یکی می‌کند. هیچ رنگی از سند وارد کد نکنید.
+3. **DESIGN.md مرجع است** (S-099). تغییر هر توکن = یک کامیت که هر سه فایل (`DESIGN.md`، `globals.css`، `tokens.ts`) را با هم عوض می‌کند؛ در غیر این صورت gate نام متغیر و دو مقدار را چاپ می‌کند و CI قرمز می‌شود.
 4. **S-008 روی GitHub است** (بازسازی‌شده در شاخهٔ ناظر). قبل از هر کامیت `pnpm install` و سپس `pnpm lefthook install` را اجرا کنید تا هوک‌های pre-commit/commit-msg فعال شوند؛ `pnpm gate:static` همان چیزی است که CI اجرا می‌کند.
 5. **CI فعال است** (S-009). هر push به `arena/**` سه جاب را اجرا می‌کند؛ GREEN شدن مرحله‌ای که AC وابسته به محیط دارد باید لینک run سبز را در EVIDENCE بیاورد. اگر لاگ/آرتیفکت با توکن قابل دانلود نبود: annotation‌های عمومی check-run را بخوانید (`gh api repos/…/check-runs/<job>/annotations`) یا URL امضاشدهٔ `gh api …/actions/jobs/<id>/logs` را با ابزار fetch باز کنید. تنها برچسب باز: `unverified:windows` برای `cargo` (BUG-16 → S-010).
 
@@ -208,7 +209,7 @@ npx playwright test tests/build-artifacts.spec.ts    # انتظار: 8 passed
 
 ### اگر خودتان (انسان) ادامه می‌دهید
 همان لوپ را اجرا کنید؛ چیزی در آن مخصوص ایجنت نیست:
-1. `04_LEDGER.md` → اولین `TODO` که وابستگی‌هایش GREEN است (ترتیب توصیه‌شدهٔ P0، با S-009 و S-101 GREEN: S-099 → S-100 → S-010 → S-011 → S-012).
+1. `04_LEDGER.md` → اولین `TODO` که وابستگی‌هایش GREEN است (ترتیب توصیه‌شدهٔ P0: S-100 → S-010 → S-011 → S-012).
 2. کارت مرحله در `03_STEPS.md` را بخوانید؛ `evidence/S-xxx/CONTRACT.md` را از قالب بنویسید (AC/NG).
 3. تست واقعی اول (قرمز)، بعد کد، بعد گیت‌ها، کامیت با Scope Ledger در بدنه، push، وضعیت `REVIEW`.
 4. یک نفر دیگر (یا چت ناظر) `REVIEW.md` می‌نویسد؛ فقط بعد از `approved` وضعیت `GREEN` با `verified_on` و `evidence`.

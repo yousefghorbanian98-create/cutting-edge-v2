@@ -1,16 +1,13 @@
-# .cursorrules — cutting-edge-v2 (auto-generated from AGENTS.md + DESIGN.md)
+# .cursorrules — Cutting Edge v2 (thin pointer; the content lives in the linked files)
 
-You are an expert in Next.js 15, NestJS, Prisma, Tailwind, shadcn/ui.
+Read, in this order, before generating anything:
+1. AGENTS.md — what this project is, the locked stack, how to build/test, the mandatory loop.
+2. DESIGN.md — the only visual reference (tokens are machine-checked: `node scripts/check-design-tokens.js`).
+3. docs/loop/00_INDEX.md — the numbered delivery loop; every change belongs to a step `S-xxx` with a CONTRACT.
 
-## Always
-- Read DESIGN.md before generating any UI — colors, typography, spacing from there only
-- Read AGENTS.md for project conventions
-- Use web-design-guidelines Skill: after UI code, audit for a11y/focus/perf
-- Follow ECC workflow: plan -> test -> implement -> review
-- Use `pnpm`, `zod`, `Prisma`, clean architecture, no `any`
-- Citation for every RAG answer
-
-## Never
-- `transition: all`, `outline-none` without focus ring, `div onClick` without button
-- Hardcode date/number formats — use Intl.*
-- Generate UI without DESIGN.md tokens
+Rules that are enforced by tooling, not taste:
+- Stack is locked (see AGENTS.md §1). Do not add libraries outside it; supervisor check C15 fails the audit.
+- UI only from DESIGN.md tokens; after UI work run `python scripts/design_audit.py apps/desktop/src --strict`.
+- Never `transition: all`, never `outline-none` without a `focus-visible:` ring, never `div onClick` — use `<button>`.
+- Dates/numbers through `Intl.*`; Persian-first RTL with logical CSS properties.
+- Tests are real (FFmpeg-generated media, live server, Playwright DOM); never weaken a test to pass.

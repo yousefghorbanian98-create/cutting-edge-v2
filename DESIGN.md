@@ -1,171 +1,166 @@
 # DESIGN.md — Cutting Edge v2
 
-> ⚠️ **STATUS: IMPORTED DRAFT (2026-09-08) — reconciled in step S-099.**
-> This file arrived from the Roadmap-v2 proposal and still describes a *generic SaaS* palette/typography (Geist, Linear blurple, RAG chat bubbles).
-> Until S-099 lands, the **shipping tokens are the authority**: `apps/desktop/src/app/globals.css` (`@theme`) ⇄ `packages/design-system/tokens.ts`
-> (surface `#09090b/#18181b/#27272a`, AI accent `#8b5cf6`, fonts `Inter Variable` + `Vazirmatn` + `JetBrains Mono`, radius 6/10/16/24).
-> S-099 rewrites sections 2–6 below to those values, keeps the rules (sections 5, 8, 9), and adds `scripts/check-design-tokens.js` so drift fails CI.
-> Agents: **do not introduce new colors or fonts from this draft into code.**
+> **STATUS: AUTHORITY (S-099, 2026-09-22).** This file is the single visual reference for every agent and human.
+> The fenced `# tokens:` blocks below are **machine-checked** against the code on every commit and in CI:
+> `node scripts/check-design-tokens.js` (gate `design-tokens`, supervisor C14) compares
+> `DESIGN.md ⇄ apps/desktop/src/app/globals.css (@theme static) ⇄ packages/design-system/tokens.ts` three ways.
+> To change a token: edit all three in one commit (the check names the variable and the two values otherwise).
+> Decision record: ADR-0010 — `docs/adr/0010-design-md-single-ui-authority.md`.
 
-> **Hybrid Design System برای AI-Native Generation**
-> ترکیب `Linear (dark craft) + Vercel (clean minimal) + Stripe (gradient accent)` — بهینه برای عامل‌های AI کدنویسی
-> این فایل در ریشه پروژه قرار دارد تا هر Agent (Claude Code, Cursor, Codex) آن را به عنوان مرجع بصری بخواند.
-> منبع الهام: `design-md/DESIGN.linear.md` (548 lines), `DESIGN.vercel.md` (736), `DESIGN.stripe.md` (487) از VoltAgent/awesome-design-md — MIT
+> **Persian-first, dark-only, offline.** A Windows desktop editor for sports / fitness creators.
+> Inspirations were Linear (dark craft), Vercel (Swiss clarity) and Stripe (one confident accent) — see
+> `design-md/DESIGN.*.md` for the sources — but **only the values below exist in this product.**
 
 ---
-version: 1.0.0
+version: 2.0.0
 name: cutting-edge-v2 Design System
-description: "AI-Native dark-first system: Linear's near-black canvas (#010102) + Vercel's geometric clarity + Stripe's blurple accent. Built for dashboards, RAG chat, and data-heavy SaaS."
-author: cutting-edge-v2 team
-basedOn: [linear.app, vercel, stripe]
+description: "Dark-only, RTL-first desktop editor: near-black zinc surfaces, indigo primary, violet AI accent, fitness heat/energy scales. Inter Variable + Vazirmatn + JetBrains Mono, all self-hosted."
 license: MIT
-
+sources: [apps/desktop/src/app/globals.css, packages/design-system/tokens.ts]
 ---
 
 ## 1. Brand & Vision
-- **Personality:** Precise, technical, quietly luxurious — like Linear's craft but with Stripe's confidence and Vercel's Swiss grid.
-- **Promise:** "Cutting edge, but calm." No neon, no glassmorphism gimmicks. Content first, chrome second.
-- **Tagline vibe:** `Software that thinks with you`
+- **Personality:** Precise, technical, calm. The video is the hero; chrome stays quiet until the AI acts — then it glows violet.
+- **Promise:** "Cutting edge, but calm." No neon, no glassmorphism gimmicks, no light theme (ADR-0003 / ADR-0007).
+- **Audience:** Persian-speaking coaches and athletes on a mid-range Windows laptop (16 GB, GTX 1650). Every screen must read at 1366×768 in RTL.
 
 ## 2. Colors
+
+All colours are Tailwind-4 theme variables (`--color-*` → utilities such as `bg-surface-raised`, `text-ai-glow`, `border-surface-border`).
+The `primary` scale is JS-only today (`designTokens.colors.primary`) and is consumed through DaisyUI's `primary` theme colour; it becomes a `--color-primary-*` set when a UI card needs the utilities (owner: S-013).
+
 ```yaml
-# Core palette — dark-first (default)
-canvas: "#010102"        # deepest black — Linear
-canvas-soft: "#0A0A0B"
-surface-1: "#0F1011"      # card bg
-surface-2: "#141516"
-surface-3: "#18191A"
-hairline: "#23252A"       # borders — subtle
-hairline-strong: "#34343A"
+# tokens: colors
+# surfaces — zinc near-black, three elevations + two white overlays
+--color-surface-base: "#09090b"        # app canvas
+--color-surface-raised: "#18181b"      # panels, cards, timeline lanes
+--color-surface-overlay: "#27272a"     # popovers, menus, tooltips
+--color-surface-border: "rgb(255 255 255 / 0.06)"   # hairline on dark
+--color-surface-hover: "rgb(255 255 255 / 0.04)"    # row / clip hover
 
-ink: "#F7F8F8"            # primary text
-ink-muted: "#D0D6E0"
-ink-subtle: "#8A8F98"
-ink-tertiary: "#62666D"
+# AI accent — violet; only the AI features use it (Style Match, Assistant, Enhancer)
+--color-ai-glow: "#8b5cf6"
+--color-ai-pulse: "#a78bfa"
+--color-ai-soft: "#c4b5fd"
+--color-ai-deep: "#6d28d9"
 
-# Accent — single chromatic (Stripe/Vercel inspired)
-primary: "#5E6AD2"        # Linear blurple — primary CTA, focus ring
-primary-hover: "#828FFF"
-primary-strong: "#4C5BCC"
-primary-soft: "rgba(94,106,210,0.12)"  # hover bg
+# status
+--color-success: "#10b981"
+--color-warning: "#f59e0b"
+--color-error: "#ef4444"
+--color-info: "#3b82f6"
 
-# Semantic
-success: "#0E9F6E"
-warning: "#C27803"
-danger: "#E02424"
-info: "#5E6AD2"
+# muscle enhancer heat map (overlay legend only — never applied to the athlete's skin)
+--color-muscle-warm: "#f97316"
+--color-muscle-hot: "#ef4444"
+--color-muscle-cool: "#3b82f6"
+--color-muscle-def: "#eab308"
 
-# Light mode (auto via prefers-color-scheme)
-light-canvas: "#FFFFFF"
-light-surface: "#F6F8FA"
-light-ink: "#0A0A0B"
-light-hairline: "#E5E7EB"
+# beat-sync energy scale (timeline / waveform)
+--color-energy-low: "#22c55e"
+--color-energy-medium: "#eab308"
+--color-energy-high: "#f97316"
+--color-energy-peak: "#ef4444"
+
+# primary — indigo scale (tokens.ts only; DaisyUI `primary` = 500)
+ts:colors.primary.50: "#eef2ff"
+ts:colors.primary.100: "#e0e7ff"
+ts:colors.primary.200: "#c7d2fe"
+ts:colors.primary.300: "#a5b4fc"
+ts:colors.primary.400: "#818cf8"
+ts:colors.primary.500: "#6366f1"
+ts:colors.primary.600: "#4f46e5"
+ts:colors.primary.700: "#4338ca"
+ts:colors.primary.800: "#3730a3"
+ts:colors.primary.900: "#312e81"
+ts:colors.primary.950: "#1e1b4b"
 ```
 
-**Usage rules:**
-- فقط یک رنگ accent (primary) — هرگز دو رنگ پررنگ کنار هم نه
-- CTA اصلی: `bg-primary text-white`، ثانویه: `bg-surface-2 border-hairline text-ink`
-- Focus ring همیشه `ring-2 ring-primary/50` — از `web-interface-guidelines` تبعیت می‌کند
+**Usage rules**
+- Exactly **two** chromatic accents may appear on one screen: `primary` (indigo) for the user's own actions and `ai-glow` (violet) for anything the AI produced or is producing. Never both on the same control.
+- Text on `surface-base`: white at 100 % (headings), 80 % (body), 40 % (secondary), 20 % (disabled/hints). Contrast of `#ffffff/80` on `#09090b` ≈ 15:1; 40 % ≈ 6.5:1 — still AA for body text; never go below 40 % for readable copy.
+- `error`/`success`/`warning` colour is never the only signal — pair with icon + text (WIG, S-084).
+- Status colours are shared with the heat/energy scales by value (`#ef4444` appears three times) on purpose: one red, one orange, one yellow across the product.
 
 ## 3. Typography
-```yaml
-font-display: "Geist Sans, Inter, SF Pro Display, system-ui"  # Vercel Geist
-font-mono: "Geist Mono, JetBrains Mono, monospace"
-font-brand: "Linear Display, Geist Sans"
 
-scale:
-  display-xl: { size: 72px, weight: 600, lineHeight: 1.05, tracking: -2.5px } # hero
-  display-lg: { size: 56px, weight: 600, lineHeight: 1.10, tracking: -1.8px }
-  display-md: { size: 40px, weight: 600, lineHeight: 1.15, tracking: -1.0px }
-  headline:   { size: 28px, weight: 600, lineHeight: 1.20, tracking: -0.6px }
-  title:      { size: 20px, weight: 500, lineHeight: 1.30 }
-  body:       { size: 15px, weight: 400, lineHeight: 1.70 }
-  body-sm:    { size: 13px, weight: 400, lineHeight: 1.60 }
-  caption:    { size: 12px, weight: 500, lineHeight: 1.50, tracking: 0.3px, uppercase: false }
-  mono:       { size: 13px, weight: 400, lineHeight: 1.60 }
+```yaml
+# tokens: typography
+--font-sans: "Inter Variable, Vazirmatn, system-ui, sans-serif"
+--font-mono: "JetBrains Mono, ui-monospace, monospace"
 ```
 
-**Rules:**
-- Headings با `text-wrap: balance` (Vercel guideline)
-- اعداد جدول: `font-variant-numeric: tabular-nums`
-- `…` نه `...` ، گیومه فارسی `«»` برای فارسی، curly quotes برای انگلیسی
+- **Self-hosted only** (`@fontsource-variable/inter`, `@fontsource/vazirmatn` 400/700, `@fontsource/jetbrains-mono` 400) — the app must render identically with no network. The Playwright suite fails on any `fonts.googleapis.com` / `fonts.gstatic.com` request.
+- `html[lang="fa"][dir="rtl"]` is the default; Vazirmatn resolves for Persian glyphs, Inter for Latin, both from the same `--font-sans` stack — do not switch font-family per language.
+- Scale (Tailwind defaults, no custom scale until S-013 introduces the timeline typography): `text-xs` 12 px captions/mono readouts · `text-sm` 14 px controls · `text-base` 16 px body · `text-lg` 18 px panel titles · `text-2xl`+ page header (gradient `from-indigo-400 to-purple-300`, `bg-clip-text`).
+- Numbers in timecodes, BPM, sizes: `font-mono tabular-nums`; Persian digits only inside prose, Latin digits in technical readouts (S-085 decides per string).
+- `…` not `...`; Persian quotes `«»`; `text-wrap: balance` on headings.
 
-## 4. Spacing & Grid
+## 4. Radius, Spacing & Shadows
+
 ```yaml
-base: 4px
-scale: [0, 4, 8, 12, 16, 24, 32, 48, 64, 96]
-radius:
-  sm: 6px
-  md: 10px
-  lg: 16px
-  xl: 24px
-  full: 9999px
-shadow:
-  soft: "0 4px 20px rgba(0,0,0,0.06)"
-  card: "0 1px 3px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.08)"
-  focus: "0 0 0 3px rgba(94,106,210,0.32)"
-grid:
-  maxWidth: 1280px
-  columns: 12
-  gutter: 24px
-  breakpoints: { sm: 640, md: 768, lg: 1024, xl: 1280, 2xl: 1536 }
+# tokens: radius
+--radius-sm: "6px"      # chips, inputs, small buttons
+--radius-md: "10px"     # buttons, list rows, thumbnails
+--radius-lg: "16px"     # cards, panels
+--radius-xl: "24px"     # modals, feature tiles
+ts:radius.full: "9999px"
 ```
 
-**Layout:** Flex/Grid only — never JS measurement (Vercel rule). Container queries برای کارت‌ها.
-
-## 5. Components
-### Button
-- Primary: `h-9 px-4 bg-primary text-white rounded-md font-medium hover:bg-primary-hover focus-visible:ring-2`
-- Ghost: `h-9 px-4 bg-transparent border border-hairline text-ink hover:bg-surface-2`
-- Icon-only: حتماً `aria-label` + `aria-hidden` روی svg (web-guideline)
-
-### Card
-- `bg-surface-1 border border-hairline rounded-xl p-6 shadow-card`
-- Hover: `border-hairline-strong` + subtle lift `translate-y-[-1px]`
-
-### Input
-- `h-10 px-3 bg-surface-2 border border-hairline rounded-md focus:border-primary focus:ring-2 focus:ring-primary/20`
-- `autocomplete` + `name` معنادار + `spellCheck={false}` روی email/code (Vercel form rules)
-
-### Chat Bubble (core for RAG)
-- User: `bg-primary text-white rounded-2xl rounded-br-sm ml-auto max-w-[80%]`
-- Assistant: `bg-surface-2 border border-hairline rounded-2xl rounded-bl-sm max-w-[80%]` + citation badges `[1][2]`
-
-### Table
-- Header: `text-caption text-ink-subtle uppercase tracking-wide bg-surface-2`
-- Row: `border-b border-hairline hover:bg-surface-2/50`
-- Virtualize اگر >50 rows (Vercel perf rule)
-
-## 6. Motion
 ```yaml
-duration: { fast: 150ms, base: 200ms, slow: 300ms }
-easing: { enter: "cubic-bezier(0.16,1,0.3,1)", exit: "cubic-bezier(0.4,0,1,1)" }
-respect: "prefers-reduced-motion: reduce → disable or reduce to 150ms"
- animateOnly: ["transform", "opacity"]  # never `transition: all`
+# tokens: shadows
+ts:shadows.glow: "0 0 20px rgba(139,92,246,0.3)"   # AI activity halo (ai-glow at 30 %)
+ts:shadows.card: "0 4px 24px rgba(0,0,0,0.4)"      # raised panels on base
 ```
 
-- Message stream: `opacity 0→1 + translateY 4px` per token chunk
-- Modal: `scale 0.98→1 + opacity` with `overscroll-behavior: contain`
+- Spacing: Tailwind's 4 px scale (`1`=4 px … `6`=24 px … `12`=48 px). Panel padding `p-6`, control gaps `gap-2`/`gap-3`, section gaps `gap-6`.
+- Layout is Flex/Grid only; never measure with JS for layout. Editor shell = CSS grid `media-bin | preview | inspector` over `timeline`; timeline rows virtualised (S-015).
+- Borders use `border-surface-border`; hover lifts to `bg-surface-hover`, not a stronger border.
 
-## 7. Dark / Light
-- Default: **dark** (`color-scheme: dark` on html) — مطابق Linear
-- Toggle via `next-themes`, ذخیره در localStorage, no FOUC
-- `<meta name="theme-color" content="#010102">` (dark) / `#ffffff` (light)
+## 5. Motion
 
-## 8. Accessibility (from web-interface-guidelines)
-- `aria-label` روی icon buttons, `label` روی هر input
-- `focus-visible:ring-*` — هرگز `outline-none` بدون جایگزین
-- Keyboard: `onKeyDown` برای هر `onClick` روی div
-- Color contrast ≥ 4.5:1 (ink on canvas = 19:1 ✅)
-- `scroll-margin-top` برای heading anchors
+```yaml
+# tokens: motion
+ts:motion.spring.type: "spring"
+ts:motion.spring.stiffness: "300"
+ts:motion.spring.damping: "30"
+ts:motion.smooth.duration: "0.3"
+ts:motion.smooth.ease: "[0.25, 0.1, 0.25, 1]"
+```
 
-## 9. Performance Budgets
-- Bundle JS <200KB gz, CSS <30KB
-- Image: `width+height` + `loading=lazy` below fold, `priority` above fold
-- List >50 → virtualize (`virtua` / `content-visibility: auto`)
+- Framer Motion 11 with `designTokens.motion.spring` for layout/position changes (clips, panels) and `motion.smooth` (300 ms, ease-out) for opacity/reveal.
+- Animate **only** `transform` and `opacity`; `transition: all` is a lint failure (S-100 `design_audit.py`).
+- `prefers-reduced-motion: reduce` → springs become instant, reveals ≤ 150 ms; the AI glow pulse stops (static halo).
+- Progress for anything > 500 ms: determinate bar when the backend reports `%`, otherwise an indeterminate bar + cancel; never a spinner alone.
 
-## 10. Agent Instructions
-> **به عامل AI:** هر صفحه/کامپوننت جدید را با این DESIGN.md بساز. اگر بین این فایل و رفتار پیش‌فرض مرددی، این فایل اولویت دارد. قبل از تحویل، خودت را با `web-design-guidelines` Skill چک کن (aria, focus, ...).
+## 6. Components (DaisyUI 5, theme `dark`)
 
----
-**Preview:** برای دیدن کاتالوگ بصری، فایل‌های `design-md/DESIGN.*.md` را باز کن — هر کدام `preview.html` هم دارند (در ریپو اصلی VoltAgent).
+DaisyUI 5 is compiled through `@plugin 'daisyui' { themes: dark --default; }`. Use its classes (`btn`, `card`, `input`, `menu`, `modal`, `tooltip`, `progress`) and recolour with the tokens above — do not hand-roll a second button system.
+
+- **Button** — `btn btn-primary` (indigo) for user actions; `btn` + `bg-ai-glow text-white hover:bg-ai-pulse shadow-[var(--shadow-glow)]` for AI actions; `btn btn-ghost` for secondary. Icon-only buttons carry `aria-label`; the icon `aria-hidden`.
+- **Card / Panel** — `bg-surface-raised border border-surface-border rounded-lg p-6` (+ `shadow-card` via tokens.ts for floating panels).
+- **Input / Select** — DaisyUI `input input-bordered bg-surface-overlay rounded-md focus-visible:ring-2 focus-visible:ring-primary/50`; every input has a visible `<label>` (Persian) and `name`; `spellCheck={false}` on paths, codes, keys.
+- **Timeline clip** — `rounded-md` block, energy colour as a 2 px bottom edge (`border-b-2 border-energy-*`), selected = `ring-2 ring-primary`, AI-generated = `ring-ai-glow`.
+- **Preview** — 16:9 `bg-black` stage with `rounded-xl` overflow hidden; the HTML `<video>` gets a `<track kind="captions">` from S-047 (until then the Biome a11y ignore is documented).
+- **Muscle Enhancer overlay** — heat legend uses the `muscle-*` tokens on a translucent `surface-overlay` chip; the athlete's pixels are never tinted (ADR-0007 product rule, "100 % natural").
+- **Toasts / Errors** — Persian sentence + what to do next; `error` colour + icon + text; never only red.
+
+## 7. Dark only
+- `html { color-scheme: dark }`; there is no light theme and no theme toggle (ADR-0003). `<meta name="theme-color" content="#09090b">`.
+- Do not add a theme-switching library or DaisyUI light themes; `supervise.py` C15 flags them.
+
+## 8. Accessibility (Web Interface Guidelines snapshot — `docs/integrations/web-guidelines/`)
+- `aria-label` on icon-only buttons; a `<label>` for every input; `<button>` for actions (never `div onClick`).
+- Focus: `focus-visible:ring-2 ring-primary/50` everywhere; `outline-none` only with that replacement.
+- Keyboard: every action reachable by keyboard and listed in the Command Palette (S-022); `Esc` closes, `Enter` confirms, arrow keys move the playhead.
+- RTL: logical properties (`ms-*`, `pe-*`, `text-start`), never `ml/mr` for layout; icons that imply direction (play, next) are mirrored in RTL.
+- Contrast ≥ 4.5:1 for text (see §2); `scroll-margin-top` on anchors; `overscroll-behavior: contain` inside modals and lists.
+- Enforced offline by `python scripts/design_audit.py apps/desktop/src --strict` (S-100) and by axe in Playwright (S-084).
+
+## 9. Performance budgets (desktop WebView2)
+- First load of the static export: JS < 200 KB gz, CSS < 80 KB raw (S-007 baseline 64.6 KB with all DaisyUI dark theme rules).
+- 60 fps timeline scrub on a GTX 1650 laptop; lists > 50 rows virtualised; thumbnails `width`+`height` set, `loading="lazy"` off-screen.
+- No layout thrash: read → write batching in scrub handlers; `content-visibility: auto` for off-screen media-bin sections.
+
+## 10. Agent instructions
+> **To the agent:** before any UI work read this file, then `AGENTS.md` §5. Use only the tokens above (Tailwind utilities generated from them, or `designTokens` in TS). Adding a colour, font or radius means editing `globals.css`, `tokens.ts` **and** this file in the same commit — `node scripts/check-design-tokens.js` and the CI job will name the variable you forgot. After the UI change run `python scripts/design_audit.py apps/desktop/src --strict` (S-100) and the Playwright styling suite.

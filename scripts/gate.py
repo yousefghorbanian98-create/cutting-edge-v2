@@ -295,9 +295,9 @@ def check_design_tokens() -> Check:
     script = ROOT / "scripts" / "check-design-tokens.js"
     if not script.exists():
         return Check("design-tokens", "MISSING", "scripts/check-design-tokens.js absent")
-    text = script.read_text(encoding="utf-8")
-    if "placeholder" in text:
-        return Check("design-tokens", "SKIP", "placeholder until S-099 (DESIGN.md is an imported draft)")
+    if shutil.which("node") is None:
+        return Check("design-tokens", "MISSING", "node not on PATH")
+    # S-099: real three-way check DESIGN.md ⇄ globals.css @theme ⇄ tokens.ts (exit 2 = parse error).
     rc, out = _run(["node", str(script)])
     return Check("design-tokens", "PASS" if rc == 0 else "FAIL", out.strip()[-2000:])
 

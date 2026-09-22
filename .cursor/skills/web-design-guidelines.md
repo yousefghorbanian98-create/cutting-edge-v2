@@ -1,39 +1,28 @@
 ---
 name: web-design-guidelines
-description: Review UI code for Web Interface Guidelines compliance. Use when asked to "review my UI", "check accessibility", "audit design", "review UX", or "check my site against best practices".
+description: Review UI code in this repository for Web Interface Guidelines compliance. Use when asked to "review my UI", "check accessibility", "audit design", "review UX".
 metadata:
-  author: vercel
-  version: "1.0.0"
+  author: vercel-labs (snapshot adapted for cutting-edge-v2, S-099)
+  version: "1.1.0"
   argument-hint: <file-or-pattern>
 ---
 
-# Web Interface Guidelines
+# Web Interface Guidelines — Cutting Edge v2 (offline)
 
-Review files for compliance with Web Interface Guidelines.
+This is a thin pointer. The project's rules live in:
 
-## How It Works
+- `AGENTS.md` — operating manual (stack, loop, enforcement)
+- `DESIGN.md` — the single visual authority (tokens are machine-checked)
+- `docs/loop/00_INDEX.md` — the numbered delivery loop
 
-1. Fetch the latest guidelines from the source URL below
-2. Read the specified files (or prompt user for files/pattern)
-3. Check against all rules in the fetched guidelines
-4. Output findings in the terse `file:line` format
+## How it works (no network)
 
-## Guidelines Source
+1. Read the rule snapshot: `docs/integrations/web-guidelines/web-interface-guidelines.md` (do **not** fetch a live URL — the desktop app and its tooling are offline by design).
+2. Read the requested files (default: `apps/desktop/src/**/*.tsx`).
+3. Run the deterministic checker first and start from its output:
+   `python scripts/design_audit.py apps/desktop/src --strict` (S-100)
+4. Add anything the checker cannot see (copy, hierarchy, RTL mirroring, motion feel) in the same terse format.
 
-Fetch fresh guidelines before each review:
+## Output
 
-```
-https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md
-```
-
-Use WebFetch to retrieve the latest rules. The fetched content contains all the rules and output format instructions.
-
-## Usage
-
-When a user provides a file or pattern argument:
-1. Fetch guidelines from the source URL above
-2. Read the specified files
-3. Apply all rules from the fetched guidelines
-4. Output findings using the format specified in the guidelines
-
-If no files specified, ask the user which files to review.
+`file:line rule message` — one finding per line, no prose. Suppressions in code only as `// wig-ignore <rule>: <why> (S-xxx)`.

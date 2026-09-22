@@ -17,7 +17,7 @@
 | 2 | `docs/loop/02_LOOP_PROTOCOL.md` | The 10-stage loop every step runs (contract → real test → build → static → review → evidence) |
 | 3 | `docs/loop/04_LEDGER.md` | Status of every numbered step; machine-checked |
 | 4 | `docs/loop/03_STEPS.md` | The step cards (generated from `steps.json`) |
-| 5 | `DESIGN.md` | Visual authority: tokens, typography, motion, component rules |
+| 5 | `DESIGN.md` | Visual authority (ADR-0010): machine-checked tokens, typography, radius, motion, DaisyUI component rules, a11y, budgets |
 | 6 | `docs/loop/13_INTEGRATIONS_ADOPTION.md` | What we took from ECC / Web Interface Guidelines / awesome-design-md and how it is enforced |
 | 7 | `docs/adr/` | Architecture decisions (why things are the way they are) |
 | 8 | `docs/learnings/` | What went wrong before and the rule we derived — read before repeating a mistake |
@@ -50,8 +50,9 @@ plan (CONTRACT: AC-n / NG-n) → red real test → implement → static → real
 - Before starting a new step, confirm the previous one is on GitHub: `git ls-remote origin <branch>` must show your HEAD. If push fails with an auth error, say so and stop — never ask for tokens.
 
 ## 5. UI rules (enforced, not advisory)
-- Read `DESIGN.md` before any UI work. Colors, radius, typography and motion only from tokens (`packages/design-system/tokens.ts` ⇄ `apps/desktop/src/app/globals.css` `@theme`). `node scripts/check-design-tokens.js` fails the static gate on drift.
-- After UI work run `python scripts/design_audit.py apps/desktop/src --strict` (offline Web Interface Guidelines checker). Suppress only with `// wig-ignore <rule>: <why> (S-xxx)`.
+- Read `DESIGN.md` before any UI work (ADR-0010). Its `# tokens:` blocks (colors, typography, radius, shadows, motion) are the same values as `apps/desktop/src/app/globals.css` `@theme static` and `packages/design-system/tokens.ts`; `node scripts/check-design-tokens.js` (gate `design-tokens`, supervisor C14, CI) fails on any drift — a token change is one commit touching all three files.
+- After UI work run `python scripts/design_audit.py apps/desktop/src --strict` (offline Web Interface Guidelines checker, S-100; rule snapshot in `docs/integrations/web-guidelines/web-interface-guidelines.md` — never fetch rules from the network). Suppress only with `// wig-ignore <rule>: <why> (S-xxx)`.
+- Harness files (`.cursorrules`, `.github/copilot-instructions.md`, `.claude/`, `.cursor/`, `.windsurf/`) are thin pointers to this file, `DESIGN.md` and `docs/loop/00_INDEX.md`; `tests/unit/test_agent_docs.py` keeps them free of foreign-stack claims.
 - Always: `aria-label` on icon-only buttons, `focus-visible:` ring (never bare `outline-none`), animate `transform`/`opacity` only, honor `prefers-reduced-motion`, `<button>` for actions, `Intl.*` for dates/numbers, Persian `«»` quotes, `tabular-nums` for numeric columns, RTL-correct logical properties.
 - Every action has a keyboard shortcut and appears in the Command Palette; every async > 500 ms has progress + cancel.
 

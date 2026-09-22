@@ -53,3 +53,4 @@
 - Learnings: `2026-09-22-ci-run2-formatter-drift-and-annotation-grammar.md` (formatter-proof tests, C11 HEAD-only, `::error` grammar, signed-log URL via fetch, atomic commits). ADRs: 0003–0009.
 - Status: 10/101 GREEN. Blockers: none. BUG-16 (cargo advisory) owned by S-010.
 - Next step: S-099 (DESIGN.md single authority + token drift check), then S-100 → S-010 → S-011 → S-012.
+- (same session, cont.) S-099 GREEN: DESIGN.md v2.0.0 authority (46 token keys), `check-design-tokens.js` three-way check in gate/C14/CI, harness files → thin pointers, ADR-0010, `tests/unit/test_agent_docs.py` 9 tests. 11/101 GREEN. Next: S-100.

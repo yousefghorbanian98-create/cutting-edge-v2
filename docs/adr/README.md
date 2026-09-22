@@ -14,3 +14,4 @@ Template: `TEMPLATE.md` (MADR short). Validator: `python scripts/loop/hygiene.py
 | 0007 | Product defaults: MIT, "Cutting Edge", Persian-first RTL, no telemetry, MP4 H.264 default | Accepted |
 | 0008 | Numbered steps run by a Supervisor/Builder loop with contracts, fresh review, evidence ledger, Skip ≠ Pass | Accepted |
 | 0009 | CI as public evidence: SHA-pinned actions, least privilege, strict-missing gate, junit annotations | Accepted |
+| 0010 | `DESIGN.md` is the single UI authority, machine-checked three ways (DESIGN.md ⇄ globals.css ⇄ tokens.ts) | Accepted |

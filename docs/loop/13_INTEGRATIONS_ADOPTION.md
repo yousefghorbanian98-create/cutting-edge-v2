@@ -37,7 +37,7 @@
 |---|---|---|
 | `DESIGN.md` در ریشه به‌عنوان مرجع بصری اجباری | ✅ پذیرفته شد — اما فایل وارداتی با توکن‌های واقعی S-007 تعارض دارد (Geist/blurple/چت RAG در برابر Inter+Vazirmatn/بنفش AI) | S-099 آن را با `@theme` و `tokens.ts` یکی می‌کند |
 | سه فایل الهام (`design-md/DESIGN.{linear,vercel,stripe}.md`) | ✅ نگه داشته شد فقط به‌عنوان مرجع الهام؛ هیچ‌کدام مستقیم به کد نمی‌آید | — |
-| `scripts/check-design-tokens.js` | فعلاً placeholder است → ➕ در S-099 چک واقعی سه‌طرفه DESIGN.md ⇄ globals.css ⇄ tokens.ts و ورود به gate static | S-099 |
+| `scripts/check-design-tokens.js` | ✅ S-099: چک واقعی سه‌طرفه DESIGN.md ⇄ globals.css ⇄ tokens.ts (۲۷ + ۱۹ توکن) در gate static، C14 و CI | S-099 GREEN |
 | KPI «۹۵٪ رنگ‌ها از توکن» | ➕ به S-087 اضافه شد (اسکریپت شمارش hex خام) | S-087 |
 | Storybook/Chromatic | ✂️ نه؛ Playwright visual regression در S-081 | — |
 | ادعاهای استک بیگانه در `.cursorrules`/copilot (NestJS, Prisma, shadcn) | ➕ S-099 آن‌ها را به اشاره‌گر نازک به AGENTS.md تبدیل می‌کند و تست `test_agent_docs.py` واژه‌های ممنوع را قرمز می‌کند | S-099 |
