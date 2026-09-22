@@ -13,16 +13,18 @@
 | BUG-7 | **(جدید)** import نسبی + `python main.py` → ImportError | OPEN | `main.py` | S-002 | `scripts/dev-backend.sh` در CI + `/health` |
 | BUG-8 | **(جدید)** path traversal در upload/download | OPEN — امنیتی | `main.py` | S-003 | `test_security.py::test_traversal_*` |
 | BUG-9 | **(جدید)** Tailwind/DaisyUI نصب نیست؛ UI بدون استایل | FIXED در کد (S-007؛ CSS ۶۴KB، تست مرورگری در CI S-009) | `apps/desktop` | S-007 | Playwright computed-style |
-| BUG-10 | **(جدید)** Tauri کامپایل نمی‌شود (`shell-open`, بدون build.rs/آیکون) | OPEN | `src-tauri` | S-010 | CI windows `tauri build` artifact |
+| BUG-10 | **(جدید)** Tauri کامپایل نمی‌شود (`shell-open`, بدون build.rs/آیکون) | **CLOSED (S-010, fadbe2d)** — `tauri-build` + `build.rs`، ویژگی Tauri-1 حذف، آیکون/قابلیت اضافه؛ `tauri build` روی `ci / windows` نصاب NSIS ساخت | `src-tauri` | S-010 | CI run 35711041909 job 106691418725 step 17 `tauri build` ✅ + artifact `cutting-edge-windows-x64-setup` + `installer_smoke.ps1` 17/17 |
 | BUG-11 | **(جدید)** اندپوینت‌های async سرور را بلاک می‌کنند | OPEN | `main.py` | S-012 | `test_jobs.py::test_health_latency_during_job` |
 | BUG-12 | **(جدید)** خروجی Muscle Enhancer بدون صدا و با `mp4v` | OPEN | `muscle_enhancer.py` | S-037 | `assert_playable(has_audio=True, vcodec='h264')` |
 | BUG-13 | **(جدید)** `.env` خوانده نمی‌شود (بدون dotenv) | OPEN | `main.py` | S-002 | `test_config.py` |
 | BUG-14 | **(جدید)** CORS `*` روی سرویس محلی | OPEN | `main.py` | S-003 | `test_security.py::test_cors_origin` |
 | BUG-15 | **(جدید)** `turbo.json` فرمت Turbo 1 با `turbo@latest` (=2) | FIXED (S-008) | `turbo.json` | S-008 | `pnpm turbo run build` در CI |
-| BUG-16 | **(جدید)** `src-tauri` بدون `tauri-build`/`build.rs`/آیکون/capabilities کامپایل نمی‌شود؛ `cargo fmt --check` + `cargo clippy` در CI ویندوز فعلاً advisory (`continue-on-error` + `::warning`)؛ `tests/unit/test_gate.py::test_cargo_clippy_green` با `xfail(strict=True)` | OPEN | `apps/desktop/src-tauri` | S-010 | جاب `ci / windows`: clippy با `-D warnings` سبز و `continue-on-error` حذف‌شده |
+| BUG-16 | **(جدید)** `src-tauri` بدون `tauri-build`/`build.rs`/آیکون/capabilities کامپایل نمی‌شود؛ `cargo fmt --check` + `cargo clippy` در CI ویندوز فعلاً advisory (`continue-on-error` + `::warning`)؛ `tests/unit/test_gate.py::test_cargo_clippy_green` با `xfail(strict=True)` | **CLOSED (S-010, fadbe2d)** — `continue-on-error` و `::warning` حذف، `xfail` در `test_gate.py` حذف؛ fmt/clippy(-D warnings)/test هر سه hard و سبز | `apps/desktop/src-tauri` | S-010 | جاب `ci / windows`: clippy با `-D warnings` سبز و `continue-on-error` حذف‌شده |
+
+| BUG-17 | **(جدید)** `apps/desktop/src-tauri/Cargo.lock` هنوز commit نشده (sandbox بدون cargo)؛ build هنوز `--locked` نیست | OPEN — قفل روی runner تولید و در job summary (gzip+base64، sha256 `01B0A06D…34A6`) منتشر شده | `src-tauri` | S-010 (AC-7 نیمهٔ دوم) / S-011 | `git ls-files apps/desktop/src-tauri/Cargo.lock` + `cargo clippy --locked` سبز در `ci / windows` |
 
 ## پروتکل باگ جدید
-1. شناسه‌ی بعدی بگیر (`BUG-17` …).
+1. شناسه‌ی بعدی بگیر (`BUG-18` …).
 2. **اول** تست بازتولید بنویس (قرمز).
 3. اگر در حوزه‌ی مرحله‌ی جاری است همان‌جا ببند؛ وگرنه کارت hotfix `S-xxx-hN` بساز و به دفترچه اضافه کن (از طریق `steps.json`).
 4. بستن = تست اثبات سبز در CI + ردیف این جدول `CLOSED (S-xxx, <commit>)`.
