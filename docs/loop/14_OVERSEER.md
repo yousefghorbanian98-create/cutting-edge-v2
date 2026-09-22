@@ -12,6 +12,8 @@
 | **Builder** (چت فعلی/اول) | `arena/01a06951-cutting-edge-v2` | گام‌های ①–⑦ و ⑨–⑩ هر مرحله؛ push؛ GREEN کردن **فقط بعد از** `approved` ناظر | نوشتن `REVIEW.md`؛ خودتأییدی |
 | **Overseer** (چت دوم) | شاخهٔ خودش `arena/<id>-cutting-edge-v2` (کپی از شاخهٔ سازنده + کامیت‌های `review(...)`) | گام ⑧ (بازبینی تازه با اجرای دوبارهٔ تست‌ها)، `supervise.py`، ممیزی گذشته‌نگر، برگرداندن GREEN مشکوک به REVIEW، کارت hotfix | نوشتن/تغییر کد محصول یا تست؛ push به شاخهٔ سازنده؛ GREEN زدن؛ تصمیم U3 به‌جای کاربر |
 
+اگر چت سازنده به نشست جدید منتقل شد (`10_OPERATING_GUIDE.md` §B2)، کاربر پیام `شاخهٔ سازنده عوض شد: arena/<id>-cutting-edge-v2 @ <sha>` را به ناظر می‌دهد و ناظر از آن به بعد همان شاخه را fetch می‌کند (شاخهٔ مرجع فعلی در بالای `00_INDEX.md`).
+
 هیچ‌کدام از دو چت به شاخهٔ دیگری push نمی‌کند (قاعدهٔ Arena: هر نشست فقط به شاخهٔ خودش). تبادل فقط از طریق **fetch** است:
 - ناظر: `git fetch origin arena/01a06951-cutting-edge-v2 && git reset --hard FETCH_HEAD` (شاخهٔ خودش را با سازنده هم‌تراز می‌کند)، سپس فقط `REVIEW.md` را کامیت و push می‌کند.
 - سازنده: `git fetch origin <overseer-branch> && git checkout FETCH_HEAD -- docs/loop/evidence/S-xxx/REVIEW.md` و آن را در کامیت ⑩ می‌آورد.
