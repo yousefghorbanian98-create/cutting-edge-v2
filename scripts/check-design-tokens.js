@@ -181,11 +181,16 @@ function stripQuotes(s) {
   return String(s).replace(/^['"]|['"]$/g, '');
 }
 
+/** Read as LF regardless of checkout/editor line endings (Windows CRLF broke the fence regex — CI run 35675177747). */
+function readLf(file) {
+  return fs.readFileSync(file, 'utf8').replace(/\r\n?/g, '\n');
+}
+
 function main() {
   const opts = parseArgs(process.argv.slice(2));
-  const design = parseDesign(fs.readFileSync(opts.design, 'utf8'));
-  const css = parseCss(fs.readFileSync(opts.css, 'utf8'));
-  const ts = parseTokens(fs.readFileSync(opts.tokens, 'utf8'));
+  const design = parseDesign(readLf(opts.design));
+  const css = parseCss(readLf(opts.css));
+  const ts = parseTokens(readLf(opts.tokens));
 
   const problems = [];
   let threeWay = 0;

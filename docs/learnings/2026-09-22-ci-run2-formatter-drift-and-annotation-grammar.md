@@ -16,3 +16,4 @@
 - Anything that emits machine-parsed output (`::error`, junit, JSON) gets a unit test on the exact grammar (`test_junit_annotate_emits_valid_workflow_commands`).
 - Signed job-log URLs from `gh api …/jobs/<id>/logs` are readable through `fetch_page` even when the sandbox cannot reach blob storage — use that before guessing.
 - Splitting one working tree into several commits must keep **each** commit runnable: run #3 (`27e84a4`) failed `loop-audit` only because `supervise.py` imported `scripts/loop/hygiene.py` that landed in the next commit. Stage by dependency, or run the audit against the staged tree before committing.
+- `Path.write_text` on Windows turns `\n` into `\r\n`: any parser fed by a test-written temp file must normalise CRLF (S-099 checker, CI run 35675177747) — add a CRLF test whenever a script parses text with regexes anchored on `\n`.

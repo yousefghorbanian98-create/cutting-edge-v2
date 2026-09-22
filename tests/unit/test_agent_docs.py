@@ -82,6 +82,19 @@ def test_token_check_green_on_clean_tree() -> None:
 
 
 # ── AC-2 / AC-6: drift in each of the three sources is named ─────────────────
+def test_token_check_tolerates_crlf(tmp_path: Path) -> None:
+    """Windows checkouts/editors may write CRLF; the check must parse them (CI run 35675177747)."""
+    crlf = tmp_path / "DESIGN.md"
+    crlf.write_bytes(DESIGN.read_text(encoding="utf-8").replace("\n", "\r\n").encode("utf-8"))
+    css = tmp_path / "globals.css"
+    css.write_bytes(CSS.read_text(encoding="utf-8").replace("\n", "\r\n").encode("utf-8"))
+    ts = tmp_path / "tokens.ts"
+    ts.write_bytes(TOKENS.read_text(encoding="utf-8").replace("\n", "\r\n").encode("utf-8"))
+    rc, rep = _run("--design", str(crlf), "--css", str(css), "--tokens", str(ts))
+    assert rc == 0, rep["problems"]
+    assert rep["threeWay"] == 27 and rep["tsOnly"] >= 16
+
+
 def test_token_check_detects_drift_in_each_source(tmp_path: Path) -> None:
     css = tmp_path / "globals.css"
     css.write_text(
