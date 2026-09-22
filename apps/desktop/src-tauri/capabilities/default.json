@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "S-010 walking skeleton: only the core IPC surface (window/app/event basics) for the main window. Dialog, opener and fs permissions are added per feature in S-059.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

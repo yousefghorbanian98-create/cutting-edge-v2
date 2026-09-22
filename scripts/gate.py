@@ -286,6 +286,15 @@ def check_cargo() -> Check:
     return Check("cargo-clippy", "PASS" if ok else "FAIL", (out1 + out2).strip()[-4000:])
 
 
+def check_icons() -> Check:
+    script = ROOT / "scripts" / "make_icons.py"
+    if not script.exists():
+        return Check("icons", "MISSING", "scripts/make_icons.py absent")
+    # S-010: committed src-tauri/icons/* must be byte-for-pixel what the generator emits.
+    rc, out = _run([sys.executable, str(script), "--check"])
+    return Check("icons", "PASS" if rc == 0 else "FAIL", out.strip()[-2000:])
+
+
 def check_verify_ledger() -> Check:
     rc, out = _run([sys.executable, "scripts/verify_ledger.py"])
     return Check("verify-ledger", "PASS" if rc == 0 else "FAIL", out.strip()[-2000:])
@@ -324,9 +333,10 @@ STATIC_CHECKS: dict[str, object] = {
     "verify-ledger": lambda staged: check_verify_ledger(),
     "design-tokens": lambda staged: check_design_tokens(),
     "design-audit": lambda staged: check_design_audit(),
+    "icons": lambda staged: check_icons(),
 }
 # checks that are slow/network-bound and irrelevant for a per-commit hook
-STAGED_SKIP = {"tsc", "turbo", "pip-audit", "pnpm-audit", "cargo-clippy", "bandit"}
+STAGED_SKIP = {"tsc", "turbo", "pip-audit", "pnpm-audit", "cargo-clippy", "bandit", "icons"}
 
 STAGES = {
     "static": "static analysis, secrets, versions, ledger (S-008)",

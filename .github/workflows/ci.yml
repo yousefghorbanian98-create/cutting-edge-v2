@@ -71,7 +71,7 @@ jobs:
           ai-engine/.venv/bin/python -m pip install --quiet -r ai-engine/requirements-tooling.txt
           ai-engine/.venv/bin/python -m pip install --quiet --no-deps -e ai-engine
 
-      - name: Static gate (13 checks; cargo-clippy is owned by the windows job)
+      - name: Static gate (14 checks; cargo-clippy is owned by the windows job)
         run: ai-engine/.venv/bin/python scripts/gate.py --stage static --json --strict-missing --skip cargo-clippy | tee gate-static.log
 
       - name: Unit tests (tests/unit) → junit
@@ -121,7 +121,7 @@ jobs:
   windows:
     name: windows
     runs-on: windows-2022
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.2.2
@@ -157,7 +157,7 @@ jobs:
           ai-engine/.venv/Scripts/python.exe -m pip install --quiet --no-deps -e ai-engine
           ai-engine/.venv/Scripts/python.exe -c "import imageio_ffmpeg, sys; print('ffmpeg:', imageio_ffmpeg.get_ffmpeg_exe())"
 
-      - name: Rust stable (rustfmt, clippy)
+      - name: Rust stable (rustfmt, clippy) — S-010 hard checks + tauri build
         uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # v1 (stable branch, 2026-09)
         with:
           components: rustfmt, clippy
@@ -178,24 +178,69 @@ jobs:
         shell: pwsh
         run: python scripts/ci/junit_annotate.py reports/junit-windows.xml
 
-      # NG-3 / BUG-16: the crate cannot compile until S-010 adds tauri-build/icons/
-      # capabilities, and rustfmt is not available in the build sandbox. Until S-010
-      # both checks are reported as a warning (never silently green); S-010 splits
-      # them into hard steps (continue-on-error removed) and closes BUG-16.
-      - name: cargo fmt --check + cargo clippy -D warnings (src-tauri) — advisory until S-010
-        id: cargo
+      # S-010: the crate compiles → fmt/clippy/tests are hard checks (BUG-16 closed).
+      # `tauri::generate_context!()` embeds `frontendDist` (../out) at compile time,
+      # so the static export must exist before clippy/test can even type-check.
+      - name: Frontend build (Turbo → next export) — required by generate_context!
+        run: pnpm run build
+
+      - name: cargo fmt --check (src-tauri)
         working-directory: apps/desktop/src-tauri
         shell: pwsh
-        continue-on-error: true
-        run: |
-          cargo fmt --all --check
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cargo clippy --all-targets -- -D warnings
+        run: cargo fmt --all --check
 
-      - name: Cargo status → annotation
-        if: steps.cargo.outcome != 'success'
+      - name: cargo clippy -D warnings (src-tauri, all targets)
+        working-directory: apps/desktop/src-tauri
         shell: pwsh
-        run: Write-Output "::warning title=cargo fmt/clippy::src-tauri did not pass fmt/clippy (expected before S-010 walking skeleton); tracked as BUG-16"
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: cargo test (src-tauri, health rules)
+        working-directory: apps/desktop/src-tauri
+        shell: pwsh
+        run: cargo test -- --nocapture
+
+      - name: Icons match the deterministic generator (scripts/make_icons.py --check)
+        shell: pwsh
+        run: python scripts/make_icons.py --check
+
+      # `tauri build` runs `pnpm build` (next export → apps/desktop/out) itself via
+      # beforeBuildCommand, then compiles release and packs the NSIS installer.
+      - name: tauri build → NSIS installer (*_x64-setup.exe)
+        working-directory: apps/desktop
+        shell: pwsh
+        env:
+          CI: 'true'
+        run: pnpm exec tauri build --ci --verbose
+
+      # The sandbox that authors this repo has no cargo, so the first resolved
+      # Cargo.lock is captured from the runner (gzip+base64 in the log and as an
+      # artifact) and committed in the follow-up; afterwards `--locked` is enforced.
+      - name: Cargo.lock → log (gzip+base64) for the lockfile commit
+        if: hashFiles('apps/desktop/src-tauri/Cargo.lock') != ''
+        working-directory: apps/desktop/src-tauri
+        shell: pwsh
+        run: |
+          $bytes = [IO.File]::ReadAllBytes("Cargo.lock")
+          $ms = New-Object IO.MemoryStream
+          $gz = New-Object IO.Compression.GzipStream($ms, [IO.Compression.CompressionLevel]::Optimal)
+          $gz.Write($bytes, 0, $bytes.Length); $gz.Close()
+          $b64 = [Convert]::ToBase64String($ms.ToArray())
+          Write-Output "::group::CARGO_LOCK_B64 ($($bytes.Length) bytes, sha256 $((Get-FileHash Cargo.lock).Hash))"
+          for ($i = 0; $i -lt $b64.Length; $i += 1000) { Write-Output $b64.Substring($i, [Math]::Min(1000, $b64.Length - $i)) }
+          Write-Output "::endgroup::"
+
+      - name: Installer smoke — silent install, launch, window title, silent uninstall
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/ci/installer_smoke.ps1 -Report reports/installer-smoke.jsonl
+
+      - name: Upload installer (downloadable .exe on every push)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: cutting-edge-windows-x64-setup
+          if-no-files-found: error
+          retention-days: 30
+          path: apps/desktop/src-tauri/target/release/bundle/nsis/*_x64-setup.exe
 
       - name: Upload windows evidence (junit)
         if: always()
@@ -204,7 +249,10 @@ jobs:
           name: windows-evidence
           if-no-files-found: error
           retention-days: 14
-          path: reports/junit-windows.xml
+          path: |
+            reports/junit-windows.xml
+            reports/installer-smoke.jsonl
+            apps/desktop/src-tauri/Cargo.lock
 
   # ───────────────────────────────────────────────────────────────────────────
   loop-audit:

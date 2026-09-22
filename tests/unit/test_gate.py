@@ -77,11 +77,6 @@ def test_staged_secret_fails_static(tmp_path: Path) -> None:
     assert ".gate-secret-probe.py:1" in sec["detail"]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG-16: src-tauri lacks tauri-build/icons/capabilities so clippy cannot compile it; "
-    "S-010 (walking skeleton) makes fmt+clippy green and must delete this marker",
-)
 def test_cargo_clippy_green() -> None:
     # Owned by the `ci / windows` job (Tauri's Linux build needs webkit2gtk system libs
     # that hosted ubuntu runners lack, and the sandbox has no cargo at all).

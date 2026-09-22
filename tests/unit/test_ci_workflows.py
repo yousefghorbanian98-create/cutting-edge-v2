@@ -98,8 +98,23 @@ def test_windows_job_steps():
     assert "Swatinem/rust-cache" in uses
     assert "cargo fmt" in runs and "--check" in runs
     assert "cargo clippy" in runs and "-D warnings" in runs
+    assert "cargo test" in runs
     assert "src-tauri" in dump
     assert "actions/upload-artifact" in uses
+    # S-010: cargo checks are hard (BUG-16 closed) and every push ships an installer.
+    for step in _steps(job):
+        if "cargo" in str(step.get("run", "")):
+            assert not step.get("continue-on-error"), f"cargo step is advisory again: {step.get('name')}"
+    assert "tauri build" in runs
+    assert "scripts/ci/installer_smoke.ps1" in runs
+    assert "make_icons.py --check" in runs
+    assert "_x64-setup.exe" in dump, "installer artifact must be uploaded"
+    order = [str(s.get("name", "")) for s in _steps(job)]
+    i_front = next(i for i, n in enumerate(order) if n.startswith("Frontend build"))
+    i_clippy = next(i for i, n in enumerate(order) if n.startswith("cargo clippy"))
+    i_build = next(i for i, n in enumerate(order) if n.startswith("tauri build"))
+    i_smoke = next(i for i, n in enumerate(order) if n.startswith("Installer smoke"))
+    assert i_front < i_clippy < i_build < i_smoke, order
 
 
 # ── AC-4 ─────────────────────────────────────────────────────────────────────
