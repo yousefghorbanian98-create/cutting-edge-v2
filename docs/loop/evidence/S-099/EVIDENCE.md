@@ -23,3 +23,7 @@ Suite: `pytest tests/unit` → **46 passed / 1 skipped** (cargo); `biome check` 
 ## Reheal / carry
 - The checker's `tokens.ts` walker is a minimal tokenizer for this file's shape (nested object literals, strings, numbers, arrays). If S-013 adds functions or template literals to `designTokens`, the walker must be extended — `test_token_check_green_on_clean_tree` would fail loudly (exit 2), not silently pass.
 - Biome ignore on `<video>` (useMediaCaption) still owned by S-047; noted in DESIGN.md §6.
+
+
+## CI
+`7f5618c` → https://github.com/yousefghorbanian98-create/cutting-edge-v2/actions/runs/35675829105 — `ubuntu` ✅ `windows` ✅ `loop-audit` ✅ (unit junit incl. this step's tests on both OSes; gate `design-tokens` + `design-audit` PASS under `--strict-missing`).

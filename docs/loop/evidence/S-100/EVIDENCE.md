@@ -24,3 +24,7 @@ Regression: `next build` OK; `build-artifacts.spec.ts` 8/8; `biome check` 7 file
 ## Reheal / carry
 - Future rules (S-084): `autoFocus` justification, `onPaste`+`preventDefault`, `.map()` > 50 without virtualisation (needs data-size knowledge), `user-scalable=no`.
 - The remaining `outline-none` usages are paired with `focus-visible:ring-*`; S-084's axe run must confirm the ring is visible on the dark surfaces (contrast of `indigo-500/50` on `#09090b`).
+
+
+## CI
+`7f5618c` → https://github.com/yousefghorbanian98-create/cutting-edge-v2/actions/runs/35675829105 — `ubuntu` ✅ `windows` ✅ `loop-audit` ✅ (unit junit incl. this step's tests on both OSes; gate `design-tokens` + `design-audit` PASS under `--strict-missing`).
