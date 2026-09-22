@@ -22,6 +22,17 @@ TAURI = ROOT / "apps" / "desktop" / "src-tauri"
 sys.path.insert(0, str(ROOT / "scripts"))
 import make_icons  # noqa: E402
 
+# Keys of tauri-bundler/src/bundle/windows/nsis/languages/English.nsh (tauri-bundler 2.9.x).
+ENGLISH_NSIS_KEYS = {
+    "addOrReinstall", "alreadyInstalled", "alreadyInstalledLong", "appRunning", "appRunningOkKill",
+    "chooseMaintenanceOption", "choowHowToInstall", "createDesktop", "dontUninstall",
+    "dontUninstallDowngrade", "failedToKillApp", "installingWebview2", "newerVersionInstalled", "older",
+    "olderOrUnknownVersionInstalled", "silentDowngrades", "unableToUninstall", "uninstallApp",
+    "uninstallBeforeInstalling", "unknown", "webview2AbortError", "webview2DownloadError",
+    "webview2DownloadSuccess", "webview2Downloading", "webview2InstallError", "webview2InstallSuccess",
+    "deleteAppData",
+}  # fmt: skip
+
 
 def _conf() -> dict:
     return json.loads((TAURI / "tauri.conf.json").read_text(encoding="utf-8"))
@@ -75,7 +86,15 @@ def test_bundle_targets_nsis_per_user_with_persian() -> None:
     assert bundle["active"] is True and bundle["targets"] == ["nsis"]
     nsis = bundle["windows"]["nsis"]
     assert nsis["installMode"] == "currentUser", "no UAC (S-062 default)"
-    assert set(nsis["languages"]) >= {"English", "Persian"} and nsis["displayLanguageSelector"] is True
+    # NSIS names the Persian locale "Farsi" (Farsi.nlf); Tauri's built-in "Persian" aborts makensis
+    # (CI run 35707003767), so the Persian strings ship as a custom language file.
+    assert nsis["languages"] == ["English", "Farsi"] and nsis["displayLanguageSelector"] is True
+    farsi = TAURI / nsis["customLanguageFiles"]["Farsi"]
+    assert farsi.exists()
+    body = farsi.read_text(encoding="utf-8")
+    keys = set(re.findall(r"^LangString (\w+) \$\{LANG_FARSI\}", body, re.M))
+    assert keys == ENGLISH_NSIS_KEYS, sorted(keys ^ ENGLISH_NSIS_KEYS)
+    assert "{{" not in body, "custom language files are not handlebars-rendered; use ${PRODUCTNAME}"
     lic = (TAURI / bundle["licenseFile"]).resolve()
     assert lic == ROOT / "LICENSE" and lic.exists()
     for rel in bundle["icon"]:

@@ -1,0 +1,33 @@
+; Cutting Edge — Persian strings for the NSIS installer (S-010).
+; NSIS ships the Persian locale as "Farsi" (Farsi.nlf); Tauri's bundled "Persian"
+; table points at a Persian.nlf that does not exist, so makensis aborts. We select
+; "Farsi" and provide Tauri's custom messages ourselves via
+; bundle > windows > nsis > customLanguageFiles. Keys mirror tauri-bundler's
+; languages/English.nsh; ${PRODUCTNAME} / ${VERSION} are NSIS defines.
+LangString addOrReinstall ${LANG_FARSI} "افزودن / نصب دوبارهٔ اجزا"
+LangString alreadyInstalled ${LANG_FARSI} "قبلاً نصب شده است"
+LangString alreadyInstalledLong ${LANG_FARSI} "${PRODUCTNAME} ${VERSION} از قبل نصب شده است. عملیات موردنظر را انتخاب کنید و روی «بعدی» بزنید."
+LangString appRunning ${LANG_FARSI} "${PRODUCTNAME} در حال اجراست. لطفاً ابتدا آن را ببندید و دوباره تلاش کنید."
+LangString appRunningOkKill ${LANG_FARSI} "${PRODUCTNAME} در حال اجراست.$\nبرای بستن آن روی «تأیید» بزنید."
+LangString chooseMaintenanceOption ${LANG_FARSI} "عملیات نگهداری موردنظر را انتخاب کنید."
+LangString choowHowToInstall ${LANG_FARSI} "نحوهٔ نصب ${PRODUCTNAME} را انتخاب کنید."
+LangString createDesktop ${LANG_FARSI} "ساخت میان‌بر روی دسکتاپ"
+LangString dontUninstall ${LANG_FARSI} "حذف نشود"
+LangString dontUninstallDowngrade ${LANG_FARSI} "حذف نشود (بازگشت به نسخهٔ قدیمی‌تر بدون حذف در این نصب‌کننده غیرفعال است)"
+LangString failedToKillApp ${LANG_FARSI} "بستن ${PRODUCTNAME} ممکن نشد. لطفاً ابتدا آن را ببندید و دوباره تلاش کنید."
+LangString installingWebview2 ${LANG_FARSI} "در حال نصب WebView2…"
+LangString newerVersionInstalled ${LANG_FARSI} "نسخهٔ جدیدتری از ${PRODUCTNAME} نصب شده است. نصب نسخهٔ قدیمی‌تر توصیه نمی‌شود؛ اگر مطمئن هستید، بهتر است ابتدا نسخهٔ فعلی را حذف کنید. عملیات موردنظر را انتخاب کنید و روی «بعدی» بزنید."
+LangString older ${LANG_FARSI} "قدیمی‌تر"
+LangString olderOrUnknownVersionInstalled ${LANG_FARSI} "نسخهٔ $R4 ${PRODUCTNAME} روی این سیستم نصب است. توصیه می‌شود پیش از نصب، نسخهٔ فعلی حذف شود. عملیات موردنظر را انتخاب کنید و روی «بعدی» بزنید."
+LangString silentDowngrades ${LANG_FARSI} "بازگشت به نسخهٔ قدیمی‌تر در این نصب‌کننده غیرفعال است؛ نصب بی‌صدا ممکن نیست. لطفاً از نصب‌کنندهٔ گرافیکی استفاده کنید.$\n"
+LangString unableToUninstall ${LANG_FARSI} "حذف ممکن نشد."
+LangString uninstallApp ${LANG_FARSI} "حذف ${PRODUCTNAME}"
+LangString uninstallBeforeInstalling ${LANG_FARSI} "حذف پیش از نصب"
+LangString unknown ${LANG_FARSI} "نامشخص"
+LangString webview2AbortError ${LANG_FARSI} "نصب WebView2 ناموفق بود. برنامه بدون آن اجرا نمی‌شود؛ نصب‌کننده را دوباره اجرا کنید."
+LangString webview2DownloadError ${LANG_FARSI} "خطا: دانلود WebView2 ناموفق بود — $0"
+LangString webview2DownloadSuccess ${LANG_FARSI} "راه‌انداز WebView2 با موفقیت دانلود شد"
+LangString webview2Downloading ${LANG_FARSI} "در حال دانلود راه‌انداز WebView2…"
+LangString webview2InstallError ${LANG_FARSI} "خطا: نصب WebView2 با کد $1 ناموفق بود"
+LangString webview2InstallSuccess ${LANG_FARSI} "WebView2 با موفقیت نصب شد"
+LangString deleteAppData ${LANG_FARSI} "حذف داده‌های برنامه"
