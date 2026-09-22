@@ -11,7 +11,7 @@ use sysinfo::System;
 use tracing_subscriber::EnvFilter;
 
 /// RAM headroom the Reheal layer wants to keep free (the AI stack alone can
-/// need ~1.5 GB; see `docs/loop/07_HARDWARE_LIMITS.md`).
+/// need ~1.5 GB on a 16 GB / GTX 1650 machine, see `docs/loop/01_STATE_OF_REPO.md`).
 pub const RAM_HEALTHY_MAX_PERCENT: f32 = 85.0;
 /// Above this the host is saturated and background jobs should be paused.
 pub const CPU_HEALTHY_MAX_PERCENT: f32 = 95.0;
@@ -64,16 +64,20 @@ impl Default for Monitor {
         let mut sys = System::new();
         sys.refresh_memory();
         sys.refresh_cpu_usage();
-        Self { sys: Mutex::new(sys) }
+        Self {
+            sys: Mutex::new(sys),
+        }
     }
 }
 
 #[tauri::command]
 fn system_status(monitor: tauri::State<'_, Monitor>) -> SystemStatus {
-    let mut sys = monitor.sys.lock().unwrap_or_else(PoisonError::into_inner);
+    let guard = monitor.sys.lock();
+    let mut sys = guard.unwrap_or_else(PoisonError::into_inner);
     sys.refresh_memory();
     sys.refresh_cpu_usage();
-    status_from(sys.used_memory(), sys.total_memory(), sys.global_cpu_usage())
+    let (used, total) = (sys.used_memory(), sys.total_memory());
+    status_from(used, total, sys.global_cpu_usage())
 }
 
 #[tauri::command]
@@ -82,7 +86,8 @@ fn app_version() -> &'static str {
 }
 
 pub fn run() {
-    let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
+    let filter = EnvFilter::try_from_default_env();
+    let filter = filter.unwrap_or_else(|_| EnvFilter::new("info"));
     tracing_subscriber::fmt().with_env_filter(filter).init();
 
     tauri::Builder::default()
@@ -111,7 +116,8 @@ mod tests {
 
     #[test]
     fn status_from_converts_bytes_and_guards_zero_total() {
-        let s = status_from(3 * 1024 * 1024 * 1024, 16 * 1024 * 1024 * 1024, 12.5);
+        const GIB: u64 = 1024 * 1024 * 1024;
+        let s = status_from(3 * GIB, 16 * GIB, 12.5);
         assert_eq!((s.ram_used_mb, s.ram_total_mb), (3072, 16384));
         assert!((s.ram_percent - 18.75).abs() < 0.01);
         assert!(s.healthy);
@@ -124,9 +130,12 @@ mod tests {
     #[test]
     fn status_serialises_to_the_health_shape() {
         let json = serde_json::to_value(status_from(1, 2, 3.0)).unwrap();
-        for key in ["ram_used_mb", "ram_total_mb", "ram_percent", "cpu_percent", "healthy"] {
-            assert!(json.get(key).is_some(), "missing {key}");
-        }
+        let obj = json.as_object().unwrap();
+        assert!(obj.contains_key("ram_used_mb"));
+        assert!(obj.contains_key("ram_total_mb"));
+        assert!(obj.contains_key("ram_percent"));
+        assert!(obj.contains_key("cpu_percent"));
+        assert!(obj.contains_key("healthy"));
     }
 
     #[test]
