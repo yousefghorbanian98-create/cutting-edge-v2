@@ -1,5 +1,5 @@
 'use client';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   Brain,
   CheckCircle2,
@@ -72,6 +72,9 @@ function EditorApp() {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [dnaData, setDnaData] = useState<MoodDNA | null>(null);
   const vRef = useRef<HTMLVideoElement>(null);
+  /** WIG: honour prefers-reduced-motion — slide/scale become plain fades. */
+  const reduceMotion = useReducedMotion();
+  const slideY = (px: number) => (reduceMotion ? 0 : px);
 
   // ── Reheal Polling ──
   useEffect(() => {
@@ -284,9 +287,9 @@ function EditorApp() {
       <AnimatePresence>
         {toast && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: slideY(-20) }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            exit={{ opacity: 0, y: slideY(-20) }}
             className="fixed top-14 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-5 py-2.5 bg-emerald-500/20 border border-emerald-500/40 rounded-xl backdrop-blur-md text-xs text-emerald-200 shadow-2xl max-w-lg"
           >
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -306,7 +309,7 @@ function EditorApp() {
             type="button"
             key={p.id}
             onClick={() => setPanel(p.id)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all ${panel === p.id ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70'}`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors ${panel === p.id ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70'}`}
           >
             <p.icon className="w-3.5 h-3.5" />
             {p.label}
@@ -344,8 +347,8 @@ function EditorApp() {
                 onEnded={() => setIsPlaying(false)}
               />
             ) : (
-              <label className="flex flex-col items-center gap-4 p-12 border-2 border-dashed border-white/10 rounded-2xl cursor-pointer hover:border-indigo-500/50 transition-all group">
-                <Upload className="w-12 h-12 text-white/20 group-hover:text-indigo-400 group-hover:scale-110 transition-all" />
+              <label className="flex flex-col items-center gap-4 p-12 border-2 border-dashed border-white/10 rounded-2xl cursor-pointer hover:border-indigo-500/50 transition-colors group">
+                <Upload className="w-12 h-12 text-white/20 group-hover:text-indigo-400 group-hover:scale-110 transition-[color,transform] motion-reduce:transform-none" />
                 <span className="text-white/40 text-sm">ویدیو را بکشید و رها کنید</span>
                 <span className="text-white/20 text-xs">MP4, MOV, AVI</span>
                 <input type="file" accept="video/*" className="hidden" onChange={onFile} />
@@ -357,32 +360,40 @@ function EditorApp() {
               <div className="h-14 bg-[#0f0f12] border-t border-white/5 flex items-center px-4 gap-3 shrink-0">
                 <button
                   type="button"
+                  aria-label="۵ ثانیه عقب"
                   onClick={() => {
                     if (vRef.current) vRef.current.currentTime = Math.max(0, currentTime - 5);
                   }}
                 >
-                  <SkipBack className="w-4 h-4 text-white/50 hover:text-white" />
+                  <SkipBack aria-hidden="true" className="w-4 h-4 text-white/50 hover:text-white" />
                 </button>
                 <button
                   type="button"
+                  aria-label={isPlaying ? 'توقف' : 'پخش'}
                   onClick={toggle}
                   className="p-2 bg-white/10 hover:bg-white/20 rounded-full"
                 >
-                  {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-white" />}
+                  {isPlaying ? (
+                    <Pause aria-hidden="true" className="w-4 h-4" />
+                  ) : (
+                    <Play aria-hidden="true" className="w-4 h-4 fill-white" />
+                  )}
                 </button>
                 <button
                   type="button"
+                  aria-label="۵ ثانیه جلو"
                   onClick={() => {
                     if (vRef.current) vRef.current.currentTime = Math.min(duration, currentTime + 5);
                   }}
                 >
-                  <SkipForward className="w-4 h-4 text-white/50 hover:text-white" />
+                  <SkipForward aria-hidden="true" className="w-4 h-4 text-white/50 hover:text-white" />
                 </button>
                 <span className="text-xs text-white/40 font-mono w-24 text-center">
                   {fmt(currentTime)} / {fmt(duration)}
                 </span>
                 <input
                   type="range"
+                  aria-label="موقعیت پخش"
                   min={0}
                   max={duration || 100}
                   value={currentTime}
@@ -404,7 +415,7 @@ function EditorApp() {
                     ? clips.map((c) => (
                         <div
                           key={c.id ?? `clip-${c.start}-${c.end}`}
-                          className="flex-1 rounded-t transition-all"
+                          className="flex-1 rounded-t transition-[height,background-color]"
                           style={{
                             height: `${c.energyLevel * 100}%`,
                             backgroundColor: c.emotionTag === 'intense' ? '#f97316' : '#6366f1',
@@ -431,9 +442,9 @@ function EditorApp() {
         <AnimatePresence mode="wait">
           <motion.div
             key={panel}
-            initial={{ x: 50, opacity: 0 }}
+            initial={{ x: slideY(50), opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 50, opacity: 0 }}
+            exit={{ x: slideY(50), opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="w-80 bg-[#0f0f12] border-r border-white/5 flex flex-col shrink-0"
           >
@@ -461,8 +472,9 @@ function EditorApp() {
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && sendAi()}
-                      placeholder="سؤالت رو بپرس..."
-                      className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-violet-500/50"
+                      placeholder="سؤالت رو بپرس…"
+                      aria-label="پرسش از دستیار هوشمند"
+                      className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 focus:border-violet-500/50"
                     />
                     <button
                       type="button"
@@ -502,7 +514,7 @@ function EditorApp() {
                       type="button"
                       key={p.id}
                       onClick={() => setSelectedPreset(p.id)}
-                      className={`w-full text-right px-3 py-2.5 rounded-lg text-xs border transition-all ${selectedPreset === p.id ? 'bg-orange-500/20 border-orange-500/50 text-orange-200' : 'bg-white/5 border-white/5 text-white/70 hover:border-orange-500/30'}`}
+                      className={`w-full text-right px-3 py-2.5 rounded-lg text-xs border transition-colors ${selectedPreset === p.id ? 'bg-orange-500/20 border-orange-500/50 text-orange-200' : 'bg-white/5 border-white/5 text-white/70 hover:border-orange-500/30'}`}
                     >
                       💪 {p.l}
                     </button>
@@ -538,7 +550,7 @@ function EditorApp() {
                   </button>
                   {dnaData && (
                     <motion.div
-                      initial={{ opacity: 0, y: 10 }}
+                      initial={{ opacity: 0, y: slideY(10) }}
                       animate={{ opacity: 1, y: 0 }}
                       className="p-3 bg-purple-500/5 border border-purple-500/20 rounded-xl space-y-2"
                     >
@@ -583,7 +595,7 @@ function EditorApp() {
                     type="button"
                     onClick={handleBeatSync}
                     disabled={!!loading}
-                    className="w-full flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-lg border border-white/5 hover:border-indigo-500/30 text-right transition-all"
+                    className="w-full flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-lg border border-white/5 hover:border-indigo-500/30 text-right transition-colors"
                   >
                     <span className="text-lg">🎵</span>
                     <div className="flex-1">
@@ -600,7 +612,7 @@ function EditorApp() {
                     type="button"
                     onClick={handleViralCut}
                     disabled={!!loading}
-                    className="w-full flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-lg border border-white/5 hover:border-indigo-500/30 text-right transition-all"
+                    className="w-full flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-lg border border-white/5 hover:border-indigo-500/30 text-right transition-colors"
                   >
                     <span className="text-lg">🎬</span>
                     <div className="flex-1">
@@ -624,9 +636,9 @@ function EditorApp() {
       <AnimatePresence>
         {showReheal && (
           <motion.div
-            initial={{ y: 100, opacity: 0 }}
+            initial={{ y: slideY(100), opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
+            exit={{ y: slideY(100), opacity: 0 }}
             className="fixed bottom-7 right-4 w-96 bg-[#121217] border border-white/10 rounded-2xl shadow-2xl p-4 z-50 text-xs"
           >
             <div className="flex items-center justify-between border-b border-white/5 pb-2 mb-3">

@@ -54,3 +54,4 @@
 - Status: 10/101 GREEN. Blockers: none. BUG-16 (cargo advisory) owned by S-010.
 - Next step: S-099 (DESIGN.md single authority + token drift check), then S-100 → S-010 → S-011 → S-012.
 - (same session, cont.) S-099 GREEN: DESIGN.md v2.0.0 authority (46 token keys), `check-design-tokens.js` three-way check in gate/C14/CI, harness files → thin pointers, ADR-0010, `tests/unit/test_agent_docs.py` 9 tests. 11/101 GREEN. Next: S-100.
+- (same session, cont.) S-100 GREEN: `scripts/design_audit.py` (8 WIG rules, exact-line fixtures, ignore grammar) in gate `design-audit`; 17 real findings fixed in page.tsx/CommandPalette.tsx (aria-labels, focus-visible, transition props, useReducedMotion). Gate 12/0/0/1. 12/101 GREEN. Next: S-010 (Tauri walking skeleton — cargo only on CI windows).

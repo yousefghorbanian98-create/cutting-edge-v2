@@ -305,7 +305,7 @@ def check_design_tokens() -> Check:
 def check_design_audit() -> Check:
     script = ROOT / "scripts" / "design_audit.py"
     if not script.exists():
-        return Check("design-audit", "SKIP", "scripts/design_audit.py lands in S-100")
+        return Check("design-audit", "MISSING", "scripts/design_audit.py absent")
     rc, out = _run([sys.executable, str(script), "apps/desktop/src", "--strict"])
     return Check("design-audit", "PASS" if rc == 0 else "FAIL", out.strip()[-4000:])
 

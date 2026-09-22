@@ -1,5 +1,5 @@
 'use client';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Brain, Dumbbell, Mic, Palette, Scissors, Search, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -38,6 +38,8 @@ export function CommandPalette() {
     (c) => c.label.includes(query) || c.category.toLowerCase().includes(query.toLowerCase())
   );
 
+  /** WIG: honour prefers-reduced-motion — the panel fades instead of scaling/sliding. */
+  const reduceMotion = useReducedMotion();
   return (
     <AnimatePresence>
       {open && (
@@ -46,14 +48,16 @@ export function CommandPalette() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-50 flex items-start justify-center pt-28 bg-black/60 backdrop-blur-sm"
-          onClick={() => setOpen(false)}
+          // wig-ignore div-click: backdrop dismiss is supplementary — Escape closes via the window listener above; native dialog element lands in S-084 (S-084)
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setOpen(false);
+          }}
         >
           <motion.div
-            initial={{ scale: 0.95, y: -20 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.95, y: -20 }}
+            initial={reduceMotion ? { opacity: 0 } : { scale: 0.95, y: -20 }}
+            animate={reduceMotion ? { opacity: 1 } : { scale: 1, y: 0 }}
+            exit={reduceMotion ? { opacity: 0 } : { scale: 0.95, y: -20 }}
             className="w-[520px] bg-[#121217] border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
             dir="rtl"
           >
             <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
@@ -61,8 +65,9 @@ export function CommandPalette() {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="دستور یا ویژگی را جستجو کنید..."
-                className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/30"
+                placeholder="دستور یا ویژگی را جستجو کنید…"
+                aria-label="جستجوی دستور"
+                className="flex-1 bg-transparent text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 rounded"
               />
               <kbd className="text-[10px] text-white/40 bg-white/5 px-2 py-0.5 rounded">ESC</kbd>
             </div>
@@ -72,7 +77,7 @@ export function CommandPalette() {
                   type="button"
                   key={cmd.id}
                   onClick={() => setOpen(false)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-right transition-all group"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-right transition-colors group"
                 >
                   <cmd.icon className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
                   <span className="text-xs text-white/80 flex-1">{cmd.label}</span>

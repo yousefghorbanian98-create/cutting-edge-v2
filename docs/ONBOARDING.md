@@ -93,7 +93,8 @@ P7 Release             S-091…S-098                 v1.0.0
 | S-009 | CI سه‌جابه (ubuntu / windows / loop-audit) با اکشن‌های SHA-pin، آرتیفکت شواهد، CodeQL/Dependabot/gitleaks | GREEN (ci-ubuntu; ci-windows) | ۴ اجرا تا سبز شدن؛ درس‌ها در `docs/learnings/2026-09-22-ci-*.md`؛ شکست‌ها بدون توکن از annotation خوانده می‌شوند |
 | S-101 | ADR 0001…0009 + validator مشترک ADR/learnings | GREEN | `scripts/loop/hygiene.py`؛ ناظر C13 حالا FAIL می‌دهد اگر سشنی درس ننویسد |
 | S-099 | DESIGN.md مرجع واحد + چک سه‌طرفهٔ توکن + AGENTS.md و فایل‌های هارنس نازک | GREEN | `check-design-tokens.js` در gate و C14؛ ADR-0010؛ `tests/unit/test_agent_docs.py` |
-| S-100, S-010 … S-012 | ممیزی UI آفلاین، Tauri skeleton، ابزار لوپ، job model | TODO | ترتیب: S-100 → S-010 → S-011 → S-012 |
+| S-100 | چک‌کنندهٔ آفلاین Web Interface Guidelines (`design_audit.py`, ۸ قاعده) در gate | GREEN | ۱۷ یافتهٔ واقعی UI همان‌جا رفع شد؛ `pnpm design:audit`؛ فقط یک ignore دلیل‌دار (S-084) |
+| S-010 … S-012 | Tauri skeleton، ابزار لوپ، job model | TODO | ترتیب: S-010 → S-011 → S-012 |
 
 مجموعهٔ تست فعلی (CI run 35673944671): **ubuntu ۳۸ unit + ۱۵ Playwright، windows ۶۵ pytest با مدیای واقعی** — همه سبز؛ تنها skip: `cargo-clippy` خارج از ویندوز (مالک: جاب windows / S-010).
 
@@ -209,7 +210,7 @@ npx playwright test tests/build-artifacts.spec.ts    # انتظار: 8 passed
 
 ### اگر خودتان (انسان) ادامه می‌دهید
 همان لوپ را اجرا کنید؛ چیزی در آن مخصوص ایجنت نیست:
-1. `04_LEDGER.md` → اولین `TODO` که وابستگی‌هایش GREEN است (ترتیب توصیه‌شدهٔ P0: S-100 → S-010 → S-011 → S-012).
+1. `04_LEDGER.md` → اولین `TODO` که وابستگی‌هایش GREEN است (ترتیب توصیه‌شدهٔ P0: S-010 → S-011 → S-012).
 2. کارت مرحله در `03_STEPS.md` را بخوانید؛ `evidence/S-xxx/CONTRACT.md` را از قالب بنویسید (AC/NG).
 3. تست واقعی اول (قرمز)، بعد کد، بعد گیت‌ها، کامیت با Scope Ledger در بدنه، push، وضعیت `REVIEW`.
 4. یک نفر دیگر (یا چت ناظر) `REVIEW.md` می‌نویسد؛ فقط بعد از `approved` وضعیت `GREEN` با `verified_on` و `evidence`.

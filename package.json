@@ -12,6 +12,7 @@
     "lint": "biome ci apps/desktop/src apps/desktop/tests packages scripts",
     "format": "biome format --write apps/desktop/src apps/desktop/tests packages scripts",
     "gate:static": "python scripts/gate.py --stage static",
+    "design:audit": "python scripts/design_audit.py apps/desktop/src --strict",
     "gate:unit": "python scripts/gate.py --stage unit",
     "gate:real": "python scripts/gate.py --stage real",
     "gate:e2e": "python scripts/gate.py --stage e2e",
