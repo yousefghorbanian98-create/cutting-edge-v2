@@ -78,15 +78,36 @@ def test_staged_secret_fails_static(tmp_path: Path) -> None:
 
 
 def test_cargo_clippy_green() -> None:
-    # Owned by the `ci / windows` job (Tauri's Linux build needs webkit2gtk system libs
-    # that hosted ubuntu runners lack, and the sandbox has no cargo at all).
+    # Owned by the ci/windows steps that run after the frontend export.
+    # Pytest on that job is earlier, so a missing ../out must be MISSING, not a
+    # compile FAIL that aborts tauri build / installer smoke / the .exe artifact.
     if sys.platform != "win32" and not os.environ.get("CE_RUN_CARGO"):
         pytest.skip("cargo-clippy is exercised on the windows CI job (set CE_RUN_CARGO=1 to force)")
     rep = _report(_run_gate("--stage", "static", "--only", "cargo-clippy", "--json"))
     chk = rep["checks"][0]
     if chk["status"] == "MISSING":
-        pytest.skip("cargo not installed here — exercised on the windows CI job")
+        pytest.skip(chk["detail"][:240] or "cargo-clippy not runnable here")
     assert chk["status"] == "PASS", chk["detail"][-1500:]
+
+
+def test_cargo_does_not_compile_before_frontend_export(monkeypatch, tmp_path: Path) -> None:
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("gate_frontend_guard", GATE)
+    assert spec and spec.loader
+    gate = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = gate
+    spec.loader.exec_module(gate)
+    monkeypatch.setattr(gate.shutil, "which", lambda name: "cargo" if name == "cargo" else None)
+    monkeypatch.setattr(gate, "DESKTOP", tmp_path)
+    called: list[object] = []
+    monkeypatch.setattr(gate, "_run", lambda *args, **kwargs: called.append(args) or (1, "must not compile"))
+    for fn, name in ((gate.check_cargo, "cargo-clippy"), (gate.check_cargo_test, "cargo-test")):
+        chk = fn()
+        assert chk.name == name
+        assert chk.status == "MISSING"
+        assert "out" in chk.detail
+    assert called == []
 
 
 # ── AC-3 / AC-4 / AC-7 (each tool wired and clean or explicitly missing) ─────

@@ -277,10 +277,30 @@ def check_pnpm_audit() -> Check:
     return Check("pnpm-audit", "PASS" if rc == 0 else "FAIL", out.strip()[-4000:])
 
 
+def _frontend_export_missing(name: str) -> Check | None:
+    """generate_context!() embeds frontendDist at compile time.
+
+    Pytest on ci/windows runs before `pnpm build`, so invoking cargo there fails
+    the job and skips tauri build, installer smoke, and the .exe artifact.
+    Those steps, after the export, are the AC-1 proof. MISSING ≠ PASS.
+    """
+    if (DESKTOP / "out").is_dir():
+        return None
+    return Check(
+        name,
+        "MISSING",
+        "apps/desktop/out missing — generate_context! needs the frontend export; "
+        "ci/windows cargo fmt/clippy/test run after pnpm build (S-010)",
+    )
+
+
 def check_cargo() -> Check:
     cargo = shutil.which("cargo")
     if not cargo:
         return Check("cargo-clippy", "MISSING", "cargo not found — CI windows job runs fmt/clippy (S-009/S-010)")
+    blocked = _frontend_export_missing("cargo-clippy")
+    if blocked:
+        return blocked
     tauri = DESKTOP / "src-tauri"
     rc1, out1 = _run([cargo, "fmt", "--check"], cwd=tauri)
     if rc1 != 0:
@@ -442,6 +462,9 @@ def check_cargo_test() -> Check:
     cargo = shutil.which("cargo")
     if not cargo:
         return Check("cargo-test", "MISSING", "cargo not found — cargo test --locked runs on ci/windows (S-010)")
+    blocked = _frontend_export_missing("cargo-test")
+    if blocked:
+        return blocked
     rc, out = _run([cargo, "test", "--locked", "--all-targets"], cwd=DESKTOP / "src-tauri", timeout=1800)
     return Check("cargo-test", "PASS" if rc == 0 else "FAIL", out.strip()[-1500:])
 
