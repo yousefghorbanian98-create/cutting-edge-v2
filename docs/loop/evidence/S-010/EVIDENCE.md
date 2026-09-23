@@ -56,6 +56,6 @@ Artifacts of run 35711041909: `cutting-edge-windows-x64-setup` (2 MB, digest `sh
 | item | owner |
 |------|-------|
 | AC-1 / AC-5 / AC-6 / AC-7 on the current branch | [35816459591](https://github.com/yousefghorbanian98-create/cutting-edge-v2/actions/runs/35816459591) @ `2e9057b`, windows job `107038926944`, all success. AC-1: `cargo fmt --check`, `cargo clippy --locked -D warnings`, `cargo test --locked`. AC-5: installer smoke **17/17**. AC-6: artifact `cutting-edge-windows-x64-setup` id `10732430814`, `Cutting Edge_2.0.0_x64-setup.exe` 2.02 MB sha256 `3F8B7E7FD7FDD09053F1E8441658ECBEBA8C186FDF2BEF689BBB424DAC81FC5F`. AC-7: lock still `114995` B sha256 `01B0A06DCC1724B91A5C27F60CD98A5BD1EEFB53ECFD37ED81C96BAE4E6E34A6`. S-010 stays REVIEW. |
-| Overseer round 1 | `needs-human` in `REVIEW.md` from `9d09d17` (`arena/01a0c841-cutting-edge-v2`). Must-fix `[CI]`: opening the installer zip failed with TLS EOF here and in the Overseer sandbox. Annotations are intact. Not GREEN. |
+| Overseer round 1 | `needs-human` in `REVIEW.md` from `9d09d17` (`arena/01a0c841-cutting-edge-v2`). Must-fix `[CI]`: opening the installer zip failed with TLS EOF here and in the Overseer sandbox. User chose on 2026-09-23: public annotations are enough; Overseer is asked to approve without the binary. Not GREEN until that verdict is `approved`. |
 | `.app` identifier warning | S-063 |
 | Node-20 action pin deprecation warnings (checkout/setup-node/setup-python/upload-artifact/pnpm) | Dependabot → S-009 follow-up |
