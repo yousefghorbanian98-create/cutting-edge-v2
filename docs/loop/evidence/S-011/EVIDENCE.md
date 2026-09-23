@@ -1,6 +1,6 @@
 # EVIDENCE — S-011 — Loop tooling
 
-Builder. Status: REVIEW (not GREEN). Local half: `local-linux`. `smoke-gpu.ps1 -DryRun` execution: `unverified:windows` until the next `ci / windows`.
+Builder. Status: REVIEW (not GREEN). Local half: `local-linux`. `smoke-gpu.ps1 -DryRun` executed on `ci / windows` (not a GPU pass).
 
 ## What landed
 
