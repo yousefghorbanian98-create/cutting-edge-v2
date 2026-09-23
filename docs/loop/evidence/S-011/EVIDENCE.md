@@ -34,7 +34,7 @@ Negative ledger cases (temp files): GREEN with empty `verified_on` → exit 1; a
 
 | item | owner |
 |------|-------|
-| `pwsh scripts/smoke-gpu.ps1 -DryRun` on a real runner | next `ci / windows` (this commit) |
+| `pwsh scripts/smoke-gpu.ps1 -DryRun` on a real runner | proven on [35816459591](https://github.com/yousefghorbanian98-create/cutting-edge-v2/actions/runs/35816459591) windows job `107038926944` (step success; `dry_run` true, `ok` not true). Real GPU probes stay on the user machine. |
 | real GPU probes (`app_launch=true`) | user machine, S-027 / U2 |
 | vitest suite | S-013 |
 | chaos / perf / tauri-driver | S-077 / S-082 / S-079 |
