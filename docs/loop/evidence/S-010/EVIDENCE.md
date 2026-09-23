@@ -15,6 +15,8 @@ Builder: this chat (Builder). Local half: `local-linux` (no cargo). Runner half:
 | [35707003767](https://github.com/yousefghorbanian98-create/cutting-edge-v2/actions/runs/35707003767) | `5c16396` | ✅ | ❌ step 17 `tauri build`: `Error in macro MUI_LANGUAGEEX` — `Persian.nlf` missing in tauri's bundled NSIS | ✅ |
 | [35708714699](https://github.com/yousefghorbanian98-create/cutting-edge-v2/actions/runs/35708714699) | `fadbe2d` | ✅ | ✅ job `106683814048` — steps 12–21 all success | ✅ |
 | [35711041909](https://github.com/yousefghorbanian98-create/cutting-edge-v2/actions/runs/35711041909) | `2193db9` | ✅ (65 unit + 15 Playwright, junit `0 failed`) | ✅ job `106691418725` (10 m 7 s) — 92 pytest, fmt, clippy, cargo test, icons, tauri build, smoke **17/17** | ✅ (verify_ledger, supervise, steps drift) |
+| [35705050881](https://github.com/yousefghorbanian98-create/cutting-edge-v2/actions/runs/35705050881) | `630e64c` | ✅ | ❌ pytest `test_cargo_clippy_green` (clippy before `../out` existed) — tauri build, smoke, `.exe` skipped | ✅ |
+| [35816459591](https://github.com/yousefghorbanian98-create/cutting-edge-v2/actions/runs/35816459591) | `2e9057b` | ✅ | ✅ job `107038926944` — pytest `0 failed / 102`, fmt, `clippy --locked`, `cargo test --locked`, tauri build, smoke **17/17**, installer uploaded | ✅ |
 
 ### `ci / windows` step → acceptance-criterion map (job 106691418725, all `success`)
 | # | step | proves |
@@ -53,6 +55,6 @@ Artifacts of run 35711041909: `cutting-edge-windows-x64-setup` (2 MB, digest `sh
 ## Carried / open
 | item | owner |
 |------|-------|
-| AC-7 second half + BUG-17 | CLOSED. Lock `40efd7b` (114995 B, sha256 `01B0A06DCC1724B91A5C27F60CD98A5BD1EEFB53ECFD37ED81C96BAE4E6E34A6`). `--locked` proof: [35734652629](https://github.com/yousefghorbanian98-create/cutting-edge-v2/actions/runs/35734652629) @ `390b6ca`, windows job `106768677907` — clippy/test/tauri `--locked` ✅, smoke 17/17, installer sha256 `70A3A74142A53F6F11DDEB91209C32E1BAA969277FA77F1453980C18EDA7E1E1`. S-010 stays REVIEW until Overseer `approved`. |
+| AC-1 / AC-5 / AC-6 / AC-7 on the current branch | [35816459591](https://github.com/yousefghorbanian98-create/cutting-edge-v2/actions/runs/35816459591) @ `2e9057b`, windows job `107038926944`, all success. AC-1: `cargo fmt --check`, `cargo clippy --locked -D warnings`, `cargo test --locked`. AC-5: installer smoke **17/17**. AC-6: artifact `cutting-edge-windows-x64-setup`, `Cutting Edge_2.0.0_x64-setup.exe` 2.02 MB sha256 `3F8B7E7FD7FDD09053F1E8441658ECBEBA8C186FDF2BEF689BBB424DAC81FC5F`. AC-7: lock still `114995` B sha256 `01B0A06DCC1724B91A5C27F60CD98A5BD1EEFB53ECFD37ED81C96BAE4E6E34A6`. Cause of the `630e64c` red run: pytest invoked clippy before the frontend export; that path is now MISSING, not a job-killing FAIL. S-010 stays REVIEW. |
 | `.app` identifier warning | S-063 |
 | Node-20 action pin deprecation warnings (checkout/setup-node/setup-python/upload-artifact/pnpm) | Dependabot → S-009 follow-up |
