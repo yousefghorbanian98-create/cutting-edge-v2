@@ -14,7 +14,7 @@
 | BUG-8 | **(جدید)** path traversal در upload/download | OPEN — امنیتی | `main.py` | S-003 | `test_security.py::test_traversal_*` |
 | BUG-9 | **(جدید)** Tailwind/DaisyUI نصب نیست؛ UI بدون استایل | FIXED در کد (S-007؛ CSS ۶۴KB، تست مرورگری در CI S-009) | `apps/desktop` | S-007 | Playwright computed-style |
 | BUG-10 | **(جدید)** Tauri کامپایل نمی‌شود (`shell-open`, بدون build.rs/آیکون) | **CLOSED (S-010, fadbe2d)** — `tauri-build` + `build.rs`، ویژگی Tauri-1 حذف، آیکون/قابلیت اضافه؛ `tauri build` روی `ci / windows` نصاب NSIS ساخت | `src-tauri` | S-010 | CI run 35711041909 job 106691418725 step 17 `tauri build` ✅ + artifact `cutting-edge-windows-x64-setup` + `installer_smoke.ps1` 17/17 |
-| BUG-11 | **(جدید)** اندپوینت‌های async سرور را بلاک می‌کنند | OPEN | `main.py` | S-012 | `test_jobs.py::test_health_latency_during_job` |
+| BUG-11 | **(جدید)** اندپوینت‌های async سرور را بلاک می‌کنند | OPEN — local-linux p95 passed; stays OPEN until `ci / windows` | `main.py` | S-012 | `tests/test_jobs.py::test_health_p95_under_200ms_while_enhance_runs_and_output_is_playable` |
 | BUG-12 | **(جدید)** خروجی Muscle Enhancer بدون صدا و با `mp4v` | OPEN | `muscle_enhancer.py` | S-037 | `assert_playable(has_audio=True, vcodec='h264')` |
 | BUG-13 | **(جدید)** `.env` خوانده نمی‌شود (بدون dotenv) | OPEN | `main.py` | S-002 | `test_config.py` |
 | BUG-14 | **(جدید)** CORS `*` روی سرویس محلی | OPEN | `main.py` | S-003 | `test_security.py::test_cors_origin` |

@@ -335,6 +335,18 @@ def check_design_tokens() -> Check:
     return Check("design-tokens", "PASS" if rc == 0 else "FAIL", out.strip()[-2000:])
 
 
+def check_openapi_client(staged: bool) -> Check:
+    """S-012: committed OpenAPI schema + generated TS client must match a fresh run."""
+    script = ROOT / "scripts" / "check_openapi_client.py"
+    if not script.exists():
+        return Check("openapi-client", "MISSING", "scripts/check_openapi_client.py absent")
+    py = _venv_bin("python") or _venv_bin("python3") or sys.executable
+    rc, out = _run([py, str(script)], timeout=180)
+    if rc == 2:
+        return Check("openapi-client", "MISSING", out.strip()[-2000:] or "generator or FastAPI missing")
+    return Check("openapi-client", "PASS" if rc == 0 else "FAIL", out.strip()[-4000:])
+
+
 def check_design_audit() -> Check:
     script = ROOT / "scripts" / "design_audit.py"
     if not script.exists():
@@ -358,6 +370,7 @@ STATIC_CHECKS: dict[str, object] = {
     "design-tokens": lambda staged: check_design_tokens(),
     "design-audit": lambda staged: check_design_audit(),
     "icons": lambda staged: check_icons(),
+    "openapi-client": lambda staged: check_openapi_client(staged),
 }
 # checks that are slow/network-bound and irrelevant for a per-commit hook
 STAGED_SKIP = {"tsc", "turbo", "pip-audit", "pnpm-audit", "cargo-clippy", "bandit", "icons"}

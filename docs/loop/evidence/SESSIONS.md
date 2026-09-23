@@ -65,3 +65,9 @@
 - Next step: commit `apps/desktop/src-tauri/Cargo.lock` and switch cargo steps to `--locked` (BUG-17), then start S-011.
 - (same chat, cont.) BUG-17 CLOSED: lock `40efd7b`, `--locked` green on CI run 35734652629 (`390b6ca`, windows job 106768677907, smoke 17/17, installer sha256 `70A3A741…E1E1`). S-010 stays REVIEW.
 - (same chat, cont.) S-011 REVIEW: `gate.py --stage all`, ledger negative tests, `scripts/smoke-gpu.ps1`. Learnings: `docs/learnings/2026-09-22-s011-unit-marker-collects-real.md`. Next TODO: S-012. S-010 and S-011 await Overseer.
+
+## 2026-09-23 — BATCH BUILDER: S-011 evidence note + S-012 jobs
+- S-011 stays REVIEW. Windows dry-run already recorded: run 35816459591, job 107038926944. Not a GPU pass. Not GREEN.
+- S-012 REVIEW (local-linux): five heavy routes return 202; tests/test_jobs.py 2 passed in 60.12s. BUG-11 stays OPEN until ci/windows.
+- Client: @hey-api/openapi-ts@0.99.0 directory plus api.ts barrel. Gate check openapi-client.
+- Blockers: none. Next: Overseer joint review of S-011 and S-012. Do not GREEN either from this chat.

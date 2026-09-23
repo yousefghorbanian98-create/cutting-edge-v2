@@ -181,29 +181,49 @@ class MuscleEnhancer:
                 )
         return cv2.GaussianBlur(mask, (31, 31), 10)
 
-    def enhance_video(self, input_path, output_path, settings=None):
+    def enhance_video(self, input_path, output_path, settings=None, *, on_progress=None, should_cancel=None):
+        """Enhance every frame.
+
+        ``on_progress`` receives 0..1 after each frame. ``should_cancel`` is
+        checked before the writer opens and before every frame so a cancel
+        stops within one frame and the caller can delete the partial file
+        after this returns False (the writer is already released).
+        """
         if not os.path.exists(input_path):
             print(f"Error: {input_path} not found")
-            return
+            return False
+        if should_cancel and should_cancel():
+            return False
         cap = cv2.VideoCapture(input_path)
         fps = cap.get(cv2.CAP_PROP_FPS) or 30
         w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 1
         fourcc = cv2.VideoWriter_fourcc(*"mp4v")
         out = cv2.VideoWriter(output_path, fourcc, fps, (w, h))
         idx = 0
-        while cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
-            out.write(self.enhance_frame(frame, settings))
-            idx += 1
-            if idx % 30 == 0:
-                print(f"  Processing: {idx}/{total} ({idx/total*100:.0f}%)")
-        cap.release()
-        out.release()
+        cancelled = False
+        try:
+            while cap.isOpened():
+                if should_cancel and should_cancel():
+                    cancelled = True
+                    break
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                out.write(self.enhance_frame(frame, settings))
+                idx += 1
+                if on_progress:
+                    on_progress(min(1.0, idx / total))
+                if idx % 30 == 0:
+                    print(f"  Processing: {idx}/{total} ({idx / total * 100:.0f}%)")
+        finally:
+            cap.release()
+            out.release()
+        if cancelled:
+            return False
         print(f"Done: {output_path}")
+        return True
 
 
 if __name__ == "__main__":

@@ -1,0 +1,177 @@
+"""Minimal in-process job runner (S-012).
+
+Heavy work runs on a thread pool so the FastAPI event loop, and therefore
+``GET /health``, stays responsive. Priority, persistence, retry, and resume
+belong to S-072 — this module is only submit / poll / cancel.
+"""
+
+from __future__ import annotations
+
+import threading
+import time
+import uuid
+from collections.abc import Callable
+from concurrent.futures import Future, ThreadPoolExecutor
+from dataclasses import dataclass, field
+from typing import Any
+
+
+class Cancelled(Exception):
+    """Raised inside a worker when the caller asked the job to stop."""
+
+
+@dataclass
+class Job:
+    """Mutable job record. Mutate only while holding ``JobManager._lock``."""
+
+    id: str
+    status: str = "queued"
+    progress: float = 0.0
+    error: str | None = None
+    result: dict[str, Any] | None = None
+    output_filename: str | None = None
+    partial_removed: bool = False
+    created_at: float = field(default_factory=time.monotonic)
+    started_at: float | None = None
+    cancel_event: threading.Event = field(default_factory=threading.Event)
+    future: Future[None] | None = None
+
+
+class JobControl:
+    """What a worker is allowed to touch: progress, cancel, and the partial file."""
+
+    def __init__(self, job: Job, manager: JobManager) -> None:
+        self._job = job
+        self._manager = manager
+
+    @property
+    def cancelled(self) -> bool:
+        return self._job.cancel_event.is_set()
+
+    def raise_if_cancelled(self) -> None:
+        if self.cancelled:
+            raise Cancelled()
+
+    def report(self, progress: float) -> None:
+        """Record 0..1 progress and abort if cancel was requested."""
+        self._manager.set_progress(self._job.id, progress)
+        self.raise_if_cancelled()
+
+    def attach_partial(self, download_name: str) -> None:
+        """Name the file cancel must delete. The name is a storage basename."""
+        self._manager.set_output_filename(self._job.id, download_name)
+
+
+class JobManager:
+    """A fixed thread pool plus an in-memory job table.
+
+    ``on_cancel_cleanup`` receives the download basename and must delete that
+    file if it exists. The manager does not know about storage paths.
+    """
+
+    def __init__(
+        self,
+        max_workers: int = 2,
+        on_cancel_cleanup: Callable[[str], None] | None = None,
+    ) -> None:
+        self._pool = ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix="ce-job")
+        self._jobs: dict[str, Job] = {}
+        self._lock = threading.Lock()
+        self._on_cancel_cleanup = on_cancel_cleanup
+
+    def submit(self, fn: Callable[[JobControl], dict[str, Any]]) -> str:
+        """Queue ``fn`` and return the new job id. ``fn`` runs off the event loop."""
+        job = Job(id=uuid.uuid4().hex)
+        control = JobControl(job, self)
+        with self._lock:
+            self._jobs[job.id] = job
+        job.future = self._pool.submit(self._run, job, fn, control)
+        return job.id
+
+    def get(self, job_id: str) -> dict[str, Any] | None:
+        with self._lock:
+            job = self._jobs.get(job_id)
+            return None if job is None else self._view(job)
+
+    def cancel(self, job_id: str) -> dict[str, Any] | None:
+        """Request stop. The worker observes it at the next ``report`` / frame check."""
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if job is None:
+                return None
+            if job.status in {"done", "error", "cancelled"}:
+                return self._view(job)
+            job.cancel_event.set()
+            return self._view(job)
+
+    def set_progress(self, job_id: str, progress: float) -> None:
+        bounded = max(0.0, min(1.0, float(progress)))
+        with self._lock:
+            job = self._jobs[job_id]
+            if job.status in {"done", "error", "cancelled"}:
+                return
+            job.progress = bounded
+
+    def set_output_filename(self, job_id: str, name: str) -> None:
+        with self._lock:
+            self._jobs[job_id].output_filename = name
+
+    def _run(self, job: Job, fn: Callable[[JobControl], dict[str, Any]], control: JobControl) -> None:
+        with self._lock:
+            if job.cancel_event.is_set():
+                job.status = "cancelled"
+                job.partial_removed = True
+                return
+            job.status = "running"
+            job.started_at = time.monotonic()
+        try:
+            result = fn(control)
+        except Cancelled:
+            self._finish_cancel(job)
+            return
+        except Exception as exc:
+            self._delete_partial(job)
+            with self._lock:
+                job.status = "error"
+                job.error = str(exc) or exc.__class__.__name__
+                job.partial_removed = job.output_filename is not None
+            return
+        with self._lock:
+            if job.cancel_event.is_set():
+                pass
+            else:
+                job.result = result
+                job.progress = 1.0
+                job.status = "done"
+                return
+        self._finish_cancel(job)
+
+    def _finish_cancel(self, job: Job) -> None:
+        self._delete_partial(job)
+        with self._lock:
+            job.status = "cancelled"
+            job.result = None
+            job.partial_removed = True
+
+    def _delete_partial(self, job: Job) -> None:
+        name = job.output_filename
+        if name and self._on_cancel_cleanup is not None:
+            self._on_cancel_cleanup(name)
+
+    def _view(self, job: Job) -> dict[str, Any]:
+        eta_s: float | None = None
+        if job.started_at is not None and 0.0 < job.progress < 1.0:
+            elapsed = time.monotonic() - job.started_at
+            eta_s = round(elapsed * (1.0 - job.progress) / job.progress, 2)
+        percent = int(round(job.progress * 100))
+        return {
+            "id": job.id,
+            "status": job.status,
+            "progress": round(job.progress, 4),
+            "percent": percent,
+            "eta_s": eta_s,
+            "error": job.error,
+            "result": job.result,
+            "output_filename": job.output_filename,
+            "partial_removed": job.partial_removed,
+        }

@@ -95,8 +95,12 @@ def test_beat_sync_live_http(fixture, live_api):
             files={"file": ("tone.mp4", fh, "video/mp4")},
             timeout=60,
         )
-    assert r.status_code == 200, f"beat-sync failed: {r.status_code} {r.text[:200]}"
-    body = r.json()
+    assert r.status_code == 202, f"beat-sync accept failed: {r.status_code} {r.text[:200]}"
+    from tests.helpers.jobs import poll_job
+
+    view = poll_job(live_api["base"], r.json()["job_id"], timeout=120)
+    assert view["status"] == "done", view
+    body = view["result"]
     # JSON schema valid
     assert set(body) == {"status", "bpm", "total_beats", "clips"}, f"unexpected schema: {body.keys()}"
     assert body["status"] == "success"

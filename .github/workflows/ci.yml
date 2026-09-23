@@ -71,7 +71,7 @@ jobs:
           ai-engine/.venv/bin/python -m pip install --quiet -r ai-engine/requirements-tooling.txt
           ai-engine/.venv/bin/python -m pip install --quiet --no-deps -e ai-engine
 
-      - name: Static gate (14 checks; cargo-clippy is owned by the windows job)
+      - name: Static gate (15 checks; cargo-clippy is owned by the windows job)
         run: ai-engine/.venv/bin/python scripts/gate.py --stage static --json --strict-missing --skip cargo-clippy | tee gate-static.log
 
       - name: Unit tests (tests/unit) → junit

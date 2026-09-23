@@ -1,4 +1,15 @@
 'use client';
+import {
+  cancelJob,
+  chatAiChatPost,
+  downloadEnhancedMuscleDownloadFilenameGet,
+  healthHealthGet,
+  postBeatSync,
+  postMoodDna,
+  postMuscleEnhance,
+  postViralCut,
+} from '@/lib/api';
+import { jobFailure, pollJob } from '@/lib/jobs';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   Brain,
@@ -21,7 +32,7 @@ import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CommandPalette } from '../components/shared/CommandPalette';
 import { RehealErrorBoundary } from '../components/shared/ErrorBoundary';
-import { useEditorStore } from '../stores/editorStore';
+import { type Clip, useEditorStore } from '../stores/editorStore';
 import { useRehealStore } from '../stores/rehealStore';
 
 type Panel = 'editor' | 'style' | 'ai' | 'muscle';
@@ -42,7 +53,31 @@ interface MoodDNA {
   style_tags?: string[];
   dominant_palette?: string[];
 }
-const API = 'http://127.0.0.1:8001';
+type SdkCall<T> = {
+  data?: T;
+  error?: unknown;
+  response?: Response;
+};
+
+/** Submit a heavy route through the generated client, then poll until it finishes. */
+async function runJob(
+  submit: () => Promise<SdkCall<{ job_id: string }>>,
+  fallback: string,
+  onAccepted?: (jobId: string) => void,
+  onPercent?: (percent: number) => void
+): Promise<Record<string, unknown>> {
+  const submitted = await submit();
+  const jobId = submitted.data?.job_id;
+  if (!jobId) {
+    throw new Error(jobFailure(submitted.error, submitted.response?.status, fallback));
+  }
+  onAccepted?.(jobId);
+  const view = await pollJob(jobId, onPercent);
+  if (view.status !== 'done' || !view.result) {
+    throw new Error(view.error || 'کار تمام نشد');
+  }
+  return view.result;
+}
 
 function EditorApp() {
   const {
@@ -71,6 +106,8 @@ function EditorApp() {
   const [showReheal, setShowReheal] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [dnaData, setDnaData] = useState<MoodDNA | null>(null);
+  const [jobPercent, setJobPercent] = useState<number | null>(null);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const vRef = useRef<HTMLVideoElement>(null);
   /** WIG: honour prefers-reduced-motion — slide/scale become plain fades. */
   const reduceMotion = useReducedMotion();
@@ -80,10 +117,13 @@ function EditorApp() {
   useEffect(() => {
     const poll = async () => {
       try {
-        const r = await fetch(`${API}/health`);
-        const d = await r.json();
+        const { data, response } = await healthHealthGet();
+        if (!response?.ok || !data || typeof data !== 'object') return;
+        const d = data as { ram?: number; cpu?: number; status?: string };
         setHealth({ ramPercent: d.ram || 0, cpuPercent: d.cpu || 0, isHealthy: d.status === 'healthy' });
-      } catch {}
+      } catch {
+        /* core offline — keep the last reading */
+      }
     };
     poll();
     const id = setInterval(poll, 5000);
@@ -138,14 +178,12 @@ function EditorApp() {
     }
     setLoading('beatsync');
     try {
-      const fd = new FormData();
-      fd.append('file', videoFile);
-      const r = await fetch(`${API}/editor/beat-sync`, { method: 'POST', body: fd });
-      const d = await r.json();
-      if (d.clips) {
-        setClips(d.clips);
+      const result = await runJob(() => postBeatSync({ body: { file: videoFile } }), 'Beat Sync ثبت نشد');
+      const clips = Array.isArray(result.clips) ? (result.clips as Clip[]) : [];
+      if (clips.length > 0) {
+        setClips(clips);
         notify(
-          `🎵 Beat Sync واقعی! ${d.total_beats} ضرب شناسایی شد | ${d.bpm} BPM | ${d.clips.length} کات روی تایم‌لاین`
+          `🎵 Beat Sync واقعی! ${result.total_beats} ضرب شناسایی شد | ${result.bpm} BPM | ${clips.length} کات روی تایم‌لاین`
         );
       }
     } catch {
@@ -169,13 +207,14 @@ function EditorApp() {
     }
     setLoading('viral');
     try {
-      const fd = new FormData();
-      fd.append('file', videoFile);
-      fd.append('target_duration', '30');
-      const r = await fetch(`${API}/editor/viral-cut`, { method: 'POST', body: fd });
-      const d = await r.json();
-      notify(`🎬 وایرال کات: ثانیه ${d.start} تا ${d.end} | امتیاز: ${d.virality_score}% | ${d.message}`);
-      if (vRef.current) vRef.current.currentTime = d.start;
+      const result = await runJob(
+        () => postViralCut({ body: { file: videoFile, target_duration: 30 } }),
+        'وایرال کات ثبت نشد'
+      );
+      notify(
+        `🎬 وایرال کات: ثانیه ${result.start} تا ${result.end} | امتیاز: ${result.virality_score}% | ${result.message}`
+      );
+      if (vRef.current && typeof result.start === 'number') vRef.current.currentTime = result.start;
     } catch {
       addFixEvent({
         id: `f-${Date.now()}`,
@@ -196,10 +235,8 @@ function EditorApp() {
     }
     setLoading('style');
     try {
-      const fd = new FormData();
-      fd.append('file', videoFile);
-      const r = await fetch(`${API}/mood-dna`, { method: 'POST', body: fd });
-      const d = (await r.json()) as MoodDNA;
+      const result = await runJob(() => postMoodDna({ body: { file: videoFile } }), 'Mood DNA ثبت نشد');
+      const d = result as unknown as MoodDNA;
       setDnaData(d);
       notify(
         `🧬 Mood DNA: انرژی ${Math.round(d.avg_energy * 100)}% | تم: ${d.color_mood} | ریتم: ${d.cut_rhythm_avg}s`
@@ -223,20 +260,33 @@ function EditorApp() {
       return;
     }
     setLoading('muscle');
+    setJobPercent(0);
     try {
-      const fd = new FormData();
-      fd.append('file', videoFile);
-      fd.append('intensity', String(intensity / 100));
-      fd.append('preset', selectedPreset);
-      const r = await fetch(`${API}/muscle/enhance`, { method: 'POST', body: fd });
-      const d = await r.json();
-      notify(`💪 ${d.message}`);
-      if (d.output_filename) {
-        // Auto-download enhanced video
-        const a = document.createElement('a');
-        a.href = `${API}/muscle/download/${d.output_filename}`;
-        a.download = d.output_filename;
-        a.click();
+      const result = await runJob(
+        () =>
+          postMuscleEnhance({
+            body: { file: videoFile, intensity: intensity / 100, preset: selectedPreset },
+          }),
+        'تقویت عضلات ثبت نشد',
+        setActiveJobId,
+        setJobPercent
+      );
+      const message = typeof result.message === 'string' ? result.message : 'ویدیو تقویت شد';
+      notify(`💪 ${message}`);
+      const output = typeof result.output_filename === 'string' ? result.output_filename : '';
+      if (output) {
+        const downloaded = await downloadEnhancedMuscleDownloadFilenameGet({
+          path: { filename: output },
+          parseAs: 'blob',
+        });
+        if (downloaded.data instanceof Blob) {
+          const url = URL.createObjectURL(downloaded.data);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = output;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
       }
     } catch {
       addFixEvent({
@@ -247,6 +297,8 @@ function EditorApp() {
         timestamp: Date.now(),
       });
     } finally {
+      setActiveJobId(null);
+      setJobPercent(null);
       setLoading(null);
     }
   };
@@ -257,13 +309,11 @@ function EditorApp() {
     const q = input;
     setInput('');
     try {
-      const r = await fetch(`${API}/ai/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: q, language: 'fa' }),
-      });
-      const d = await r.json();
-      setMsgs((p) => [...p, { r: 'ai', t: d.reply }]);
+      const { data, response } = await chatAiChatPost({ body: { message: q, language: 'fa' } });
+      const reply =
+        data && typeof data === 'object' && 'reply' in data ? String((data as { reply: unknown }).reply) : '';
+      if (!response?.ok || !reply) throw new Error('chat failed');
+      setMsgs((prev) => [...prev, { r: 'ai', t: reply }]);
     } catch {
       setMsgs((p) => [...p, { r: 'ai', t: '⚠️ سرور AI در دسترس نیست' }]);
     }
@@ -526,11 +576,23 @@ function EditorApp() {
                     className="w-full py-3 bg-gradient-to-l from-orange-600 to-red-600 rounded-xl text-sm font-bold hover:opacity-90 flex items-center justify-center gap-2"
                   >
                     {loading === 'muscle' ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {`در حال پردازش ${jobPercent ?? 0}%`}
+                      </>
                     ) : (
                       '✨ اعمال و دانلود ویدیو'
                     )}
                   </button>
+                  {loading === 'muscle' && activeJobId && (
+                    <button
+                      type="button"
+                      onClick={() => void cancelJob({ path: { job_id: activeJobId } })}
+                      className="w-full py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white/70 hover:text-white"
+                    >
+                      لغو کار
+                    </button>
+                  )}
                 </div>
               )}
 

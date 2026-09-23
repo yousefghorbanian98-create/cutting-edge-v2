@@ -25,6 +25,8 @@
     "zustand": "5.0.15"
   },
   "devDependencies": {
+    "@hey-api/client-fetch": "0.13.1",
+    "@hey-api/openapi-ts": "0.99.0",
     "@playwright/test": "1.63.0",
     "@tailwindcss/postcss": "4.3.3",
     "@tauri-apps/cli": "2.11.5",
