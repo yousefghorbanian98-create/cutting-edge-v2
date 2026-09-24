@@ -1,6 +1,7 @@
 'use client';
 
 import { MediaBin } from '@/components/media-bin/MediaBin';
+import { HistoryPanel } from '@/components/shared/HistoryPanel';
 import { Shortcuts } from '@/components/timeline/Shortcuts';
 import { Timeline } from '@/components/timeline/Timeline';
 import { PlaybackProvider } from '@/hooks/usePlayback';
@@ -12,6 +13,7 @@ export function EditorShell() {
         <Shortcuts />
         <MediaBin />
         <Timeline />
+        <HistoryPanel />
       </main>
     </PlaybackProvider>
   );

@@ -102,7 +102,7 @@ jobs:
       - name: Playwright — build artifacts + styling (S-007 DOM half)
         working-directory: apps/desktop
         # reporters come from playwright.config.ts: list + html (playwright-report/html) + junit (playwright-report/junit.xml)
-        run: pnpm exec playwright test tests/build-artifacts.spec.ts tests/styling.spec.ts tests/media-bin.spec.ts tests/timeline-canvas.spec.ts tests/playback.spec.ts tests/clip-drag.spec.ts tests/trim.spec.ts tests/split.spec.ts tests/selection.spec.ts
+        run: pnpm exec playwright test tests/build-artifacts.spec.ts tests/styling.spec.ts tests/media-bin.spec.ts tests/timeline-canvas.spec.ts tests/playback.spec.ts tests/clip-drag.spec.ts tests/trim.spec.ts tests/split.spec.ts tests/selection.spec.ts tests/history.spec.ts
 
       - name: Annotate Playwright failures
         if: always()

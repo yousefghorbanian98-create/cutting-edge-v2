@@ -4,7 +4,7 @@ import { removeClips, splitAtPlayhead } from '@/domain/split';
 import { usePlayback } from '@/hooks/usePlayback';
 import { shortcutAction } from '@/lib/shortcuts';
 import { useSelectionStore } from '@/stores/selectionStore';
-import { useTimelineStore } from '@/stores/timelineStore';
+import { redoTimeline, undoTimeline, useTimelineStore } from '@/stores/timelineStore';
 import { useEffect } from 'react';
 
 export function Shortcuts() {
@@ -27,6 +27,14 @@ export function Shortcuts() {
       }
       if (action === 'duplicate') {
         useSelectionStore.getState().duplicate();
+        return;
+      }
+      if (action === 'undo') {
+        undoTimeline(1);
+        return;
+      }
+      if (action === 'redo') {
+        redoTimeline(1);
         return;
       }
       if (action === 'split') {

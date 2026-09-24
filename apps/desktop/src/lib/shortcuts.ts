@@ -1,4 +1,12 @@
-export type ShortcutAction = 'split' | 'delete' | 'ripple-delete' | 'copy' | 'paste' | 'duplicate';
+export type ShortcutAction =
+  | 'split'
+  | 'delete'
+  | 'ripple-delete'
+  | 'copy'
+  | 'paste'
+  | 'duplicate'
+  | 'undo'
+  | 'redo';
 
 export function shortcutAction(event: {
   key: string;
@@ -11,6 +19,7 @@ export function shortcutAction(event: {
   if (mod && event.key.toLowerCase() === 'c') return 'copy';
   if (mod && event.key.toLowerCase() === 'v') return 'paste';
   if (mod && event.key.toLowerCase() === 'd') return 'duplicate';
+  if (mod && event.key.toLowerCase() === 'z') return event.shiftKey ? 'redo' : 'undo';
   if (event.key === 'Delete' || event.key === 'Backspace') return event.shiftKey ? 'ripple-delete' : 'delete';
   return null;
 }
