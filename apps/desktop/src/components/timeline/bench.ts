@@ -21,3 +21,21 @@ export function benchSequence(count = 200): Sequence {
   }
   return { ...sequence, clips };
 }
+
+export function snapFixture(): Sequence {
+  const sequence = emptySequence('snap', 30);
+  const base = {
+    mediaId: 'bench',
+    inPoint: 0,
+    sourceDuration: 20_000,
+    transform: identityTransform(),
+    effects: [],
+  };
+  return {
+    ...sequence,
+    clips: [
+      { ...base, id: 'A', trackId: 'track-v1', start: 0, duration: 5000, label: 'A' },
+      { ...base, id: 'B', trackId: 'track-v1', start: 8000, duration: 1000, label: 'B' },
+    ],
+  };
+}

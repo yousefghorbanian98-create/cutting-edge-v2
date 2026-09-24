@@ -6,7 +6,7 @@ import { useMemo, useRef, useState } from 'react';
 import { PlaybackBar, Playhead, scrubFromRuler } from './Playhead';
 import { Ruler } from './Ruler';
 import { Track } from './Track';
-import { benchSequence } from './bench';
+import { benchSequence, snapFixture } from './bench';
 import { PX_PER_SECOND, contentWidth, visibleClips } from './window';
 
 export function Timeline() {
@@ -36,6 +36,13 @@ export function Timeline() {
           onClick={() => reset(benchSequence(200))}
         >
           نمونه ۲۰۰ کلیپ
+        </button>
+        <button
+          type="button"
+          className="rounded-md border border-surface-border px-2 py-1 text-sm"
+          onClick={() => reset(snapFixture())}
+        >
+          نمونه اسنپ
         </button>
       </div>
       <PlaybackBar />
