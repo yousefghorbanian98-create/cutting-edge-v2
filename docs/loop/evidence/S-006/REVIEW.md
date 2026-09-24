@@ -28,3 +28,11 @@ Evidence re-produced: yes (fresh source audit plus the existing live-media evide
 - [DEFECT] The helper's probe path is human-readable stderr parsing rather than structured `ffprobe` JSON. This is acceptable as the documented sandbox fallback, but a production path needs capability detection and a structured probe when available.
 
 Retro verdict: send S-006 back to REVIEW for the AC-3 assertion fix (or an explicitly evidenced equivalent in S-011) before treating the harness as the final production evidence layer. S-004/S-006 remain otherwise reproducible; no product code was changed by this audit.
+
+## Independent review — round 3 — target `ab409cd0d2ead26dc21b0ee10efab66397f80cda`
+
+Reproduced by Overseer: source audit yes; fresh Python tests no (the detached review worktree had no pytest/ai-engine environment). The fix correctly fails when an expected width/height is absent, and structured ffprobe JSON is primary with text fallback.
+
+- AC-3 fix is directionally correct and the new unit test is present.
+- Fresh live AC-5/AC-6 evidence was not reproduced in this review.
+- Verdict: **REVIEW — not approved**. Keep S-006 out of GREEN until the fresh unit and live evidence is reproducible, including the required CI evidence. The previous retro finding is resolved in source, not yet independently evidenced.
