@@ -187,11 +187,11 @@ _ریپو را واقعاً قابل build/test/ship کردن؛ بدون این 
 
 ### S-012 — Non-blocking processing: job model + thread pool so /health stays alive
 
-**هدف:** اندپوینت‌های سنگین (muscle/enhance) داخل `async def` به‌صورت همزمان اجرا می‌شوند و کل event loop را قفل می‌کنند. مدل Job حداقلی: POST → job_id، اجرای در ThreadPool، GET /jobs/{id} با progress/percent/eta/error، لغو؛ نسخه‌ی کامل صف در S-072؛ کلاینت TS در `apps/desktop/src/lib/api.ts` از OpenAPI خودِ FastAPI تولید می‌شود (`@hey-api/openapi-ts`، خروجی کامیت‌شده + چک drift در gate static) تا هیچ اندپوینتی دستی تایپ نشود
+**هدف:** اندپوینت‌های سنگین (muscle/enhance) داخل `async def` به‌صورت همزمان اجرا می‌شوند و کل event loop را قفل می‌کنند. مدل Job حداقلی: POST → job_id، اجرای در ThreadPool، GET /jobs/{id} با progress/percent/eta/error، لغو؛ نسخه‌ی کامل صف در S-072؛ کلاینت TS در `apps/desktop/src/lib/api.ts` از OpenAPI خودِ FastAPI تولید می‌شود (`@hey-api/openapi-ts`، خروجی کامیت‌شده + چک drift در gate static) تا هیچ اندپوینتی دستی تایپ نشود برای pipelineهای تحلیل media نیز scheduler با یک GPU lock، job progress/cancel و CPU fallback آماده شود؛ هر تحلیل سنگین نباید event loop یا /health را قفل کند.
 
 **فایل‌ها:** `ai-engine/src/core/jobs.py`, `ai-engine/src/main.py`, `apps/desktop/src/lib/api.ts`, `tests/test_jobs.py`
 
-**تست واقعی (نه فقط عدد):** Start muscle enhance on 10s 720p fixture; during processing hammer /health 50x → p95 latency < 200ms; job reaches 100% and output passes assert_playable; cancel at 30% → process stops within 2s and partial file removed
+**تست واقعی (نه فقط عدد):** Start muscle enhance on 10s 720p fixture; during processing hammer /health 50x → p95 latency < 200ms; job reaches 100% and output passes assert_playable; cancel at 30% → process stops within 2s and partial file removed و scheduler باید هم‌زمانی GPU را به یک inference job محدود کند؛ نبود GPU باید unverified باشد، نه PASS.
 
 **Done when:** All endpoints > 2s runtime use jobs; frontend polls /jobs
 
@@ -646,11 +646,11 @@ _هر ۱۶ قابلیت با UI واقعی، تست واقعی روی مدیا �
 
 ### S-040 — Living Timeline: real energy/emotion heat-map per segment
 
-**هدف:** تحلیل انرژی حرکت + صدا + احساس صحنه به‌صورت job، رنگ‌آمیزی کلیپ‌ها/ruler با گرادیان heat-map، کش نتایج بر اساس hash فایل
+**هدف:** تحلیل انرژی حرکت + صدا + احساس صحنه به‌صورت job، رنگ‌آمیزی کلیپ‌ها/ruler با گرادیان heat-map، کش نتایج بر اساس hash فایل ویژگی‌ها باید per-shot، versioned و قابل cache باشند تا Style Match از یک score مبهم به Style Signature چندمحوره برسد.
 
 **فایل‌ها:** `ai-engine/src/analyzer/energy_map.py`, `apps/desktop/src/components/timeline/HeatMap.tsx`
 
-**تست واقعی (نه فقط عدد):** Fixture with static first half + fast motion second half → heat values second half > 2× first half; UI colors match value buckets
+**تست واقعی (نه فقط عدد):** Fixture with static first half + fast motion second half → heat values second half > 2× first half; UI colors match value buckets و خروجی شامل score/confidence و timestamp evidence برای semantic، visual، temporal و audio باشد.
 
 **Done when:** Green
 
@@ -716,11 +716,11 @@ _هر ۱۶ قابلیت با UI واقعی، تست واقعی روی مدیا �
 
 ### S-045 — Mood DNA visualization: radar + timeline charts, cache by hash
 
-**هدف:** نمودار رادار ۸ بُعدی و نمودار زمانی انرژی/رنگ، کش نتایج بر اساس SHA256 فایل، خروجی JSON
+**هدف:** نمودار رادار ۸ بُعدی و نمودار زمانی انرژی/رنگ، کش نتایج بر اساس SHA256 فایل، خروجی JSON Style DNA باید از signature نسخه‌دار و قابل بازتولید ساخته شود؛ CPU-first باشد و مدل‌های optional را از runtime اصلی جدا نگه دارد.
 
 **فایل‌ها:** `apps/desktop/src/components/style-match/MoodDnaChart.tsx`, `ai-engine/src/style_match/mood_dna.py`
 
-**تست واقعی (نه فقط عدد):** Same file twice → second call served from cache < 50ms; radar SVG has 8 axes with values in [0,1]
+**تست واقعی (نه فقط عدد):** Same file twice → second call served from cache < 50ms; radar SVG has 8 axes with values in [0,1] و hash ورودی/نسخهٔ الگوریتم/محورهای score ثبت شود؛ نبود مدل یا audio برابر unverified باشد.
 
 **Done when:** Green
 
@@ -730,11 +730,11 @@ _هر ۱۶ قابلیت با UI واقعی، تست واقعی روی مدیا �
 
 ### S-046 — Style Match: side-by-side compare, DNA diff, 'Apply Style' suggestions
 
-**هدف:** نمای دو ویدیو کنار هم با اسکراب همگام، diff بُعدهای DNA، «اعمال استایل» → پیشنهاد LUT + ریتم برش + ترنزیشن‌ها با پیش‌نمایش و تأیید
+**هدف:** نمای دو ویدیو کنار هم با اسکراب همگام، diff بُعدهای DNA، «اعمال استایل» → پیشنهاد LUT + ریتم برش + ترنزیشن‌ها با پیش‌نمایش و تأیید مقایسه باید semantic، composition، palette/lighting، pacing/motion، pose/crop و audio را جدا نشان دهد و Apply Style فقط plan محدود و قابل rollback تولید کند. جزئیات در docs/loop/STYLE_MATCH_ARCHITECTURE.md است.
 
 **فایل‌ها:** `apps/desktop/src/components/style-match/CompareView.tsx`, `ai-engine/src/style_match/apply_style.py`
 
-**تست واقعی (نه فقط عدد):** Reference fast-cut fixture vs slow target → suggested avg cut length within 20% of reference; applying produces timeline with N cuts matching
+**تست واقعی (نه فقط عدد):** Reference fast-cut fixture vs slow target → suggested avg cut length within 20% of reference; applying produces timeline with N cuts matching و plan نامعتبر یا action ناشناخته رد شود؛ before/after score، playable output و rollback failure تست شوند.
 
 **Done when:** Green
 
@@ -758,11 +758,11 @@ _هر ۱۶ قابلیت با UI واقعی، تست واقعی روی مدیا �
 
 ### S-048 — Transition Intelligence: per-cut suggestions with reasoning + apply via xfade
 
-**هدف:** برای هر برش دلیل و نوع ترنزیشن پیشنهادی (cut/crossfade/dip/whip) بر اساس انرژی و بیت، اعمال در خروجی با xfade/acrossfade و پیش‌نمایش تقریبی
+**هدف:** برای هر برش دلیل و نوع ترنزیشن پیشنهادی (cut/crossfade/dip/whip) بر اساس انرژی و بیت، اعمال در خروجی با xfade/acrossfade و پیش‌نمایش تقریبی پیشنهاد transition باید از energy/beat/shot boundary بیاید و فقط از allow-list plan معتبر اجرا شود؛ LLM نباید raw FFmpeg command تولید کند.
 
 **فایل‌ها:** `ai-engine/src/style_match/transition_ai.py`, `ai-engine/src/export/transitions.py`
 
-**تست واقعی (نه فقط عدد):** Export with 1s crossfade between two solid-color fixtures → frame at midpoint has mean color ≈ 50/50 blend (±10)
+**تست واقعی (نه فقط عدد):** Export with 1s crossfade between two solid-color fixtures → frame at midpoint has mean color ≈ 50/50 blend (±10) و شکست xfade/acrossfade باید structured error، cleanup و rollback داشته باشد.
 
 **Done when:** Green
 
@@ -856,11 +856,11 @@ _هر ۱۶ قابلیت با UI واقعی، تست واقعی روی مدیا �
 
 ### S-055 — Content Strategy dashboard: virality score breakdown, hook timing, length, hashtags
 
-**هدف:** داشبورد امتیاز وایرال با تفکیک مؤلفه‌ها، تشخیص hook در ۳ ثانیه‌ی اول، پیشنهاد طول برای هر پلتفرم، هشتگ‌ها (fa/en)
+**هدف:** داشبورد امتیاز وایرال با تفکیک مؤلفه‌ها، تشخیص hook در ۳ ثانیه‌ی اول، پیشنهاد طول برای هر پلتفرم، هشتگ‌ها (fa/en) dashboard از featureهای واقعی و timestampدار Style DNA استفاده کند و confidence/limitations را نشان دهد؛ virality score نباید ادعای causal یا قطعیت داشته باشد.
 
 **فایل‌ها:** `ai-engine/src/assistant/content_strategy.py`, `apps/desktop/src/components/ai-assistant/StrategyDashboard.tsx`
 
-**تست واقعی (نه فقط عدد):** High-energy-start fixture scores hook ≥ 0.7; static-start fixture ≤ 0.3; UI renders all components with values in range
+**تست واقعی (نه فقط عدد):** High-energy-start fixture scores hook ≥ 0.7; static-start fixture ≤ 0.3; UI renders all components with values in range و ورودی missing/unverified یا confidence پایین با پیام شفاف نمایش داده شود.
 
 **Done when:** Green
 
@@ -870,11 +870,11 @@ _هر ۱۶ قابلیت با UI واقعی، تست واقعی روی مدیا �
 
 ### S-056 — AI guardrails: rate limits, content-hash cache, offline mode UX, cost = $0 enforcement
 
-**هدف:** محدودیت نرخ فراخوانی، کش بر اساس hash محتوا، پیام‌های شفاف حالت آفلاین، فقط مدل‌های :free مجاز (لیست سفید) تا هزینه صفر بماند
+**هدف:** محدودیت نرخ فراخوانی، کش بر اساس hash محتوا، پیام‌های شفاف حالت آفلاین، فقط مدل‌های :free مجاز (لیست سفید) تا هزینه صفر بماند مدل/providerها optional و allow-listed باشند؛ content-hash cache، offline mode، license metadata، هزینهٔ صفر و عدم bundle مدل‌های سنگین enforce شود.
 
 **فایل‌ها:** `ai-engine/src/ai/guard.py`, `apps/desktop/src/components/shared/OfflineBanner.tsx`
 
-**تست واقعی (نه فقط عدد):** Request non-free model id → rejected 400; 20 identical requests → 1 upstream call; disconnect network → banner in Persian within 5s
+**تست واقعی (نه فقط عدد):** Request non-free model id → rejected 400; 20 identical requests → 1 upstream call; disconnect network → banner in Persian within 5s و مدل غیرمجاز، provider غیرمجاز، cache ناسازگار و قطع شبکه با خطای قابل اقدام رد/گزارش شوند.
 
 **Done when:** Green
 
