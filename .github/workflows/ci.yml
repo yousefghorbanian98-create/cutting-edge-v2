@@ -77,6 +77,10 @@ jobs:
       - name: Unit tests (tests/unit) → junit
         run: ai-engine/.venv/bin/python -m pytest tests/unit -q -p no:cacheprovider -rfEs --junitxml=reports/junit-unit.xml
 
+      - name: Timeline domain (vitest + line coverage)
+        working-directory: apps/desktop
+        run: pnpm exec vitest run --coverage
+
       - name: Annotate unit failures (public annotations, no token needed)
         if: always()
         run: python scripts/ci/junit_annotate.py reports/junit-unit.xml

@@ -18,6 +18,7 @@ tests/fixtures/.cache/
 out/
 playwright-report/
 test-results/
+coverage/
 .turbo/
 next-env.d.ts
 *.tsbuildinfo
