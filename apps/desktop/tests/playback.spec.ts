@@ -42,7 +42,11 @@ test('playhead stays within one frame, and ten arrow steps match fps', async ({ 
       ) {
         return 999;
       }
-      const x = head.getBoundingClientRect().left - lane.getBoundingClientRect().left + lane.scrollLeft;
+      const x =
+        head.getBoundingClientRect().left -
+        lane.getBoundingClientRect().left -
+        lane.clientLeft +
+        lane.scrollLeft;
       return Math.abs(x / 100 - video.currentTime);
     });
     expect(drift).toBeLessThan(1 / fixture.fps);

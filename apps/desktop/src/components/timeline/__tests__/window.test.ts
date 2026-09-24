@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { benchSequence } from '../bench';
-import { visibleClips } from '../window';
+import { timeFromPointer, visibleClips } from '../window';
 
 describe('timeline window', () => {
   it('renders only clips inside the scroll window of a 200-clip sequence', () => {
@@ -14,5 +14,10 @@ describe('timeline window', () => {
       const end = (clip.start + clip.duration) / 1000;
       expect(start < 12 && end > 10).toBe(true);
     }
+  });
+
+  it('a 1px lane border does not shift a ruler click by 10ms', () => {
+    expect(timeFromPointer(551, 100, 1, 0)).toBe(4.5);
+    expect(timeFromPointer(550, 100, 0, 0)).toBe(4.5);
   });
 });

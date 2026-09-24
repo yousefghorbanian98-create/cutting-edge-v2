@@ -2,7 +2,7 @@
 
 import { formatTimecode, usePlayback } from '@/hooks/usePlayback';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import { PX_PER_SECOND } from './window';
+import { timeFromPointer } from './window';
 
 export function PlaybackBar() {
   const { videoRef, time, fps, playing, ready, loadFile, toggle } = usePlayback();
@@ -68,7 +68,7 @@ export function Playhead() {
           event.currentTarget.setPointerCapture(event.pointerId);
           const move = (point: { clientX: number }) => {
             const rect = lane.getBoundingClientRect();
-            setTime(Math.max(0, (point.clientX - rect.left + lane.scrollLeft) / PX_PER_SECOND));
+            setTime(timeFromPointer(point.clientX, rect.left, lane.clientLeft, lane.scrollLeft));
           };
           move(event);
           const onMove = (next: PointerEvent) => move(next);
@@ -91,7 +91,7 @@ export function scrubFromRuler(event: ReactPointerEvent<HTMLDivElement>, setTime
   target.setPointerCapture(event.pointerId);
   const move = (point: { clientX: number }) => {
     const rect = lane.getBoundingClientRect();
-    setTime(Math.max(0, (point.clientX - rect.left + lane.scrollLeft) / PX_PER_SECOND));
+    setTime(timeFromPointer(point.clientX, rect.left, lane.clientLeft, lane.scrollLeft));
   };
   move(event);
   const onMove = (next: PointerEvent) => move(next);

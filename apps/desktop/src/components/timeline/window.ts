@@ -23,6 +23,18 @@ export function visibleClips(clips: WindowClip[], startSec: number, endSec: numb
   });
 }
 
+/** Pointer time inside the scroll content, ignoring the lane's border box. */
+export function timeFromPointer(
+  clientX: number,
+  laneLeft: number,
+  borderLeft: number,
+  scrollLeft: number,
+  pxPerSecond = PX_PER_SECOND
+): number {
+  if (pxPerSecond <= 0) return 0;
+  return Math.max(0, (clientX - laneLeft - borderLeft + scrollLeft) / pxPerSecond);
+}
+
 export function contentWidth(clips: WindowClip[]): number {
   const end = clips.reduce((max, clip) => Math.max(max, msToSeconds(clip.start + clip.duration)), 1);
   return Math.ceil(end * PX_PER_SECOND);
