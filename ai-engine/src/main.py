@@ -9,6 +9,7 @@ import asyncio
 import logging
 import os
 import tempfile
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -144,19 +145,44 @@ def cancel_job(job_id: str) -> JobView:
 # ══════════════════════════════════════════
 # HEALTH
 # ══════════════════════════════════════════
-@app.get("/health")
-def health():
-    ram = psutil.virtual_memory().percent
-    cpu = psutil.cpu_percent(interval=0.1)
-    gpu_mem = 0
+_gpu_mem = 0.0
+_gpu_lock = threading.Lock()
+_gpu_probe_started = False
+
+
+def _refresh_gpu_mem() -> None:
+    """Slow driver probe. Never call this on the /health request path."""
+    global _gpu_mem
     try:
         import GPUtil
 
-        g = GPUtil.getGPUs()
-        if g:
-            gpu_mem = g[0].memoryUsed
+        gpus = GPUtil.getGPUs()
+        value = float(gpus[0].memoryUsed) if gpus else 0.0
     except Exception as exc:  # GPUtil absent or driver error — health must still answer
         logger.debug("gpu probe skipped: %s", exc)
+        value = 0.0
+    with _gpu_lock:
+        _gpu_mem = value
+
+
+def _ensure_gpu_probe() -> None:
+    global _gpu_probe_started
+    if _gpu_probe_started:
+        return
+    _gpu_probe_started = True
+    threading.Thread(target=_refresh_gpu_mem, name="health-gpu", daemon=True).start()
+
+
+@app.get("/health")
+def health():
+    # interval=0.1 blocks the worker for 100ms. Ten overlapping probes during
+    # enhance then miss the 200ms p95 (CI run 36065950386: p95 1.265s, median 0.227s).
+    # The budget is unchanged. The request only reads a non-blocking sample.
+    _ensure_gpu_probe()
+    ram = psutil.virtual_memory().percent
+    cpu = psutil.cpu_percent(interval=None)
+    with _gpu_lock:
+        gpu_mem = _gpu_mem
     return {
         "status": "healthy" if ram < 88 and gpu_mem < 3500 else "warning",
         "ram": ram,

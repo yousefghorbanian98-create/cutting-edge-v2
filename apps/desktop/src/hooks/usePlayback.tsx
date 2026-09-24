@@ -1,6 +1,7 @@
 'use client';
 
 import { PX_PER_SECOND } from '@/components/timeline/window';
+import { fpsFromMp4 } from '@/hooks/mp4Fps';
 import {
   type ReactNode,
   type RefObject,
@@ -193,8 +194,11 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       video.onloadeddata = () => resolve();
       video.onerror = () => reject(new Error('پیش‌نمایش باز نشد'));
     });
-    const sampled = await sampleFps(video);
-    setFps(sampled);
+    // Container rate, not the display sample. Headless Chromium presented the
+    // 60fps fixture at 33fps and then 43fps; sampleFps must not overwrite a
+    // parsed constant rate, and its ±2 snap stays unchanged.
+    const parsed = fpsFromMp4(new Uint8Array(await file.arrayBuffer()));
+    setFps(parsed ?? (await sampleFps(video)));
     setReady(true);
     applyTime(0);
   }

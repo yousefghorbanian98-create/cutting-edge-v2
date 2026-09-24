@@ -20,6 +20,8 @@ async function load(page: import('@playwright/test').Page, fixture: PlaybackFixt
   await page.goto('/editor');
   await page.getByTestId('preview-file').setInputFiles(file);
   await expect(page.getByTestId('preview-video')).toHaveAttribute('data-ready', '1', { timeout: 20_000 });
+  // Container rate from stts. Do not widen this: CI received 43, then 33, when
+  // loadFile used requestVideoFrameCallback on the 60fps file.
   await expect(page.getByTestId('preview-video')).toHaveAttribute('data-fps', String(fixture.fps));
 }
 
