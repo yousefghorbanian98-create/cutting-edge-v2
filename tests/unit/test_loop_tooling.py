@@ -112,9 +112,12 @@ def test_unit_stage_runs_pytest_and_names_missing_tools() -> None:
     by_name = {c["name"]: c for c in rep["checks"]}
     assert by_name["pytest-unit"]["status"] in {"PASS", "FAIL"}
     assert by_name["pytest-unit"]["status"] == "PASS", by_name["pytest-unit"]["detail"][-800:]
-    for missing in ("vitest", "cargo-test"):
-        assert by_name[missing]["status"] == "MISSING"
-        assert by_name[missing]["detail"].strip()
+    vitest = by_name["vitest"]["status"]
+    assert vitest in {"PASS", "MISSING"}, by_name["vitest"]
+    if vitest == "MISSING":
+        assert by_name["vitest"]["detail"].strip()
+    assert by_name["cargo-test"]["status"] == "MISSING"
+    assert by_name["cargo-test"]["detail"].strip()
 
 
 def test_real_stage_is_not_silent() -> None:

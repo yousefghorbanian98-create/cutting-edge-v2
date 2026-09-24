@@ -453,19 +453,16 @@ def _pytest_marker(marker: str, paths: list[str]) -> Check:
 
 
 def check_vitest() -> Check:
-    pkg_text = ""
-    for pkg in (DESKTOP / "package.json", ROOT / "package.json"):
-        if pkg.exists():
-            pkg_text += pkg.read_text(encoding="utf-8")
-    if "vitest" not in pkg_text:
+    pkg = DESKTOP / "package.json"
+    if not pkg.exists() or "vitest" not in pkg.read_text(encoding="utf-8"):
         return Check(
             "vitest",
             "MISSING",
             "vitest is not a dependency and no script runs it; pytest -m unit is the unit runner until a vitest suite lands",
         )
-    local = ROOT / "node_modules" / ".bin" / ("vitest.cmd" if IS_WIN else "vitest")
+    local = DESKTOP / "node_modules" / ".bin" / ("vitest.cmd" if IS_WIN else "vitest")
     cmd = [str(local), "run"] if local.exists() else ["pnpm", "exec", "vitest", "run"]
-    rc, out = _run(cmd, timeout=600)
+    rc, out = _run(cmd, cwd=DESKTOP, timeout=600)
     if rc == 127:
         return Check("vitest", "MISSING", out.strip()[-500:] or "vitest binary not found")
     return Check("vitest", "PASS" if rc == 0 else "FAIL", out.strip()[-1500:])

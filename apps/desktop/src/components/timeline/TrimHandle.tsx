@@ -35,7 +35,7 @@ export function TrimHandle({ clipId, edge }: { clipId: string; edge: 'in' | 'out
       const sequence = useTimelineStore.getState().sequence;
       const rolled = next.shiftKey ? rollNeighbor(sequence, clipId, edge, signed) : null;
       const nextSequence = rolled ?? trimBy(sequence, clipId, edge, signed, next.altKey);
-      if (nextSequence !== sequence) useTimelineStore.setState({ sequence: nextSequence });
+      useTimelineStore.getState().commitEdit(nextSequence);
     };
     node.addEventListener('pointerup', onUp);
     event.stopPropagation();

@@ -40,6 +40,7 @@ export interface TimelineState extends TimelineSnapshot {
   setTrackFlag: (trackId: string, flag: 'muted' | 'solo' | 'locked', value: boolean) => boolean;
   addMarker: (marker: Marker) => boolean;
   setSelection: (ids: string[]) => void;
+  commitEdit: (next: Sequence, addedIds?: number) => boolean;
   reset: (sequence?: Sequence) => void;
 }
 
@@ -85,6 +86,14 @@ export const useTimelineStore = create<TimelineState>()(
         set((state) => {
           state.sequence = setSelection(state.sequence, ids);
         });
+      },
+      commitEdit: (next, addedIds = 0) => {
+        if (next === get().sequence && addedIds === 0) return false;
+        set((state) => {
+          state.sequence = next;
+          state.nextId += addedIds;
+        });
+        return true;
       },
       reset: (sequence) => {
         set((state) => {

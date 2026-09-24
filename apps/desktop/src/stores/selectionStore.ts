@@ -64,18 +64,20 @@ export const useSelectionStore = create<SelectionState>()((set, get) => ({
   paste: (atMs) => {
     const sequence = useTimelineStore.getState().sequence;
     const next = pasteAt(sequence, get().clipboard, atMs);
-    if (next !== sequence) useTimelineStore.setState({ sequence: next });
+    const added = Math.max(0, next.clips.length - sequence.clips.length);
+    useTimelineStore.getState().commitEdit(next, added);
   },
   duplicate: () => {
     const sequence = useTimelineStore.getState().sequence;
     const next = duplicateClips(sequence, sequence.selection);
-    if (next !== sequence) useTimelineStore.setState({ sequence: next });
+    const added = Math.max(0, next.clips.length - sequence.clips.length);
+    useTimelineStore.getState().commitEdit(next, added);
   },
   selectRect: (rect, additive) => {
     const sequence = useTimelineStore.getState().sequence;
     const hit = clipsInRect(sequence.clips, rect);
     const selection = additive ? [...new Set([...sequence.selection, ...hit])] : hit;
-    useTimelineStore.setState({ sequence: { ...sequence, selection } });
+    useTimelineStore.getState().setSelection(selection);
   },
 }));
 

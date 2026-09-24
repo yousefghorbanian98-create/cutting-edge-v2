@@ -42,13 +42,14 @@ export function Shortcuts() {
         const fromHead = Number(head instanceof HTMLElement ? head.dataset.time : time);
         const at = Number.isFinite(fromHead) ? Math.round(fromHead * 1000) : Math.round(time * 1000);
         const next = splitAtPlayhead(sequence, at, sequence.selection, sequence.selection.length > 0);
-        if (next !== sequence) useTimelineStore.setState({ sequence: next });
+        const added = Math.max(0, next.clips.length - sequence.clips.length);
+        useTimelineStore.getState().commitEdit(next, added);
         return;
       }
       const ids = sequence.selection.length > 0 ? sequence.selection : [];
       if (ids.length === 0) return;
       const next = removeClips(sequence, ids, action === 'ripple-delete');
-      if (next !== sequence) useTimelineStore.setState({ sequence: next });
+      useTimelineStore.getState().commitEdit(next);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
