@@ -22,6 +22,27 @@ export function benchSequence(count = 200): Sequence {
   return { ...sequence, clips };
 }
 
+export function splitFixture(): Sequence {
+  const sequence = emptySequence('split', 30);
+  return {
+    ...sequence,
+    clips: [
+      {
+        id: 'long',
+        mediaId: 'bench',
+        trackId: 'track-v1',
+        start: 0,
+        duration: 10_000,
+        inPoint: 100,
+        sourceDuration: 20_000,
+        transform: identityTransform(),
+        effects: [],
+        label: 'بلند',
+      },
+    ],
+  };
+}
+
 export function snapFixture(): Sequence {
   const sequence = emptySequence('snap', 30);
   const base = {

@@ -34,7 +34,7 @@
 | S-016 | Playhead sync, scrubbing, JKL, frame-step, time display | REVIEW | 1 | local-linux | docs/loop/evidence/S-016/CONTRACT.md; EVIDENCE.md; apps/desktop/src/hooks/usePlayback.tsx; apps/desktop/src/components/timeline/Playhead.tsx; apps/desktop/tests/playback.spec.ts | Timecode test green. Playwright sync spec unverified:browser. Not GREEN. |
 | S-017 | Clip drag/move/reorder across tracks with snapping | REVIEW | 1 | local-linux | docs/loop/evidence/S-017/CONTRACT.md; EVIDENCE.md; apps/desktop/src/domain/snap.ts; apps/desktop/src/components/timeline/useClipDrag.ts; apps/desktop/tests/clip-drag.spec.ts | Snap unit tests green. Mouse drag spec unverified:browser. Not GREEN. |
 | S-018 | Trim handles (in/out), ripple & roll trim | REVIEW | 1 | local-linux | docs/loop/evidence/S-018/CONTRACT.md; EVIDENCE.md; apps/desktop/src/domain/trim.ts; apps/desktop/src/components/timeline/TrimHandle.tsx; apps/desktop/tests/trim.spec.ts | Trim math green. Handle drag unverified:browser. Not GREEN. |
-| S-019 | Split at playhead (Ctrl+B), delete, ripple delete | TODO | 0 |  |  |  |
+| S-019 | Split at playhead (Ctrl+B), delete, ripple delete | REVIEW | 1 | local-linux | docs/loop/evidence/S-019/CONTRACT.md; EVIDENCE.md; apps/desktop/src/domain/split.ts; apps/desktop/src/lib/shortcuts.ts; apps/desktop/tests/split.spec.ts | Split math green. Ctrl+B spec unverified:browser. Not GREEN. |
 | S-020 | Selection (click/shift/marquee), copy/paste/duplicate | TODO | 0 |  |  |  |
 | S-021 | Undo/Redo UI (Ctrl+Z / Ctrl+Shift+Z) + history panel | TODO | 0 |  |  |  |
 | S-022 | Multi-track: add/remove tracks, mute/solo/lock, text track | TODO | 0 |  |  |  |
