@@ -59,4 +59,4 @@ pwsh scripts/smoke-gpu.ps1                 # روی ماشین کاربر، از
 ```
 
 ## مرحله‌ی بعدی
-اولین ردیف `TODO` در `04_LEDGER.md` که همه‌ی وابستگی‌هایش GREEN یا REVIEW-در-همین-دسته هستند. S-010 GREEN است. S-011 و S-012 هر دو REVIEW (منتظر Overseer). Style Match فقط در `STYLE_MATCH_ARCHITECTURE.md` و کارت‌ها ثبت شده؛ مدل نصب نشده. مرحلهٔ بعدیِ TODO بعد از بازبینی: S-013.
+اولین ردیف `TODO` در `04_LEDGER.md` که همه‌ی وابستگی‌هایش GREEN یا REVIEW-در-همین-دسته هستند. S-010 تا S-012 GREEN هستند. Style Match فقط در کارت‌ها ثبت شده. مرحلهٔ بعدی: S-013.

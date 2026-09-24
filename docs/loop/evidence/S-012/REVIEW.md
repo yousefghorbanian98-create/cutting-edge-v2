@@ -2,20 +2,20 @@
 
 > نوشته‌شده توسط **Reviewer تازه**؛ بررسی بر اساس CONTRACT مرحله، diff مرحله و وضعیت CI انجام شد.
 
-CI: not completed for target SHA (no CI run found for `93ede826c00a1bde298936ce6596a7c3f3f5d9df`)
-Evidence re-produced by reviewer: partially (local AC tests reproduced; Windows CI and BUG-11 closure not reproduced for target SHA)
+CI: passed ([run 35999861447](https://github.com/yousefghorbanian98-create/cutting-edge-v2/actions/runs/35999861447))
+Evidence re-produced by reviewer: yes (all named S-012 tests reproduced locally; Windows CI and BUG-11 closure reproduced on the target SHA)
 
 ## Summary
 S-012 پردازش سنگین را از event loop جدا می‌کند، مدل job و polling/cancel را نگه می‌دارد، و یک مسیر اختیاری `inference` با یک GPU slot، CPU fallback و وضعیت `unverified` فراهم می‌کند. API عمومی `JobView` ثابت نگه داشته شده است.
 
 ## 1. Must fix before GREEN
-- [CI] برای target SHA هیچ run کامل CI پیدا نشد. AC-1 تا AC-6 و BUG-11 باید در `ci / windows` روی همین SHA اجرا و سبز شوند؛ نتیجهٔ CI روی commitهای قبلی برای این commit قابل انتقال نیست.
+- None.
 
 ## 2. Should fix soon (non-blocking → کارت hotfix یا notes)
 - مسیرهای فعلی heavy از `jobs.submit()` معمولی استفاده می‌کنند و هنوز `kind="inference"` نیستند؛ این با NG-7 که مدل‌های Style Match در S-012 ساخته نمی‌شوند سازگار است. وقتی اولین مدل Style Match اضافه شد، آن مسیر باید صریحاً از `submit_inference()` استفاده کند تا GPU lock واقعاً اعمال شود.
 
 ## 3. Verdict
-changes-requested — تست‌های محلی نام‌برده و تست‌های scheduler سبز هستند، اما CI دقیق target SHA وجود ندارد و BUG-11 هنوز طبق قرارداد باز است.
+approved — تمام تست‌های AC و scheduler محلی سبز هستند؛ CI کامل target SHA سبز است و BUG-11 با شواهد Windows بسته شده است.
 
 ## Reproduction notes
 

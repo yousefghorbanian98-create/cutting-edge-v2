@@ -1,6 +1,6 @@
 # EVIDENCE — S-012 — Non-blocking jobs
 
-Builder. Status: REVIEW (not GREEN). Round 2 must-fix is answered on `273003f`, not by this evidence note. BUG-11 is CLOSED.
+Builder. Status: GREEN. Closed after Overseer `approved` r2 @ `071a4fd`. CI run 35999861447. BUG-11 is CLOSED. Host GPU probe remains unverified, not a pass.
 
 ## What landed
 
