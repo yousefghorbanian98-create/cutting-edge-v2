@@ -25,3 +25,10 @@ approved — تمام تست‌های AC و scheduler محلی سبز هستند
 - `test_missing_gpu_is_unverified_and_falls_back_to_cpu`: passed.
 - `test_host_probe_does_not_report_gpu_pass`: passed.
 - `test_forbidden_style_match_runtimes_are_absent`: passed.
+
+## Independent review — dependency hold — target `ab409cd0d2ead26dc21b0ee10efab66397f80cda`
+
+S-012 evidence and implementation were inspected; no new S-012 product regression was found. However, S-012 depends on S-006's artifact assertion layer, and S-006 remains REVIEW pending fresh evidence.
+
+- Verdict: **REVIEW — dependency hold; not approved and not GREEN**.
+- Do not change S-012 status until S-006 is independently approved and the existing S-012 CI evidence remains applicable.
