@@ -1,16 +1,13 @@
 """Artifact assertion helpers for S-006.
 
-`assert_playable` uses `ai_engine.core.ffmpeg.probe_duration_and_streams`
-(the ffprobe-equivalent over `ffmpeg -i`) plus light OpenCV frame validation,
-so it works in a sandbox/CI that only has the bundled imageio-ffmpeg binary.
+`assert_playable` uses `ai_engine.core.ffmpeg.probe_duration_and_streams`.
+Structured ffprobe JSON is primary. The textual `ffmpeg -i` parser is fallback
+only. An expected width or height fails when the probe returns None.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-
-import cv2
-import numpy as np
 
 from ai_engine.core.ffmpeg import probe_duration_and_streams
 
@@ -18,7 +15,13 @@ from ai_engine.core.ffmpeg import probe_duration_and_streams
 def _parse_duration_seconds(dur: str | None) -> float | None:
     if not dur:
         return None
-    parts = dur.split(":")
+    text = str(dur).strip()
+    if ":" not in text:
+        try:
+            return float(text)
+        except ValueError:
+            return None
+    parts = text.split(":")
     try:
         return float(parts[0]) * 3600 + float(parts[1]) * 60 + float(parts[2])
     except (IndexError, ValueError):
@@ -47,13 +50,17 @@ def assert_playable(
     if has_audio is not None:
         assert info["audio"] == has_audio, f"audio={info['audio']}, expected {has_audio} for {path.name}"
 
-    if width is not None and info["width"] is not None:
+    if width is not None:
+        assert info["width"] is not None, f"width probe missing for {path.name}"
         assert abs(info["width"] - width) <= 2, f"width {info['width']} != {width}"
-    if height is not None and info["height"] is not None:
+    if height is not None:
+        assert info["height"] is not None, f"height probe missing for {path.name}"
         assert abs(info["height"] - height) <= 2, f"height {info['height']} != {height}"
 
     # Sanity: OpenCV can actually open + read at least one frame for video.
     if not info["duration"] or info["video_codec"]:
+        import cv2
+
         cap = cv2.VideoCapture(str(path))
         ok, frame = cap.read()
         cap.release()
@@ -63,24 +70,27 @@ def assert_playable(
     return info
 
 
-def frame_diff(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+def frame_diff(a, b):
     """Absolute per-pixel difference between two same-shaped frames."""
+    import numpy as np
+
     assert a.shape == b.shape, f"shape mismatch {a.shape} vs {b.shape}"
     return np.abs(a.astype(np.int16) - b.astype(np.int16)).astype(np.uint8)
 
 
-def mean_abs_pixel_diff(a: np.ndarray, b: np.ndarray) -> float:
+def mean_abs_pixel_diff(a, b) -> float:
     """Mean absolute per-pixel difference (0..255)."""
     return float(frame_diff(a, b).mean())
 
 
-def ssim_region(a: np.ndarray, b: np.ndarray) -> float:
+def ssim_region(a, b) -> float:
     """Lightweight structural-similarity over a sliding region (0..1).
 
     Uses a small local mean/variance formula on grayscale so it needs no extra
     deps beyond numpy. Higher = more similar.
     """
     import cv2 as _cv2
+    import numpy as np
 
     ga = _cv2.cvtColor(a, _cv2.COLOR_BGR2GRAY).astype(np.float32)
     gb = _cv2.cvtColor(b, _cv2.COLOR_BGR2GRAY).astype(np.float32)

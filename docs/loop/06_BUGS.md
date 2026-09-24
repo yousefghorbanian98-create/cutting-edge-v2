@@ -22,9 +22,10 @@
 | BUG-16 | **(جدید)** `src-tauri` بدون `tauri-build`/`build.rs`/آیکون/capabilities کامپایل نمی‌شود؛ `cargo fmt --check` + `cargo clippy` در CI ویندوز فعلاً advisory (`continue-on-error` + `::warning`)؛ `tests/unit/test_gate.py::test_cargo_clippy_green` با `xfail(strict=True)` | **CLOSED (S-010, fadbe2d)** — `continue-on-error` و `::warning` حذف، `xfail` در `test_gate.py` حذف؛ fmt/clippy(-D warnings)/test هر سه hard و سبز | `apps/desktop/src-tauri` | S-010 | جاب `ci / windows`: clippy با `-D warnings` سبز و `continue-on-error` حذف‌شده |
 
 | BUG-17 | **(جدید)** `apps/desktop/src-tauri/Cargo.lock` هنوز commit نشده (sandbox بدون cargo)؛ build هنوز `--locked` نیست | **CLOSED (S-010, 390b6ca)** — قفل `40efd7b` (114995 B, sha256 `01B0A06D…34A6`)؛ `cargo clippy --locked`، `cargo test --locked` و `tauri build -- --locked` در `ci / windows` سبز | `src-tauri` | S-010 (AC-7 نیمهٔ دوم) | CI run 35734652629 job 106768677907: clippy `--locked` ✅، smoke 17/17، installer sha256 `70A3A741…E1E1` |
+| BUG-18 | **(ممیزی گذشته‌نگر S-004)** `run_ffmpeg()` همیشه `-y` دارد و می‌تواند خروجی موجود را بدون consent بازنویسی کند | OPEN — امنیتی. ACهای S-004 معتبرند و آن مرحله GREEN می‌ماند. بستن در S-028 با overwrite policy، خروجی موقت و rollback؛ capability detection در S-028/S-086؛ ممیزی license در S-086 | `ai-engine/src/core/ffmpeg.py` | S-028, S-033, S-086 | export test must refuse an existing output without consent |
 
 ## پروتکل باگ جدید
-1. شناسه‌ی بعدی بگیر (`BUG-18` …).
+1. شناسه‌ی بعدی بگیر (`BUG-19` …).
 2. **اول** تست بازتولید بنویس (قرمز).
 3. اگر در حوزه‌ی مرحله‌ی جاری است همان‌جا ببند؛ وگرنه کارت hotfix `S-xxx-hN` بساز و به دفترچه اضافه کن (از طریق `steps.json`).
 4. بستن = تست اثبات سبز در CI + ردیف این جدول `CLOSED (S-xxx, <commit>)`.
