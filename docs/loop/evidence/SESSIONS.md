@@ -80,4 +80,4 @@
 ## 2026-09-24 — BATCH BUILDER: S-011 and S-012 round 2
 - Overseer `changes-requested` at `f082e8f` and `e0d2dfb`. Must-fix is CI on the reviewed SHA, not a new feature.
 - Windows job `107589257940` failed because the S-006 enhance helper still expected HTTP 200. It now polls the 202 job.
-- Both stay REVIEW, iter 2. Not GREEN. BUG-11 stays OPEN until the new windows job is green.
+- Both stay REVIEW, iter 2. Not GREEN. BUG-11 CLOSED after CI run 35996988592 on 273003f (windows 0 failed / 108, installer smoke 17/17).

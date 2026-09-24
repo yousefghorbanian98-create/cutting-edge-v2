@@ -1,6 +1,6 @@
 # EVIDENCE — S-012 — Non-blocking jobs
 
-Builder. Status: REVIEW (not GREEN). Round 2. Proof: `local-linux` plus the failed windows job on `93ede82`. BUG-11 stays OPEN until `ci / windows` is green on the fix SHA.
+Builder. Status: REVIEW (not GREEN). Round 2 must-fix is answered on `273003f`, not by this evidence note. BUG-11 is CLOSED.
 
 ## What landed
 
@@ -57,8 +57,8 @@ HTTP `JobView` fields are unchanged, so the committed OpenAPI client was not reg
 
 | item | owner |
 |------|-------|
-| BUG-11 close | `ci / windows` pytest on the round-2 SHA, not the failed run |
-| round-1 windows job | [35986178547](https://github.com/yousefghorbanian98-create/cutting-edge-v2/actions/runs/35986178547) job `107589257940` failed: `test_muscle_enhance_live_http` expected `200`, got `202`. Cargo and the installer were skipped. `tests/test_api_live.py` now polls the job. |
+| round-1 windows job | [35986178547](https://github.com/yousefghorbanian98-create/cutting-edge-v2/actions/runs/35986178547) job `107589257940` failed: `test_muscle_enhance_live_http` expected `200`, got `202`. |
+| round-2 windows job | [35996988592](https://github.com/yousefghorbanian98-create/cutting-edge-v2/actions/runs/35996988592) @ `273003f`, job `107624150630`: pytest 0 failed / 108, installer smoke 17/17, exe sha256 `8E4FEA0DE11D73B4D933744BDF872408FD7FE38A2DC92AB55DA7D8B138B6F4B1`. BUG-11 CLOSED. Not GREEN. |
 | Windows file-lock on cancel | same job; writer is released before `storage.delete` |
 | real GPU slot on GTX 1650 | `unverified:gpu` until `user-gpu`; this host probe is false |
 | priority / persistence / retry | S-072 |

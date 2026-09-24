@@ -34,7 +34,7 @@ Negative ledger cases (temp files): GREEN with empty `verified_on` → exit 1; a
 
 | item | owner |
 |------|-------|
-| `pwsh scripts/smoke-gpu.ps1 -DryRun` on a real runner | step success on [35986178547](https://github.com/yousefghorbanian98-create/cutting-edge-v2/actions/runs/35986178547) windows job `107589257940` at `93ede82` (`dry_run` true, not a GPU pass). The job itself failed later in pytest, so this SHA is not a green windows pass. Earlier step success: [35816459591](https://github.com/yousefghorbanian98-create/cutting-edge-v2/actions/runs/35816459591) job `107038926944`. |
+| `pwsh scripts/smoke-gpu.ps1 -DryRun` on a real runner | green windows job [35996988592](https://github.com/yousefghorbanian98-create/cutting-edge-v2/actions/runs/35996988592) @ `273003f`, job `107624150630`. Dry-run succeeded and is not a GPU pass. Pytest 0 failed / 108. Installer smoke 17/17. |
 | real GPU probes (`app_launch=true`) | user machine, S-027 / U2 |
 | vitest suite | S-013 |
 | chaos / perf / tauri-driver | S-077 / S-082 / S-079 |
