@@ -467,11 +467,11 @@ _خروجی واقعی FFmpeg با پیشرفت لحظه‌ای، لغو و پر
 
 ### S-028 — FFmpeg export engine: timeline JSON → filter_complex, progress, cancel, NVENC detect
 
-**هدف:** کامپایل سکانس به دستور FFmpeg (trim/setpts/concat/scale/pad/fps/amix/afade)، پارس `-progress pipe:1`، لغو با kill، تشخیص h264_nvenc (GTX 1650) با fallback به libx264، پروفایل‌های H.264/H.265
+**هدف:** کامپایل سکانس به دستور FFmpeg (trim/setpts/concat/scale/pad/fps/amix/afade)، پارس `-progress pipe:1`، لغو با kill، تشخیص h264_nvenc (GTX 1650) با fallback به libx264، پروفایل‌های H.264/H.265 عملیات export باید با probe قبل از plan، typed operation و capability check انجام شود؛ raw FFmpeg command از assistant ممنوع و خروجی باید provenance داشته باشد.
 
 **فایل‌ها:** `ai-engine/src/export/compiler.py`, `ai-engine/src/export/runner.py`, `tests/test_export.py`
 
-**تست واقعی (نه فقط عدد):** 3-clip sequence with overlap-free timeline → output duration == sum ±1 frame; resolution/fps per settings; A/V sync: audio click at 2.0s lands at 2.0s ±20ms (detected via librosa onset); cancel at 40% kills process < 1s
+**تست واقعی (نه فقط عدد):** 3-clip sequence with overlap-free timeline → output duration == sum ±1 frame; resolution/fps per settings; A/V sync: audio click at 2.0s lands at 2.0s ±20ms (detected via librosa onset); cancel at 40% kills process < 1s؛ تست missing codec/filter، جلوگیری از overwrite و JSON provenance اجباری است.
 
 **Done when:** Export tests green with libx264; NVENC path unit-tested via mocked encoder list
 
@@ -539,11 +539,11 @@ _خروجی واقعی FFmpeg با پیشرفت لحظه‌ای، لغو و پر
 
 ### S-033 — Export quality validation suite (ffprobe + SSIM + browser playback)
 
-**هدف:** سوییت اعتبارسنجی خروجی: ffprobe، SSIM نسبت به رفرنس ≥ 0.95، پخش در Chromium (رویداد canplaythrough)، moov atom در ابتدا (faststart)
+**هدف:** سوییت اعتبارسنجی خروجی: ffprobe، SSIM نسبت به رفرنس ≥ 0.95، پخش در Chromium (رویداد canplaythrough)، moov atom در ابتدا (faststart) اعتبارسنجی خروجی باید probe-first/verify-last باشد و playable، duration، streams، sync، codec، color metadata و delivery constraints را اندازه بگیرد.
 
 **فایل‌ها:** `tests/test_export_quality.py`, `apps/desktop/e2e/export.spec.ts`
 
-**تست واقعی (نه فقط عدد):** All presets exported from same sequence pass validation; Playwright loads each output in <video> and reaches readyState 4
+**تست واقعی (نه فقط عدد):** All presets exported from same sequence pass validation; Playwright loads each output in <video> and reaches readyState 4؛ خروجی خراب، stream گمشده، sync خراب و capability unknown باید صریحاً FAIL/MISSING شوند.
 
 **Done when:** Green
 
@@ -604,11 +604,11 @@ _هر ۱۶ قابلیت با UI واقعی، تست واقعی روی مدیا �
 
 ### S-037 — Muscle Enhancer: FFmpeg mux (keep audio, H.264 not mp4v), job progress, cancel
 
-**هدف:** خروجی فعلی با fourcc mp4v و بدون صدا. لوله‌ی فریم‌ها به FFmpeg stdin با کپی صدا از ورودی، faststart، progress و cancel از طریق jobs
+**هدف:** خروجی فعلی با fourcc mp4v و بدون صدا. لوله‌ی فریم‌ها به FFmpeg stdin با کپی صدا از ورودی، faststart، progress و cancel از طریق jobs مسیر mux باید workspace boundary، temporary output، atomic replace، cleanup و rollback داشته باشد؛ audio و codec capability قبل از اجرا بررسی شوند.
 
 **فایل‌ها:** `ai-engine/src/muscle/pipeline.py`, `ai-engine/src/main.py`
 
-**تست واقعی (نه فقط عدد):** Output has audio stream identical duration to input (±20ms), video codec h264, plays in Chromium
+**تست واقعی (نه فقط عدد):** Output has audio stream identical duration to input (±20ms), video codec h264, plays in Chromium؛ cancel/خرابی FFmpeg نباید فایل اصلی را تغییر دهد و partial file باید حذف شود.
 
 **Done when:** Green
 
@@ -674,11 +674,11 @@ _هر ۱۶ قابلیت با UI واقعی، تست واقعی روی مدیا �
 
 ### S-042 — One-Click Viral Cut → new sequence with 9:16 subject-tracked crop
 
-**هدف:** پیدا کردن بهترین ۳۰ ثانیه، ساخت سکانس جدید، پیشنهاد کراپ عمودی با دنبال‌کردن مرکز بدن (pose)، پریست‌های Reels/Shorts/TikTok
+**هدف:** پیدا کردن بهترین ۳۰ ثانیه، ساخت سکانس جدید، پیشنهاد کراپ عمودی با دنبال‌کردن مرکز بدن (pose)، پریست‌های Reels/Shorts/TikTok خروجی باید manifest نسخه‌دار و قابل تکرار داشته باشد تا hook، سوژه، زبان و نسبت تصویر بدون بازسازی دستی variant شوند؛ زمان‌بندی caption و B-roll تا حد امکان به phrase/word anchor متصل باشد.
 
 **فایل‌ها:** `ai-engine/src/editor_ai/viral_cut.py`, `apps/desktop/src/features/viralCut.ts`
 
-**تست واقعی (نه فقط عدد):** Fixture with subject moving left→right → crop x follows (correlation > 0.8); 2s fixture → whole clip, no crash
+**تست واقعی (نه فقط عدد):** Fixture with subject moving left→right → crop x follows (correlation > 0.8); 2s fixture → whole clip, no crash؛ تغییر hook یا نسبت تصویر باید فقط segmentهای وابسته را reflow کند و manifest قبلی قابل بازتولید بماند.
 
 **Done when:** Green
 
@@ -702,11 +702,11 @@ _هر ۱۶ قابلیت با UI واقعی، تست واقعی روی مدیا �
 
 ### S-044 — Whisper captions: transcript panel, SRT export, caption text track, burn-in on export
 
-**هدف:** ترنسکریپت با تایم‌کد و کلیک-برای-پرش، ترجمه‌ی fa↔en، خروجی SRT/VTT، ترک متن روی تایم‌لاین، burn-in با فیلتر subtitles/ass و فونت فارسی
+**هدف:** ترنسکریپت با تایم‌کد و کلیک-برای-پرش، ترجمه‌ی fa↔en، خروجی SRT/VTT، ترک متن روی تایم‌لاین، burn-in با فیلتر subtitles/ass و فونت فارسی captionها و B-roll باید در صورت تغییر script/زبان با anchor معنایی reflow شوند، نه فقط با timestamp ثابت؛ schema نسخه‌دار و قابل diff باشد.
 
 **فایل‌ها:** `apps/desktop/src/components/captions/`, `ai-engine/src/captioner/`, `ai-engine/src/export/subtitles.py`
 
-**تست واقعی (نه فقط عدد):** TTS-generated Persian narration fixture → WER ≤ 0.3; exported SRT parses; burned-in export frame at caption time contains text (OCR via tesseract optional, else pixel-diff vs no-caption export > threshold in bottom band)
+**تست واقعی (نه فقط عدد):** TTS-generated Persian narration fixture → WER ≤ 0.3; exported SRT parses; burned-in export frame at caption time contains text (OCR via tesseract optional, else pixel-diff vs no-caption export > threshold in bottom band)؛ تغییر طول جمله نباید sync caption/audio را خراب کند و manifest باید anchorهای phrase را حفظ کند.
 
 **Done when:** Green
 
@@ -730,11 +730,11 @@ _هر ۱۶ قابلیت با UI واقعی، تست واقعی روی مدیا �
 
 ### S-046 — Style Match: side-by-side compare, DNA diff, 'Apply Style' suggestions
 
-**هدف:** نمای دو ویدیو کنار هم با اسکراب همگام، diff بُعدهای DNA، «اعمال استایل» → پیشنهاد LUT + ریتم برش + ترنزیشن‌ها با پیش‌نمایش و تأیید مقایسه باید semantic، composition، palette/lighting، pacing/motion، pose/crop و audio را جدا نشان دهد و Apply Style فقط plan محدود و قابل rollback تولید کند. جزئیات در docs/loop/STYLE_MATCH_ARCHITECTURE.md است.
+**هدف:** نمای دو ویدیو کنار هم با اسکراب همگام، diff بُعدهای DNA، «اعمال استایل» → پیشنهاد LUT + ریتم برش + ترنزیشن‌ها با پیش‌نمایش و تأیید مقایسه باید semantic، composition، palette/lighting، pacing/motion، pose/crop و audio را جدا نشان دهد و Apply Style فقط plan محدود و قابل rollback تولید کند. جزئیات در docs/loop/STYLE_MATCH_ARCHITECTURE.md است. خروجی Apply Style باید یک EditPlan نسخه‌دار و قابل تکرار بسازد؛ plan باید shot، caption، B-roll، audio و effect را به anchor معنایی یا زمان معتبر وصل کند و برای variant قابل re-run باشد. EditPlan باید فقط typed operationهای allow-list شده تولید کند؛ قبل از اجرا media probe و capability check و بعد از اجرا verification/provenance انجام شود.
 
 **فایل‌ها:** `apps/desktop/src/components/style-match/CompareView.tsx`, `ai-engine/src/style_match/apply_style.py`
 
-**تست واقعی (نه فقط عدد):** Reference fast-cut fixture vs slow target → suggested avg cut length within 20% of reference; applying produces timeline with N cuts matching و plan نامعتبر یا action ناشناخته رد شود؛ before/after score، playable output و rollback failure تست شوند.
+**تست واقعی (نه فقط عدد):** Reference fast-cut fixture vs slow target → suggested avg cut length within 20% of reference; applying produces timeline with N cuts matching و plan نامعتبر یا action ناشناخته رد شود؛ before/after score، playable output و rollback failure تست شوند.؛ تغییر متن یا زبان باید زمان‌بندی وابسته را reflow کند و plan قبلی بدون مدل اجباری قابل inspect/replay باشد.؛ raw command، action ناشناخته، overwrite ناخواسته و خروجی غیرقابل‌پخش باید رد شوند.
 
 **Done when:** Green
 
@@ -758,11 +758,11 @@ _هر ۱۶ قابلیت با UI واقعی، تست واقعی روی مدیا �
 
 ### S-048 — Transition Intelligence: per-cut suggestions with reasoning + apply via xfade
 
-**هدف:** برای هر برش دلیل و نوع ترنزیشن پیشنهادی (cut/crossfade/dip/whip) بر اساس انرژی و بیت، اعمال در خروجی با xfade/acrossfade و پیش‌نمایش تقریبی پیشنهاد transition باید از energy/beat/shot boundary بیاید و فقط از allow-list plan معتبر اجرا شود؛ LLM نباید raw FFmpeg command تولید کند.
+**هدف:** برای هر برش دلیل و نوع ترنزیشن پیشنهادی (cut/crossfade/dip/whip) بر اساس انرژی و بیت، اعمال در خروجی با xfade/acrossfade و پیش‌نمایش تقریبی پیشنهاد transition باید از energy/beat/shot boundary بیاید و فقط از allow-list plan معتبر اجرا شود؛ LLM نباید raw FFmpeg command تولید کند. transitionها از operation schema معتبر به executor برسند؛ FFmpeg filter graph از ورودی آزاد LLM پذیرفته نشود و capability قبل از xfade/acrossfade بررسی شود.
 
 **فایل‌ها:** `ai-engine/src/style_match/transition_ai.py`, `ai-engine/src/export/transitions.py`
 
-**تست واقعی (نه فقط عدد):** Export with 1s crossfade between two solid-color fixtures → frame at midpoint has mean color ≈ 50/50 blend (±10) و شکست xfade/acrossfade باید structured error، cleanup و rollback داشته باشد.
+**تست واقعی (نه فقط عدد):** Export with 1s crossfade between two solid-color fixtures → frame at midpoint has mean color ≈ 50/50 blend (±10) و شکست xfade/acrossfade باید structured error، cleanup و rollback داشته باشد.؛ خروجی midpoint، sync، cleanup و rollback در شکست transition تست شوند.
 
 **Done when:** Green
 
@@ -842,11 +842,11 @@ _هر ۱۶ قابلیت با UI واقعی، تست واقعی روی مدیا �
 
 ### S-054 — Auto-Narrator: script generation → edge-tts → audio clip on timeline
 
-**هدف:** تولید متن روایت از تحلیل ویدیو، انتخاب صدا (fa/en)، edge-tts، افزودن به ترک صدا با هم‌ترازی، کش صداها
+**هدف:** تولید متن روایت از تحلیل ویدیو، انتخاب صدا (fa/en)، edge-tts، افزودن به ترک صدا با هم‌ترازی، کش صداها script، voiceover، caption و B-roll باید از طریق manifest واحد و anchorهای word/phrase به هم متصل شوند تا تغییر گوینده یا زبان باعث drift نشود.
 
 **فایل‌ها:** `ai-engine/src/assistant/auto_narrator.py`, `apps/desktop/src/components/ai-assistant/Narrator.tsx`
 
-**تست واقعی (نه فقط عدد):** Generate Persian narration → mp3 duration > 0; Whisper round-trip word match ≥ 70%; clip appears on audio track at requested time
+**تست واقعی (نه فقط عدد):** Generate Persian narration → mp3 duration > 0; Whisper round-trip word match ≥ 70%; clip appears on audio track at requested time؛ با دو speaking-rate متفاوت، anchorهای جمله حفظ و caption/visual cue دوباره هم‌تراز شوند.
 
 **Done when:** Green (network needed for edge-tts; offline → explicit 'unverified')
 
@@ -856,11 +856,11 @@ _هر ۱۶ قابلیت با UI واقعی، تست واقعی روی مدیا �
 
 ### S-055 — Content Strategy dashboard: virality score breakdown, hook timing, length, hashtags
 
-**هدف:** داشبورد امتیاز وایرال با تفکیک مؤلفه‌ها، تشخیص hook در ۳ ثانیه‌ی اول، پیشنهاد طول برای هر پلتفرم، هشتگ‌ها (fa/en) dashboard از featureهای واقعی و timestampدار Style DNA استفاده کند و confidence/limitations را نشان دهد؛ virality score نباید ادعای causal یا قطعیت داشته باشد.
+**هدف:** داشبورد امتیاز وایرال با تفکیک مؤلفه‌ها، تشخیص hook در ۳ ثانیه‌ی اول، پیشنهاد طول برای هر پلتفرم، هشتگ‌ها (fa/en) dashboard از featureهای واقعی و timestampدار Style DNA استفاده کند و confidence/limitations را نشان دهد؛ virality score نباید ادعای causal یا قطعیت داشته باشد. داشبورد باید امکان ساخت چند variant از یک workflow را با hook، زبان، CTA و B-roll متفاوت نشان دهد؛ هر variant باید manifest و confidence مستقل داشته باشد.
 
 **فایل‌ها:** `ai-engine/src/assistant/content_strategy.py`, `apps/desktop/src/components/ai-assistant/StrategyDashboard.tsx`
 
-**تست واقعی (نه فقط عدد):** High-energy-start fixture scores hook ≥ 0.7; static-start fixture ≤ 0.3; UI renders all components with values in range و ورودی missing/unverified یا confidence پایین با پیام شفاف نمایش داده شود.
+**تست واقعی (نه فقط عدد):** High-energy-start fixture scores hook ≥ 0.7; static-start fixture ≤ 0.3; UI renders all components with values in range و ورودی missing/unverified یا confidence پایین با پیام شفاف نمایش داده شود.؛ ساخت سه variant باید assetهای مشترک را reuse کند و تفاوت hook/CTA در manifest قابل مشاهده باشد.
 
 **Done when:** Green
 
@@ -870,11 +870,11 @@ _هر ۱۶ قابلیت با UI واقعی، تست واقعی روی مدیا �
 
 ### S-056 — AI guardrails: rate limits, content-hash cache, offline mode UX, cost = $0 enforcement
 
-**هدف:** محدودیت نرخ فراخوانی، کش بر اساس hash محتوا، پیام‌های شفاف حالت آفلاین، فقط مدل‌های :free مجاز (لیست سفید) تا هزینه صفر بماند مدل/providerها optional و allow-listed باشند؛ content-hash cache، offline mode، license metadata، هزینهٔ صفر و عدم bundle مدل‌های سنگین enforce شود.
+**هدف:** محدودیت نرخ فراخوانی، کش بر اساس hash محتوا، پیام‌های شفاف حالت آفلاین، فقط مدل‌های :free مجاز (لیست سفید) تا هزینه صفر بماند مدل/providerها optional و allow-listed باشند؛ content-hash cache، offline mode، license metadata، هزینهٔ صفر و عدم bundle مدل‌های سنگین enforce شود. قابلیت‌ها، providerها و مدل‌ها allow-listed باشند؛ offline، missing/unknown capability، content-hash cache، هزینه و provenance گزارش شوند.
 
 **فایل‌ها:** `ai-engine/src/ai/guard.py`, `apps/desktop/src/components/shared/OfflineBanner.tsx`
 
-**تست واقعی (نه فقط عدد):** Request non-free model id → rejected 400; 20 identical requests → 1 upstream call; disconnect network → banner in Persian within 5s و مدل غیرمجاز، provider غیرمجاز، cache ناسازگار و قطع شبکه با خطای قابل اقدام رد/گزارش شوند.
+**تست واقعی (نه فقط عدد):** Request non-free model id → rejected 400; 20 identical requests → 1 upstream call; disconnect network → banner in Persian within 5s و مدل غیرمجاز، provider غیرمجاز، cache ناسازگار و قطع شبکه با خطای قابل اقدام رد/گزارش شوند.؛ unknown نباید PASS شود و مسیر بدون شبکه باید پیام قابل اقدام بدهد.
 
 **Done when:** Green
 
@@ -1313,11 +1313,11 @@ _پوشش تست، کارایی روی GTX 1650، دسترس‌پذیری، i18n
 
 ### S-086 — Security audit: secrets in OS keyring, CSP, capabilities, dependency audits, path/ssrf review
 
-**هدف:** کلید OpenRouter در Settings برنامه و ذخیره در keyring ویندوز (نه .env)، CSP سخت‌گیرانه، حداقل capabilities، pnpm/pip/cargo audit در CI، gitleaks، بازبینی مسیرها و SSRF، threat model کوتاه؛ گیت لایسنس «رایگان برای همیشه»: `pip-licenses` + `license-checker` (npm) + `cargo-license` با allow-list OSI (MIT/BSD/Apache-2.0/ISC/MPL-2.0/OFL/LGPL فقط برای FFmpeg) در `scripts/license_check.py` → supervise C16
+**هدف:** کلید OpenRouter در Settings برنامه و ذخیره در keyring ویندوز (نه .env)، CSP سخت‌گیرانه، حداقل capabilities، pnpm/pip/cargo audit در CI، gitleaks، بازبینی مسیرها و SSRF، threat model کوتاه؛ گیت لایسنس «رایگان برای همیشه»: `pip-licenses` + `license-checker` (npm) + `cargo-license` با allow-list OSI (MIT/BSD/Apache-2.0/ISC/MPL-2.0/OFL/LGPL فقط برای FFmpeg) در `scripts/license_check.py` → supervise C16 audit امنیتی باید FFmpeg/ffprobe، third-party tools، license، workspace boundary، raw command injection، overwrite و capability detection را پوشش دهد.
 
 **فایل‌ها:** `apps/desktop/src-tauri/src/secrets.rs`, `apps/desktop/src/components/settings/ApiKeys.tsx`, `docs/SECURITY.md`
 
-**تست واقعی (نه فقط عدد):** Key entered in UI → not present in any file on disk (grep %LOCALAPPDATA%) → backend receives via IPC; audits 0 high/critical; CSP blocks inline script test
+**تست واقعی (نه فقط عدد):** Key entered in UI → not present in any file on disk (grep %LOCALAPPDATA%) → backend receives via IPC; audits 0 high/critical; CSP blocks inline script test؛ dependency و binary بدون license/evidence یا خارج از policy وارد محصول نشود.
 
 **Done when:** Green
 
