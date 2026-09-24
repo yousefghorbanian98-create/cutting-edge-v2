@@ -18,3 +18,13 @@ New `core/ffmpeg.py` with binary discovery (`CE_FFMPEG_BIN` → PATH → imageio
 
 ## 3. Verdict
 approved — all three ACs reproduced; NGs preserved; BUG-1/BUG-4 genuinely fixed this time.
+
+## Retro-audit — 2026-09-24 — FFmpeg execution-contract review
+
+Evidence re-produced: yes (source audit against the current FFmpeg-first implementation and the S-004 tests).
+
+- AC-1…AC-5 remain reproduced and the original S-004 scope is still satisfied.
+- [SECURITY] `run_ffmpeg()` unconditionally adds `-y`; `extract_audio()` can overwrite an existing default `<stem>_audio.wav` without an explicit user consent. This is outside the original S-004 AC but violates the new safe-execution direction. Owner: S-028/S-086; require explicit `overwrite` plus refusal by default before production export.
+- [DEFECT] `probe_duration_and_streams()` still parses human-readable `ffmpeg -i` stderr. The existing review already recorded this fragility; retain it only as a fallback behind structured probing/capability detection. Owner: S-028/S-033.
+
+Retro decision: do not invalidate the S-004 AC verdict, but carry both findings as must-fix requirements for the first production export/executor path. No product code was changed by this audit.

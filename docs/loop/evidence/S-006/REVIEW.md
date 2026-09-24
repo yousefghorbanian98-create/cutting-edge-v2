@@ -19,3 +19,12 @@ Session-scoped `live_api` fixture (subprocess uvicorn, health-wait, process-grou
 
 ## 3. Verdict
 approved — all seven ACs evidenced; NGs preserved; no regressions across 32 tests.
+
+## Retro-audit — 2026-09-24 — FFmpeg execution-contract review
+
+Evidence re-produced: yes (fresh source audit plus the existing live-media evidence; the helper implementation was inspected against AC-3).
+
+- [AC-3] `assert_playable()` silently skips a requested width/height assertion when the probe returns `None` (`if width is not None and info["width"] is not None`). A malformed or insufficiently-probed video can therefore pass a dimension assertion without proving its dimensions. The original review already noted this as a follow-up, but S-011 has not yet landed on the public Builder branch.
+- [DEFECT] The helper's probe path is human-readable stderr parsing rather than structured `ffprobe` JSON. This is acceptable as the documented sandbox fallback, but a production path needs capability detection and a structured probe when available.
+
+Retro verdict: send S-006 back to REVIEW for the AC-3 assertion fix (or an explicitly evidenced equivalent in S-011) before treating the harness as the final production evidence layer. S-004/S-006 remain otherwise reproducible; no product code was changed by this audit.
