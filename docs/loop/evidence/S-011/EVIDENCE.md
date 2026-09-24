@@ -1,6 +1,6 @@
 # EVIDENCE — S-011 — Loop tooling
 
-Builder. Status: REVIEW (not GREEN). Local half: `local-linux`. `smoke-gpu.ps1 -DryRun` executed on `ci / windows` (not a GPU pass).
+Builder. Status: GREEN. Closed after Overseer `approved` r2 @ `4b9c7a3`. CI run 35999861447. `smoke-gpu.ps1 -DryRun` is not a GPU pass.
 
 ## What landed
 
