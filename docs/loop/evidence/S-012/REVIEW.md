@@ -32,3 +32,9 @@ S-012 evidence and implementation were inspected; no new S-012 product regressio
 
 - Verdict: **REVIEW — dependency hold; not approved and not GREEN**.
 - Do not change S-012 status until S-006 is independently approved and the existing S-012 CI evidence remains applicable.
+
+## Independent review — dependency release — target `4b3204abe1ae6ee5ba98f7720be94de228177e3f`
+
+S-006 is now independently approved for the next ledger decision. The same CI run passed the Windows pytest suite and the S-012 evidence remains valid; the health path no longer blocks on the GPU probe and the 0.2s budget was not relaxed.
+
+Verdict: **approved for Builder's next ledger decision**. Status remains REVIEW; Overseer does not GREEN it.
