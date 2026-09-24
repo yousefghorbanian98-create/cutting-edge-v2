@@ -1,10 +1,12 @@
 import type { Clip } from '@/domain/timeline';
+import { useTimelineStore } from '@/stores/timelineStore';
 import { TrimHandle } from './TrimHandle';
 import { useClipDrag } from './useClipDrag';
 import { PX_PER_SECOND, barsFor, msToSeconds } from './window';
 
 export function ClipView({ clip }: { clip: Clip }) {
   const { onPointerDown, reject } = useClipDrag(clip.id);
+  const selected = useTimelineStore((state) => state.sequence.selection.includes(clip.id));
   const bars = barsFor(clip.id);
   const width = Math.max(8, msToSeconds(clip.duration) * PX_PER_SECOND - 4);
   return (
@@ -14,6 +16,7 @@ export function ClipView({ clip }: { clip: Clip }) {
       data-start={clip.start}
       data-duration={clip.duration}
       data-track={clip.trackId}
+      data-selected={selected ? '1' : '0'}
       onPointerDown={onPointerDown}
       className="absolute top-1 h-12 overflow-hidden rounded-md border border-surface-border bg-surface-overlay"
       style={{

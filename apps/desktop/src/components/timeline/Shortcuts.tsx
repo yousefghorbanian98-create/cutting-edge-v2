@@ -3,6 +3,7 @@
 import { removeClips, splitAtPlayhead } from '@/domain/split';
 import { usePlayback } from '@/hooks/usePlayback';
 import { shortcutAction } from '@/lib/shortcuts';
+import { useSelectionStore } from '@/stores/selectionStore';
 import { useTimelineStore } from '@/stores/timelineStore';
 import { useEffect } from 'react';
 
@@ -16,6 +17,18 @@ export function Shortcuts() {
       if (!action) return;
       event.preventDefault();
       const sequence = useTimelineStore.getState().sequence;
+      if (action === 'copy') {
+        useSelectionStore.getState().copy();
+        return;
+      }
+      if (action === 'paste') {
+        useSelectionStore.getState().paste(Math.round(time * 1000));
+        return;
+      }
+      if (action === 'duplicate') {
+        useSelectionStore.getState().duplicate();
+        return;
+      }
       if (action === 'split') {
         const head = document.querySelector('[data-testid=playhead]');
         const fromHead = Number(head instanceof HTMLElement ? head.dataset.time : time);

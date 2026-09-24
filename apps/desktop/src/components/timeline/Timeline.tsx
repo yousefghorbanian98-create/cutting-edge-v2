@@ -1,8 +1,10 @@
 'use client';
 
 import { usePlayback } from '@/hooks/usePlayback';
+import { useSelectionStore } from '@/stores/selectionStore';
 import { useTimelineStore } from '@/stores/timelineStore';
-import { useMemo, useRef, useState } from 'react';
+import { type PointerEvent as ReactPointerEvent, useMemo, useRef, useState } from 'react';
+import { Marquee } from './Marquee';
 import { PlaybackBar, Playhead, scrubFromRuler } from './Playhead';
 import { Ruler } from './Ruler';
 import { Track } from './Track';
@@ -13,6 +15,10 @@ export function Timeline() {
   const sequence = useTimelineStore((state) => state.sequence);
   const reset = useTimelineStore((state) => state.reset);
   const { setTime } = usePlayback();
+  const selectRect = useSelectionStore((state) => state.selectRect);
+  const [marquee, setMarquee] = useState<{ x: number; y: number; width: number; height: number } | null>(
+    null
+  );
   const [scrollLeft, setScrollLeft] = useState(0);
   const [viewport, setViewport] = useState(800);
   const frame = useRef(0);
@@ -58,6 +64,7 @@ export function Timeline() {
         data-total={sequence.clips.length}
         data-rendered={shown.length}
         className="relative overflow-x-auto rounded-md border border-surface-border bg-surface-raised"
+        onPointerDown={(event) => startMarquee(event, selectRect, setMarquee)}
         onScroll={(event) => {
           const target = event.currentTarget;
           pending.current = { left: target.scrollLeft, width: target.clientWidth };
@@ -70,6 +77,7 @@ export function Timeline() {
         }}
       >
         <Playhead />
+        <Marquee rect={marquee} />
         <Ruler
           startSec={startSec}
           endSec={endSec}
@@ -90,4 +98,30 @@ export function Timeline() {
       </div>
     </section>
   );
+}
+
+function startMarquee(
+  event: ReactPointerEvent<HTMLDivElement>,
+  selectRect: (rect: { x: number; y: number; width: number; height: number }, additive: boolean) => void,
+  setMarquee: (rect: { x: number; y: number; width: number; height: number } | null) => void
+) {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return;
+  if (target.closest('[data-testid=timeline-clip],button,[data-testid=timeline-ruler]')) return;
+  const lane = event.currentTarget.querySelector('[data-testid=timeline-lane]');
+  if (!(lane instanceof HTMLElement)) return;
+  const originX = event.clientX - lane.getBoundingClientRect().left;
+  const onMove = (next: PointerEvent) => {
+    const x = next.clientX - lane.getBoundingClientRect().left + lane.scrollLeft;
+    setMarquee({ x: originX, y: 0, width: x - originX, height: 40 });
+  };
+  const onUp = (next: PointerEvent) => {
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    const x = next.clientX - lane.getBoundingClientRect().left;
+    selectRect({ x: originX, y: 0, width: x - originX, height: 40 }, next.shiftKey);
+    setMarquee(null);
+  };
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
 }

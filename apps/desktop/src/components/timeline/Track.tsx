@@ -9,7 +9,7 @@ export function Track({ track, clips, width }: { track: TrackModel; clips: Clip[
       data-track-id={track.id}
     >
       <div className="border-e border-surface-border px-2 py-3 text-sm">{track.name}</div>
-      <div className="relative h-14" style={{ width }}>
+      <div data-testid="timeline-lane" className="relative h-14" style={{ width }}>
         {clips.map((clip) => (
           <ClipView key={clip.id} clip={clip} />
         ))}
