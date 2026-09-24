@@ -42,18 +42,21 @@ def test_expected_size_fails_when_probe_returns_none(tmp_path, monkeypatch) -> N
 def test_ffprobe_json_is_primary_and_text_parser_is_not_called(tmp_path, monkeypatch) -> None:
     from ai_engine.core import ffmpeg
 
-    script = tmp_path / "ffprobe"
-    script.write_text(
-        "#!/bin/sh\n"
-        "cat <<'JSON'\n"
+    payload = (
         '{"format":{"duration":"2.5"},"streams":['
         '{"codec_type":"video","codec_name":"h264","width":640,"height":360},'
-        '{"codec_type":"audio","codec_name":"aac"}]}\n'
-        "JSON\n",
-        encoding="utf-8",
+        '{"codec_type":"audio","codec_name":"aac"}]}'
     )
-    script.chmod(script.stat().st_mode | stat.S_IEXEC)
-    monkeypatch.setenv("CE_FFPROBE_BIN", str(script))
+    printer = tmp_path / "print_probe.py"
+    printer.write_text(f"print({payload!r})\n", encoding="utf-8")
+    if sys.platform == "win32":
+        probe = tmp_path / "ffprobe.cmd"
+        probe.write_text(f'@"{sys.executable}" "{printer}" %*\r\n', encoding="utf-8")
+    else:
+        probe = tmp_path / "ffprobe"
+        probe.write_text(f'#!/bin/sh\nexec "{sys.executable}" "{printer}" "$@"\n', encoding="utf-8")
+        probe.chmod(probe.stat().st_mode | stat.S_IEXEC)
+    monkeypatch.setenv("CE_FFPROBE_BIN", str(probe))
 
     def fail_text(path: str | Path) -> dict:
         raise AssertionError(f"text parser must not run for {path}")
