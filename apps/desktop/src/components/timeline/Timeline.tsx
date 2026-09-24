@@ -1,7 +1,9 @@
 'use client';
 
+import { usePlayback } from '@/hooks/usePlayback';
 import { useTimelineStore } from '@/stores/timelineStore';
 import { useMemo, useRef, useState } from 'react';
+import { PlaybackBar, Playhead, scrubFromRuler } from './Playhead';
 import { Ruler } from './Ruler';
 import { Track } from './Track';
 import { benchSequence } from './bench';
@@ -10,6 +12,7 @@ import { PX_PER_SECOND, contentWidth, visibleClips } from './window';
 export function Timeline() {
   const sequence = useTimelineStore((state) => state.sequence);
   const reset = useTimelineStore((state) => state.reset);
+  const { setTime } = usePlayback();
   const [scrollLeft, setScrollLeft] = useState(0);
   const [viewport, setViewport] = useState(800);
   const frame = useRef(0);
@@ -35,11 +38,12 @@ export function Timeline() {
           نمونه ۲۰۰ کلیپ
         </button>
       </div>
+      <PlaybackBar />
       <div
         data-testid="timeline-scroll"
         data-total={sequence.clips.length}
         data-rendered={shown.length}
-        className="overflow-x-auto rounded-md border border-surface-border bg-surface-raised"
+        className="relative overflow-x-auto rounded-md border border-surface-border bg-surface-raised"
         onScroll={(event) => {
           const target = event.currentTarget;
           pending.current = { left: target.scrollLeft, width: target.clientWidth };
@@ -51,7 +55,13 @@ export function Timeline() {
           });
         }}
       >
-        <Ruler startSec={startSec} endSec={endSec} width={width} />
+        <Playhead />
+        <Ruler
+          startSec={startSec}
+          endSec={endSec}
+          width={width}
+          onScrub={(event) => scrubFromRuler(event, setTime)}
+        />
         {sequence.tracks
           .slice()
           .sort((a, b) => a.order - b.order)

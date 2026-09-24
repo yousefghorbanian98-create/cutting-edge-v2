@@ -1,6 +1,17 @@
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import { PX_PER_SECOND } from './window';
 
-export function Ruler({ startSec, endSec, width }: { startSec: number; endSec: number; width: number }) {
+export function Ruler({
+  startSec,
+  endSec,
+  width,
+  onScrub,
+}: {
+  startSec: number;
+  endSec: number;
+  width: number;
+  onScrub: (event: ReactPointerEvent<HTMLDivElement>) => void;
+}) {
   const ticks: number[] = [];
   const first = Math.max(0, Math.floor(startSec));
   const last = Math.ceil(endSec);
@@ -10,6 +21,7 @@ export function Ruler({ startSec, endSec, width }: { startSec: number; endSec: n
       className="relative h-8 border-b border-surface-border"
       style={{ width }}
       data-testid="timeline-ruler"
+      onPointerDown={onScrub}
     >
       {ticks.map((second) => (
         <span
