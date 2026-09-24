@@ -56,6 +56,7 @@ describe('timeline domain', () => {
     expect(trimmed.clips.find((item) => item.id === 'a')?.duration).toBe(1500);
     expect(trimmed.clips.find((item) => item.id === 'b')?.start).toBe(1500);
     expect(trimClip(sequence, 'a', 'out', 50_000, false)).toBe(sequence);
+    expect(trimClip(sequence, 'a', 'out', 2000, true)).toBe(sequence);
     expect(hasOverlap(trimmed)).toBe(false);
   });
 

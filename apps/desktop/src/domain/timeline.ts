@@ -165,6 +165,7 @@ export function trimClip(
   const track = clip ? trackOf(sequence, clip.trackId) : undefined;
   if (!clip || !track || track.locked) return sequence;
   if (!Number.isInteger(nextDuration) || nextDuration < 1) return sequence;
+  if (nextDuration === clip.duration) return sequence;
   const max = clip.sourceDuration - (edge === 'out' ? clip.inPoint : 0);
   if (nextDuration > max) return sequence;
   if (edge === 'in' && clip.inPoint + clip.duration - nextDuration < 0) return sequence;
