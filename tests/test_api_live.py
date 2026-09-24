@@ -61,19 +61,16 @@ def _reencode_control(src: Path, dst: Path) -> Path:
 
 
 def _enhance_over_http(base: str, clip: Path, intensity: str, preset: str) -> Path:
-    """POST `clip` to /muscle/enhance, download the result, return its path."""
+    """POST /muscle/enhance, poll the 202 job, download the finished file."""
     import requests
 
-    with open(clip, "rb") as fh:
-        r = requests.post(
-            base + "/muscle/enhance",
-            files={"file": ("short.mp4", fh, "video/mp4")},
-            data={"intensity": intensity, "preset": preset},
-            timeout=180,
-        )
-    assert r.status_code == 200, f"enhance failed: {r.status_code} {r.text[:200]}"
-    out_name = r.json()["output_filename"]
-    assert out_name.endswith(".mp4"), out_name
+    from tests.helpers.jobs import poll_job, start_enhance
+
+    job_id = start_enhance(base, clip, intensity, preset)
+    view = poll_job(base, job_id, timeout=180)
+    assert view["status"] == "done", view
+    out_name = (view.get("result") or {}).get("output_filename") or ""
+    assert out_name.endswith(".mp4"), view
 
     dl = requests.get(base + "/muscle/download/" + out_name, timeout=60)
     assert dl.status_code == 200, f"download: {dl.status_code}"

@@ -76,3 +76,8 @@
 - Imported `614f4b4` docs only (`STYLE_MATCH_ARCHITECTURE.md`, `steps.json`, `03_STEPS.md`). No Style Match model or new dependency.
 - S-010 stays GREEN. S-011 stays REVIEW. S-012 stays REVIEW; one GPU inference slot, CPU fallback, host probe `unverified`.
 - Blockers: none. BUG-11 stays OPEN until `ci / windows`. Next: Overseer review of S-011 and S-012. Do not GREEN either.
+
+## 2026-09-24 — BATCH BUILDER: S-011 and S-012 round 2
+- Overseer `changes-requested` at `f082e8f` and `e0d2dfb`. Must-fix is CI on the reviewed SHA, not a new feature.
+- Windows job `107589257940` failed because the S-006 enhance helper still expected HTTP 200. It now polls the 202 job.
+- Both stay REVIEW, iter 2. Not GREEN. BUG-11 stays OPEN until the new windows job is green.
