@@ -88,3 +88,26 @@ Reference analysis
 ```
 
 The workflow layer complements Style Match; it does not replace shot analysis, visual scoring or human confirmation.
+
+## FFmpeg execution direction (reference from `ffmpeg-skill`)
+
+The project may adopt the following execution principles, but must keep its own Python/Tauri implementation rather than vendor the external repository:
+
+```text
+probe → typed operation → capability check → safe execute → verify → provenance
+```
+
+Required internal contracts for future media stages:
+
+- probe media before planning from measured duration, fps, resolution, streams and color metadata;
+- represent trim, cut, concat, fit, fill, resize, speed, overlay, transition, color, audio and export as allow-listed typed operations;
+- reject raw shell strings, arbitrary filter graphs and unknown operations from the assistant;
+- expose FFmpeg/ffprobe capability states as `available`, `missing` or `unknown`;
+- refuse accidental overwrite and use temporary output plus atomic replacement/rollback;
+- keep all input/output/temp paths within the workspace boundary;
+- verify playable output, duration, streams, sync, codec and requested delivery constraints;
+- emit structured JSON provenance containing input, operation, parameters, output, warnings, capabilities and validation;
+- create low-resolution proxies for AI analysis and execute approved plans on the original media;
+- make platform delivery checks and loudness checks explicit rather than implicit in a prompt.
+
+This is an architectural reference from the MIT-licensed `kajisho5/ffmpeg-skill`; it is not a product dependency decision. Any reuse of source code requires a separate dependency, security and license audit.
