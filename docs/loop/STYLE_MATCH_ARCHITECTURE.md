@@ -58,3 +58,33 @@ observe → explain → plan → execute → validate → revise
 - `S-056`: cache بر اساس content hash، offline UX و allow-list مدل/provider.
 
 هر مرحله قرارداد، تست واقعی، شواهد و review مستقل خودش را دارد؛ این سند به‌تنهایی scope مرحلهٔ جاری را تغییر نمی‌دهد.
+
+## Hypit-inspired workflow direction (reference only)
+
+Hypit demonstrates a useful product idea: a reference video can become a reusable, source-controlled production workflow rather than a one-off render. We adopt the idea, not Hypit code, skill, runtime, packages or license-dependent components.
+
+Our future internal workflow should support:
+
+- semantic anchors tied to spoken words or script phrases, not only absolute seconds;
+- reusable shot, caption, B-roll, audio and effect components;
+- a validated, versioned `EditPlan` that can produce multiple variants;
+- reflow when script, language, voice or duration changes;
+- deterministic components rendered locally with FFmpeg/Tauri/Python;
+- provider adapters for optional generation services, never hidden credentials or mandatory paid APIs;
+- source-controlled manifests so a result can be inspected, rerun and diffed.
+
+This is not a license to copy Hypit. Hypit's modified Apache license restricts commercial redistribution and bundled derivative products without permission. Cutting Edge must implement its own schema and runtime after a separate license review.
+
+Suggested internal model:
+
+```text
+Reference analysis
+→ Style Signature
+→ semantic EditPlan
+→ schema validator
+→ timeline/job executor
+→ output validation
+→ reusable variant manifest
+```
+
+The workflow layer complements Style Match; it does not replace shot analysis, visual scoring or human confirmation.

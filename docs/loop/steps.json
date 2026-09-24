@@ -829,12 +829,12 @@
       "id": "S-042",
       "phase": "P3",
       "title": "One-Click Viral Cut → new sequence with 9:16 subject-tracked crop",
-      "goal": "پیدا کردن بهترین ۳۰ ثانیه، ساخت سکانس جدید، پیشنهاد کراپ عمودی با دنبال‌کردن مرکز بدن (pose)، پریست‌های Reels/Shorts/TikTok",
+      "goal": "پیدا کردن بهترین ۳۰ ثانیه، ساخت سکانس جدید، پیشنهاد کراپ عمودی با دنبال‌کردن مرکز بدن (pose)، پریست‌های Reels/Shorts/TikTok خروجی باید manifest نسخه‌دار و قابل تکرار داشته باشد تا hook، سوژه، زبان و نسبت تصویر بدون بازسازی دستی variant شوند؛ زمان‌بندی caption و B-roll تا حد امکان به phrase/word anchor متصل باشد.",
       "files": [
         "ai-engine/src/editor_ai/viral_cut.py",
         "apps/desktop/src/features/viralCut.ts"
       ],
-      "real_test": "Fixture with subject moving left→right → crop x follows (correlation > 0.8); 2s fixture → whole clip, no crash",
+      "real_test": "Fixture with subject moving left→right → crop x follows (correlation > 0.8); 2s fixture → whole clip, no crash؛ تغییر hook یا نسبت تصویر باید فقط segmentهای وابسته را reflow کند و manifest قبلی قابل بازتولید بماند.",
       "done_when": "Green",
       "user": "none",
       "deps": [
@@ -864,13 +864,13 @@
       "id": "S-044",
       "phase": "P3",
       "title": "Whisper captions: transcript panel, SRT export, caption text track, burn-in on export",
-      "goal": "ترنسکریپت با تایم‌کد و کلیک-برای-پرش، ترجمه‌ی fa↔en، خروجی SRT/VTT، ترک متن روی تایم‌لاین، burn-in با فیلتر subtitles/ass و فونت فارسی",
+      "goal": "ترنسکریپت با تایم‌کد و کلیک-برای-پرش، ترجمه‌ی fa↔en، خروجی SRT/VTT، ترک متن روی تایم‌لاین، burn-in با فیلتر subtitles/ass و فونت فارسی captionها و B-roll باید در صورت تغییر script/زبان با anchor معنایی reflow شوند، نه فقط با timestamp ثابت؛ schema نسخه‌دار و قابل diff باشد.",
       "files": [
         "apps/desktop/src/components/captions/",
         "ai-engine/src/captioner/",
         "ai-engine/src/export/subtitles.py"
       ],
-      "real_test": "TTS-generated Persian narration fixture → WER ≤ 0.3; exported SRT parses; burned-in export frame at caption time contains text (OCR via tesseract optional, else pixel-diff vs no-caption export > threshold in bottom band)",
+      "real_test": "TTS-generated Persian narration fixture → WER ≤ 0.3; exported SRT parses; burned-in export frame at caption time contains text (OCR via tesseract optional, else pixel-diff vs no-caption export > threshold in bottom band)؛ تغییر طول جمله نباید sync caption/audio را خراب کند و manifest باید anchorهای phrase را حفظ کند.",
       "done_when": "Green",
       "user": "none",
       "deps": [
@@ -898,12 +898,12 @@
       "id": "S-046",
       "phase": "P3",
       "title": "Style Match: side-by-side compare, DNA diff, 'Apply Style' suggestions",
-      "goal": "نمای دو ویدیو کنار هم با اسکراب همگام، diff بُعدهای DNA، «اعمال استایل» → پیشنهاد LUT + ریتم برش + ترنزیشن‌ها با پیش‌نمایش و تأیید مقایسه باید semantic، composition، palette/lighting، pacing/motion، pose/crop و audio را جدا نشان دهد و Apply Style فقط plan محدود و قابل rollback تولید کند. جزئیات در docs/loop/STYLE_MATCH_ARCHITECTURE.md است.",
+      "goal": "نمای دو ویدیو کنار هم با اسکراب همگام، diff بُعدهای DNA، «اعمال استایل» → پیشنهاد LUT + ریتم برش + ترنزیشن‌ها با پیش‌نمایش و تأیید مقایسه باید semantic، composition، palette/lighting، pacing/motion، pose/crop و audio را جدا نشان دهد و Apply Style فقط plan محدود و قابل rollback تولید کند. جزئیات در docs/loop/STYLE_MATCH_ARCHITECTURE.md است. خروجی Apply Style باید یک EditPlan نسخه‌دار و قابل تکرار بسازد؛ plan باید shot، caption، B-roll، audio و effect را به anchor معنایی یا زمان معتبر وصل کند و برای variant قابل re-run باشد.",
       "files": [
         "apps/desktop/src/components/style-match/CompareView.tsx",
         "ai-engine/src/style_match/apply_style.py"
       ],
-      "real_test": "Reference fast-cut fixture vs slow target → suggested avg cut length within 20% of reference; applying produces timeline with N cuts matching و plan نامعتبر یا action ناشناخته رد شود؛ before/after score، playable output و rollback failure تست شوند.",
+      "real_test": "Reference fast-cut fixture vs slow target → suggested avg cut length within 20% of reference; applying produces timeline with N cuts matching و plan نامعتبر یا action ناشناخته رد شود؛ before/after score، playable output و rollback failure تست شوند.؛ تغییر متن یا زبان باید زمان‌بندی وابسته را reflow کند و plan قبلی بدون مدل اجباری قابل inspect/replay باشد.",
       "done_when": "Green",
       "user": "none",
       "deps": [
@@ -1033,12 +1033,12 @@
       "id": "S-054",
       "phase": "P3",
       "title": "Auto-Narrator: script generation → edge-tts → audio clip on timeline",
-      "goal": "تولید متن روایت از تحلیل ویدیو، انتخاب صدا (fa/en)، edge-tts، افزودن به ترک صدا با هم‌ترازی، کش صداها",
+      "goal": "تولید متن روایت از تحلیل ویدیو، انتخاب صدا (fa/en)، edge-tts، افزودن به ترک صدا با هم‌ترازی، کش صداها script، voiceover، caption و B-roll باید از طریق manifest واحد و anchorهای word/phrase به هم متصل شوند تا تغییر گوینده یا زبان باعث drift نشود.",
       "files": [
         "ai-engine/src/assistant/auto_narrator.py",
         "apps/desktop/src/components/ai-assistant/Narrator.tsx"
       ],
-      "real_test": "Generate Persian narration → mp3 duration > 0; Whisper round-trip word match ≥ 70%; clip appears on audio track at requested time",
+      "real_test": "Generate Persian narration → mp3 duration > 0; Whisper round-trip word match ≥ 70%; clip appears on audio track at requested time؛ با دو speaking-rate متفاوت، anchorهای جمله حفظ و caption/visual cue دوباره هم‌تراز شوند.",
       "done_when": "Green (network needed for edge-tts; offline → explicit 'unverified')",
       "user": "none",
       "deps": [
@@ -1050,12 +1050,12 @@
       "id": "S-055",
       "phase": "P3",
       "title": "Content Strategy dashboard: virality score breakdown, hook timing, length, hashtags",
-      "goal": "داشبورد امتیاز وایرال با تفکیک مؤلفه‌ها، تشخیص hook در ۳ ثانیه‌ی اول، پیشنهاد طول برای هر پلتفرم، هشتگ‌ها (fa/en) dashboard از featureهای واقعی و timestampدار Style DNA استفاده کند و confidence/limitations را نشان دهد؛ virality score نباید ادعای causal یا قطعیت داشته باشد.",
+      "goal": "داشبورد امتیاز وایرال با تفکیک مؤلفه‌ها، تشخیص hook در ۳ ثانیه‌ی اول، پیشنهاد طول برای هر پلتفرم، هشتگ‌ها (fa/en) dashboard از featureهای واقعی و timestampدار Style DNA استفاده کند و confidence/limitations را نشان دهد؛ virality score نباید ادعای causal یا قطعیت داشته باشد. داشبورد باید امکان ساخت چند variant از یک workflow را با hook، زبان، CTA و B-roll متفاوت نشان دهد؛ هر variant باید manifest و confidence مستقل داشته باشد.",
       "files": [
         "ai-engine/src/assistant/content_strategy.py",
         "apps/desktop/src/components/ai-assistant/StrategyDashboard.tsx"
       ],
-      "real_test": "High-energy-start fixture scores hook ≥ 0.7; static-start fixture ≤ 0.3; UI renders all components with values in range و ورودی missing/unverified یا confidence پایین با پیام شفاف نمایش داده شود.",
+      "real_test": "High-energy-start fixture scores hook ≥ 0.7; static-start fixture ≤ 0.3; UI renders all components with values in range و ورودی missing/unverified یا confidence پایین با پیام شفاف نمایش داده شود.؛ ساخت سه variant باید assetهای مشترک را reuse کند و تفاوت hook/CTA در manifest قابل مشاهده باشد.",
       "done_when": "Green",
       "user": "none",
       "deps": [
