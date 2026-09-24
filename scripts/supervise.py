@@ -427,7 +427,7 @@ def main() -> int:
     ]
     foreign = re.compile(
         r"\b(nestjs|@nestjs|prisma|@prisma|sqlalchemy|alembic|sqlmodel|psycopg|asyncpg|redis|valkey|celery|arq|"
-        r"trpc|@trpc|next-auth|better-auth|lucia|shadcn|@radix-ui|electron|langchain|ollama|litellm|langfuse|"
+        r"trpc|@trpc|next-auth|better-auth|lucia|shadcn|@radix-ui|electron|langchain|ollama|pyside6|gradio|ultralytics|litellm|langfuse|"
         r"@tanstack/react-query|react-hook-form|mongoose|typeorm|drizzle)\b",
         re.I,
     )

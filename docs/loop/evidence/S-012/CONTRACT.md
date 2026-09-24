@@ -23,6 +23,8 @@
 | NG-4 | RAM/VRAM guard actions | S-075 |
 | NG-5 | Hand-typed endpoint interfaces in the desktop client | this step forbids them |
 | NG-6 | Marking S-012 GREEN | Overseer `approved` |
+| NG-7 | Style Match models, OpenCLIP, YOLO weights, or a new heavy dependency | architecture is registered only; analysis steps own the features | S-040, S-045, S-046 |
+| NG-8 | Reporting a GPU pass when the probe does not answer | Skip ≠ Pass | `user-gpu` / `scripts/smoke-gpu.ps1` |
 
 ## Reheal layers touched
 

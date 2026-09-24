@@ -71,3 +71,8 @@
 - S-012 REVIEW (local-linux): five heavy routes return 202; tests/test_jobs.py 2 passed in 60.12s. BUG-11 stays OPEN until ci/windows.
 - Client: @hey-api/openapi-ts@0.99.0 directory plus api.ts barrel. Gate check openapi-client.
 - Blockers: none. Next: Overseer joint review of S-011 and S-012. Do not GREEN either from this chat.
+
+## 2026-09-24 — BATCH BUILDER: Style Match architecture import + S-012 GPU slot
+- Imported `614f4b4` docs only (`STYLE_MATCH_ARCHITECTURE.md`, `steps.json`, `03_STEPS.md`). No Style Match model or new dependency.
+- S-010 stays GREEN. S-011 stays REVIEW. S-012 stays REVIEW; one GPU inference slot, CPU fallback, host probe `unverified`.
+- Blockers: none. BUG-11 stays OPEN until `ci / windows`. Next: Overseer review of S-011 and S-012. Do not GREEN either.

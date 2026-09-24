@@ -113,6 +113,11 @@ class JobView(BaseModel):
     partial_removed: bool = False
 
 
+def _as_job_view(view: dict[str, Any]) -> JobView:
+    """Keep the HTTP schema stable. Scheduler fields stay off this model."""
+    return JobView(**{key: view[key] for key in JobView.model_fields})
+
+
 def _accept(work) -> JobAccepted:
     job_id = jobs.submit(work)
     return JobAccepted(job_id=job_id, status="queued")
@@ -124,7 +129,7 @@ def get_job(job_id: str) -> JobView:
     view = jobs.get(job_id)
     if view is None:
         raise HTTPException(status_code=404, detail="Job not found")
-    return JobView(**view)
+    return _as_job_view(view)
 
 
 @app.post("/jobs/{job_id}/cancel", response_model=JobView, operation_id="cancel_job")
@@ -133,7 +138,7 @@ def cancel_job(job_id: str) -> JobView:
     view = jobs.cancel(job_id)
     if view is None:
         raise HTTPException(status_code=404, detail="Job not found")
-    return JobView(**view)
+    return _as_job_view(view)
 
 
 # ══════════════════════════════════════════

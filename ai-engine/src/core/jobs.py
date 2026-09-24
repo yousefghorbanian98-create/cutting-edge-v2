@@ -3,10 +3,15 @@
 Heavy work runs on a thread pool so the FastAPI event loop, and therefore
 ``GET /health``, stays responsive. Priority, persistence, retry, and resume
 belong to S-072 — this module is only submit / poll / cancel.
+
+Inference jobs use a separate one-worker pool when a GPU answers. If it does
+not, they fall back to the CPU pool and the view says ``unverified``, never
+``pass``. No model is loaded here.
 """
 
 from __future__ import annotations
 
+import logging
 import threading
 import time
 import uuid
@@ -20,6 +25,19 @@ class Cancelled(Exception):
     """Raised inside a worker when the caller asked the job to stop."""
 
 
+def probe_gpu() -> bool:
+    """True only when an NVIDIA GPU answers. Absence is not a pass."""
+    try:
+        import GPUtil
+    except ImportError:
+        return False
+    try:
+        return bool(GPUtil.getGPUs())
+    except Exception as exc:
+        logging.getLogger(__name__).debug("gpu probe unverified: %s", exc)
+        return False
+
+
 @dataclass
 class Job:
     """Mutable job record. Mutate only while holding ``JobManager._lock``."""
@@ -31,6 +49,9 @@ class Job:
     result: dict[str, Any] | None = None
     output_filename: str | None = None
     partial_removed: bool = False
+    kind: str = "cpu"
+    device: str = "cpu"
+    gpu: str = "unverified"
     created_at: float = field(default_factory=time.monotonic)
     started_at: float | None = None
     cancel_event: threading.Event = field(default_factory=threading.Event)
@@ -73,20 +94,42 @@ class JobManager:
         self,
         max_workers: int = 2,
         on_cancel_cleanup: Callable[[str], None] | None = None,
+        gpu_probe: Callable[[], bool] | None = None,
     ) -> None:
         self._pool = ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix="ce-job")
+        # Structural cap: one GPU inference body at a time. CPU jobs stay on _pool.
+        self._gpu_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="ce-gpu")
+        self._gpu_probe = gpu_probe or probe_gpu
         self._jobs: dict[str, Job] = {}
         self._lock = threading.Lock()
         self._on_cancel_cleanup = on_cancel_cleanup
 
-    def submit(self, fn: Callable[[JobControl], dict[str, Any]]) -> str:
-        """Queue ``fn`` and return the new job id. ``fn`` runs off the event loop."""
-        job = Job(id=uuid.uuid4().hex)
+    def submit(self, fn: Callable[[JobControl], dict[str, Any]], *, kind: str = "cpu") -> str:
+        """Queue ``fn`` and return the new job id. ``fn`` runs off the event loop.
+
+        ``kind="inference"`` uses the single GPU worker when the probe is true.
+        A false probe runs the same function on the CPU pool and records
+        ``gpu="unverified"``.
+        """
+        if kind not in {"cpu", "inference"}:
+            raise ValueError(f"unknown job kind: {kind}")
+        use_gpu = kind == "inference" and bool(self._gpu_probe())
+        job = Job(
+            id=uuid.uuid4().hex,
+            kind=kind,
+            device="gpu" if use_gpu else "cpu",
+            gpu="slot" if use_gpu else "unverified",
+        )
         control = JobControl(job, self)
         with self._lock:
             self._jobs[job.id] = job
-        job.future = self._pool.submit(self._run, job, fn, control)
+        pool = self._gpu_pool if use_gpu else self._pool
+        job.future = pool.submit(self._run, job, fn, control)
         return job.id
+
+    def submit_inference(self, fn: Callable[[JobControl], dict[str, Any]]) -> str:
+        """Queue an analysis job. Missing GPU falls back to CPU and is not a pass."""
+        return self.submit(fn, kind="inference")
 
     def get(self, job_id: str) -> dict[str, Any] | None:
         with self._lock:
@@ -174,4 +217,7 @@ class JobManager:
             "result": job.result,
             "output_filename": job.output_filename,
             "partial_removed": job.partial_removed,
+            "kind": job.kind,
+            "device": job.device,
+            "gpu": job.gpu,
         }
