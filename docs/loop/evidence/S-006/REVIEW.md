@@ -36,3 +36,9 @@ Reproduced by Overseer: source audit yes; fresh Python tests no (the detached re
 - AC-3 fix is directionally correct and the new unit test is present.
 - Fresh live AC-5/AC-6 evidence was not reproduced in this review.
 - Verdict: **REVIEW — not approved**. Keep S-006 out of GREEN until the fresh unit and live evidence is reproducible, including the required CI evidence. The previous retro finding is resolved in source, not yet independently evidenced.
+
+## Independent review — round 4 — target `4b3204abe1ae6ee5ba98f7720be94de228177e3f`
+
+CI evidence reproduced from run `36068746332`: loop-audit passed; Ubuntu unit/real suite and Windows pytest passed; the probe fix is exercised on Windows. The artifact helper now fails closed for missing expected dimensions and uses structured ffprobe JSON first.
+
+Verdict: **approved for Builder's next ledger decision**. Overseer does not change the ledger or GREEN this step. Existing overwrite policy finding remains assigned to S-028/S-033/S-086.
