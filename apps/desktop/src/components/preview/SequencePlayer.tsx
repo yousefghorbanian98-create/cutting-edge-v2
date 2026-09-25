@@ -33,6 +33,10 @@ export function SequencePlayer() {
   const thumb = useRef<HTMLCanvasElement>(null);
   const ahead = useRef<HTMLCanvasElement>(null);
   const lastId = useRef<string | null>(null);
+  const editingTime = useRef(false);
+  const clock = useRef(0);
+  const timeRef = useRef(time);
+  timeRef.current = time;
   const [playing, setPlaying] = useState(false);
   const [quality, setQuality] = useState<'full' | 'low'>('full');
   const [gap, setGap] = useState<number | null>(null);
@@ -87,14 +91,18 @@ export function SequencePlayer() {
 
   useEffect(() => {
     if (!playing) return undefined;
+    // Own the clock. Reading the playhead every frame overwrote a user seek:
+    // CI 36194558289 filled time 1 and never found sequence-text «عنوان».
+    clock.current = timeRef.current;
     let frame = 0;
     let previous = performance.now();
     const tick = (now: number) => {
-      if (now - previous > 40) setQuality('low');
+      if (!editingTime.current) {
+        if (now - previous > 40) setQuality('low');
+        clock.current += 1 / 30;
+        setTime(clock.current);
+      }
       previous = now;
-      const head = document.querySelector('[data-testid=playhead]');
-      const current = Number(head instanceof HTMLElement ? head.dataset.time : 0);
-      setTime((Number.isFinite(current) ? current : 0) + 1 / 30);
       frame = window.requestAnimationFrame(tick);
     };
     frame = window.requestAnimationFrame(tick);
@@ -137,7 +145,18 @@ export function SequencePlayer() {
             aria-label="زمان سکانس"
             className="ms-2 w-20 rounded-md border border-surface-border bg-surface-base px-2 py-1"
             value={time}
-            onChange={(event) => setTime(Number(event.target.value))}
+            onFocus={() => {
+              editingTime.current = true;
+            }}
+            onBlur={() => {
+              editingTime.current = false;
+            }}
+            onChange={(event) => {
+              const next = Number(event.target.value);
+              if (!Number.isFinite(next)) return;
+              clock.current = next;
+              setTime(next);
+            }}
           />
         </label>
       </div>
