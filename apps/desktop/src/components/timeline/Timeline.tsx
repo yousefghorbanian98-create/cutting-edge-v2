@@ -1,6 +1,7 @@
 'use client';
 
 import type { TrackKind } from '@/domain/timeline';
+import { sheetWidth } from '@/domain/zoom';
 import { usePlayback } from '@/hooks/usePlayback';
 import { useZoomStore } from '@/hooks/useZoom';
 import { useSelectionStore } from '@/stores/selectionStore';
@@ -30,6 +31,9 @@ export function Timeline() {
   const [viewport, setViewport] = useState(800);
   const frame = useRef(0);
   const scroller = useRef<HTMLDivElement>(null);
+  const sheet = useRef<HTMLDivElement>(null);
+  const clipsRef = useRef(sequence.clips);
+  clipsRef.current = sequence.clips;
   const pending = useRef({ left: 0, width: 800 });
   const width = contentWidth(sequence.clips, px);
   const seconds = Math.max(1, width / px);
@@ -53,6 +57,10 @@ export function Timeline() {
       const rect = node.getBoundingClientRect();
       const cursorX = event.clientX - rect.left;
       const next = zoomBy(node.scrollLeft, cursorX, event.deltaY < 0 ? 1.25 : 0.8);
+      const sequenceWidth = contentWidth(clipsRef.current, next.pxPerSecond);
+      if (sheet.current) {
+        sheet.current.style.width = `${sheetWidth(sequenceWidth, node.clientWidth, next.scrollLeft)}px`;
+      }
       node.dataset.px = String(next.pxPerSecond);
       node.scrollLeft = next.scrollLeft;
     };
@@ -108,9 +116,13 @@ export function Timeline() {
         onFit={() => {
           const node = scroller.current;
           if (!node) return;
-          const next = fitTo(seconds, node.clientWidth || viewport);
+          const view = node.clientWidth || viewport;
+          const next = fitTo(seconds, view);
+          const fitted = contentWidth(sequence.clips, next.pxPerSecond);
+          if (sheet.current) sheet.current.style.width = `${fitted}px`;
           node.scrollLeft = next.scrollLeft;
-          node.dataset.fit = '1';
+          node.dataset.px = String(next.pxPerSecond);
+          node.dataset.fit = fitted <= view + 1 ? '1' : '0';
         }}
       />
       <Minimap content={width} viewport={viewport} scrollLeft={scrollLeft} />
@@ -124,7 +136,7 @@ export function Timeline() {
         data-px={px}
         data-scroll={scrollLeft}
         data-total-width={width}
-        data-fit={width <= viewport ? '1' : '0'}
+        data-fit={width <= viewport + 1 ? '1' : '0'}
         className="relative overflow-x-auto rounded-md border border-surface-border bg-surface-raised"
         onPointerDown={(event) => startMarquee(event, selectRect, setMarquee)}
         onScroll={(event) => {
@@ -138,27 +150,29 @@ export function Timeline() {
           });
         }}
       >
-        <Playhead />
-        <Marquee rect={marquee} />
-        <Ruler
-          startSec={startSec}
-          endSec={endSec}
-          width={width}
-          pxPerSecond={px}
-          onScrub={(event) => scrubFromRuler(event, setTime)}
-        />
-        {sequence.tracks
-          .slice()
-          .sort((a, b) => a.order - b.order)
-          .map((track) => (
-            <Track
-              key={track.id}
-              track={track}
-              width={width}
-              pxPerSecond={px}
-              clips={sequence.clips.filter((clip) => clip.trackId === track.id && shownIds.has(clip.id))}
-            />
-          ))}
+        <div ref={sheet} className="relative" style={{ width }}>
+          <Playhead />
+          <Marquee rect={marquee} />
+          <Ruler
+            startSec={startSec}
+            endSec={endSec}
+            width={width}
+            pxPerSecond={px}
+            onScrub={(event) => scrubFromRuler(event, setTime)}
+          />
+          {sequence.tracks
+            .slice()
+            .sort((a, b) => a.order - b.order)
+            .map((track) => (
+              <Track
+                key={track.id}
+                track={track}
+                width={width}
+                pxPerSecond={px}
+                clips={sequence.clips.filter((clip) => clip.trackId === track.id && shownIds.has(clip.id))}
+              />
+            ))}
+        </div>
       </div>
     </section>
   );

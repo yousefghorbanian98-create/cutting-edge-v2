@@ -23,6 +23,6 @@
 - REVIEWها و architecture updateهای اعمال‌شده: چیدن کلیپ از store action `addClip` است. undo از `undoTimeline` است، نه setState. S-025 هنوز GREEN نیست.
 - اصول جدیدی که در همین مرحله اجرا می‌شوند: سفر از UI واقعی می‌گذرد، نه helper خالص. سه تکرار پشت سر هم flake check است و retry پیکربندی Playwright برای پنهان کردن flake زیاد نمی‌شود.
 - Deferred: تگ `v0.3.0` و installer user-gpu → S-027. خروجی FFmpeg → S-028. S-033 شروع نمی‌شود.
-- Negative boundary: mutation مستقیم sequence ممنوع است. تفاوت بصری بالای `0.001` پاس نیست. skip شدن یک گام سفر پاس نیست.
+- Negative boundary: mutation مستقیم sequence ممنوع است. تفاوت بصری بالای `0.001` پاس نیست و شل نمی‌شود. موج کلیپ از id تصادفی ساخته نمی‌شود. skip شدن یک گام سفر پاس نیست.
 - Evidence plan: spec بعد از integration به دستور Playwright در CI Ubuntu اضافه می‌شود. پیش از تحویل، CI کامل. local pass جایگزین CI نیست.
 - Status: `REVIEW` تا verdict مستقل. GREEN نمی‌شود.

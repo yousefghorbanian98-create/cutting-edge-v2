@@ -27,6 +27,12 @@ export function fitPx(seconds: number, viewport: number): number {
   return clampPx(viewport / seconds);
 }
 
+/** Wide enough that the browser can apply `scrollLeft` instead of clamping it to 0. */
+export function sheetWidth(sequenceWidth: number, viewport: number, scrollLeft: number): number {
+  const room = Math.max(0, viewport) + Math.max(0, scrollLeft);
+  return Math.max(sequenceWidth, room);
+}
+
 export function pixelError(
   beforePx: number,
   beforeScroll: number,

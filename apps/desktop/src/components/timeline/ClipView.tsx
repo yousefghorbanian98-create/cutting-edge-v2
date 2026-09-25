@@ -7,7 +7,7 @@ import { PX_PER_SECOND, barsFor, msToSeconds } from './window';
 export function ClipView({ clip, pxPerSecond = PX_PER_SECOND }: { clip: Clip; pxPerSecond?: number }) {
   const { onPointerDown, reject } = useClipDrag(clip.id);
   const selected = useTimelineStore((state) => state.sequence.selection.includes(clip.id));
-  const bars = barsFor(clip.id);
+  const bars = barsFor(`${clip.trackId}:${clip.start}:${clip.duration}`);
   const width = Math.max(8, msToSeconds(clip.duration) * pxPerSecond - 4);
   return (
     <div
