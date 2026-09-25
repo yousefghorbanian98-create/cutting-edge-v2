@@ -22,6 +22,7 @@ NAMED_GAPS = (
     "playback.spec.ts",
     "e2e/timeline.spec.ts",
     "timeline.spec.ts",
+    "sequence.spec.ts",
     "test_ffmpeg_overwrite.py",
 )
 
