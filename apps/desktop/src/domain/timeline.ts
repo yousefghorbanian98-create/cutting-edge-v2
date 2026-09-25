@@ -249,10 +249,11 @@ export function setTrackFlag(
   flag: 'muted' | 'solo' | 'locked',
   value: boolean
 ): Sequence {
-  if (!sequence.tracks.some((track) => track.id === trackId)) return sequence;
+  const track = sequence.tracks.find((item) => item.id === trackId);
+  if (!track || track[flag] === value) return sequence;
   return {
     ...sequence,
-    tracks: sequence.tracks.map((track) => (track.id === trackId ? { ...track, [flag]: value } : track)),
+    tracks: sequence.tracks.map((item) => (item.id === trackId ? { ...item, [flag]: value } : item)),
   };
 }
 

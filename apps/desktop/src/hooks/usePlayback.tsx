@@ -2,6 +2,8 @@
 
 import { PX_PER_SECOND } from '@/components/timeline/window';
 import { fpsFromMp4 } from '@/hooks/mp4Fps';
+import { pauseTrackAudio, resumeTrackAudio } from '@/lib/trackAudio';
+import { useTimelineStore } from '@/stores/timelineStore';
 import {
   type ReactNode,
   type RefObject,
@@ -98,6 +100,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
 
   function pause() {
     const video = videoRef.current;
+    pauseTrackAudio(useTimelineStore.getState().sequence);
     video?.pause();
     rate.current = 0;
     setPlaying(false);
@@ -111,6 +114,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       pause();
       return;
     }
+    resumeTrackAudio(useTimelineStore.getState().sequence);
     rate.current = 1;
     video.playbackRate = 1;
     void video.play();

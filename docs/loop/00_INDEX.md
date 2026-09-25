@@ -60,4 +60,4 @@ pwsh scripts/smoke-gpu.ps1                 # روی ماشین کاربر، از
 ```
 
 ## مرحله‌ی بعدی
-اولین ردیف `TODO` در `04_LEDGER.md` که همه‌ی وابستگی‌هایش GREEN یا REVIEW-در-همین-دسته هستند. S-004 GREEN می‌ماند. بازبینی مستقل de352774 وارد شد. S-006 و S-012 و S-013 تا S-021 همچنان REVIEW هستند و GREEN نیستند. S-022 شروع نشده. گیت `FORWARD_KNOWLEDGE_GATE.md` از 0211f6f وارد شد و scope را بزرگ نمی‌کند. تا ثبت Forward-knowledge compliance در CONTRACT، implementation مرحلهٔ بعد شروع نمی‌شود.
+اولین ردیف `TODO` در `04_LEDGER.md` که همه‌ی وابستگی‌هایش GREEN یا REVIEW-در-همین-دسته هستند. S-004 GREEN می‌ماند. بازبینی مستقل de352774 وارد شد. S-006 و S-012 و S-013 تا S-021 همچنان REVIEW هستند و GREEN نیستند. S-022 implementation شروع شده و ردیف ledger آن TODO مانده است. GREEN نیست. گیت `FORWARD_KNOWLEDGE_GATE.md` scope را بزرگ نمی‌کند.

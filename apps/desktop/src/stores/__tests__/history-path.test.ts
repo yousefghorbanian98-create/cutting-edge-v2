@@ -75,6 +75,7 @@ describe('timeline history path', () => {
       resolve(here, '../../components/timeline/useClipDrag.ts'),
       resolve(here, '../../components/timeline/TrimHandle.tsx'),
       resolve(here, '../../components/timeline/Shortcuts.tsx'),
+      resolve(here, '../../components/timeline/TrackHeader.tsx'),
       resolve(here, '../selectionStore.ts'),
     ];
     for (const file of files) {

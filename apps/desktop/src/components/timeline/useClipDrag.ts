@@ -13,8 +13,14 @@ export function useClipDrag(clipId: string) {
 
   function onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     if (event.button !== 0) return;
-    const clip = useTimelineStore.getState().sequence.clips.find((item) => item.id === clipId);
+    const sequence = useTimelineStore.getState().sequence;
+    const clip = sequence.clips.find((item) => item.id === clipId);
     if (!clip) return;
+    const source = sequence.tracks.find((item) => item.id === clip.trackId);
+    if (source?.locked) {
+      setReject('این ترک قفل است');
+      return;
+    }
     event.preventDefault();
     const node = event.currentTarget;
     const originX = event.clientX;

@@ -1,5 +1,6 @@
 'use client';
 
+import type { TrackKind } from '@/domain/timeline';
 import { usePlayback } from '@/hooks/usePlayback';
 import { useSelectionStore } from '@/stores/selectionStore';
 import { useTimelineStore } from '@/stores/timelineStore';
@@ -8,6 +9,7 @@ import { Marquee } from './Marquee';
 import { PlaybackBar, Playhead, scrubFromRuler } from './Playhead';
 import { Ruler } from './Ruler';
 import { Track } from './Track';
+import { TrackAudioMeter } from './TrackAudioMeter';
 import { benchSequence, snapFixture, splitFixture } from './bench';
 import { PX_PER_SECOND, contentWidth, visibleClips } from './window';
 
@@ -57,8 +59,12 @@ export function Timeline() {
         >
           نمونه برش
         </button>
+        <TrackInsert kind="video" label="ترک ویدیو" />
+        <TrackInsert kind="audio" label="ترک صدا" />
+        <TrackInsert kind="text" label="ترک متن" />
       </div>
       <PlaybackBar />
+      <TrackAudioMeter />
       <div
         data-testid="timeline-scroll"
         data-total={sequence.clips.length}
@@ -97,6 +103,19 @@ export function Timeline() {
           ))}
       </div>
     </section>
+  );
+}
+
+function TrackInsert({ kind, label }: { kind: TrackKind; label: string }) {
+  const insertTrack = useTimelineStore((state) => state.insertTrack);
+  return (
+    <button
+      type="button"
+      className="rounded-md border border-surface-border px-2 py-1 text-sm"
+      onClick={() => insertTrack(kind)}
+    >
+      {label}
+    </button>
   );
 }
 

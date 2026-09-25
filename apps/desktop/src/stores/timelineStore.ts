@@ -8,6 +8,7 @@ import {
   type Marker,
   type Sequence,
   type Track,
+  type TrackKind,
   addClip,
   addMarker,
   addTrack,
@@ -20,6 +21,7 @@ import {
   splitClip,
   trimClip,
 } from '@/domain/timeline';
+import { createTrack, moveTrack, trackName } from '@/domain/tracks';
 import { temporal } from 'zundo';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
@@ -36,7 +38,9 @@ export interface TimelineState extends TimelineSnapshot {
   splitAt: (clipId: string, time: number) => string | null;
   deleteClips: (ids: string[], ripple: boolean) => boolean;
   addTrack: (track: Track) => boolean;
+  insertTrack: (kind: TrackKind) => boolean;
   removeTrack: (trackId: string) => boolean;
+  moveTrack: (trackId: string, direction: -1 | 1) => boolean;
   setTrackFlag: (trackId: string, flag: 'muted' | 'solo' | 'locked', value: boolean) => boolean;
   addMarker: (marker: Marker) => boolean;
   setSelection: (ids: string[]) => void;
@@ -78,7 +82,24 @@ export const useTimelineStore = create<TimelineState>()(
       },
       deleteClips: (ids, ripple) => commit(get().sequence, deleteClips(get().sequence, ids, ripple), set),
       addTrack: (track) => commit(get().sequence, addTrack(get().sequence, track), set),
+      insertTrack: (kind) => {
+        const sequence = get().sequence;
+        const id = `track-${get().nextId}`;
+        const order = sequence.tracks.reduce((max, track) => Math.max(max, track.order), -1) + 1;
+        const index = sequence.tracks.filter((track) => track.kind === kind).length + 1;
+        const track = createTrack(kind, id, order, trackName(kind, index));
+        if (!track) return false;
+        const next = addTrack(sequence, track);
+        if (next === sequence) return false;
+        set((state) => {
+          state.sequence = next;
+          state.nextId += 1;
+        });
+        return true;
+      },
       removeTrack: (trackId) => commit(get().sequence, removeTrack(get().sequence, trackId), set),
+      moveTrack: (trackId, direction) =>
+        commit(get().sequence, moveTrack(get().sequence, trackId, direction), set),
       setTrackFlag: (trackId, flag, value) =>
         commit(get().sequence, setTrackFlag(get().sequence, trackId, flag, value), set),
       addMarker: (marker) => commit(get().sequence, addMarker(get().sequence, marker), set),
