@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "ai-engine"))
 
 from ai_engine.export.compiler import PlanRejected, compile_plan  # noqa: E402
-from ai_engine.export.runner import CapabilityError, OverwriteRefused, choose_encoder  # noqa: E402
+from ai_engine.export.runner import CapabilityError, OverwriteRefused, choose_encoder, resolve_encoder  # noqa: E402
 
 pytestmark = pytest.mark.unit
 
@@ -79,6 +79,13 @@ def test_nvenc_capability_is_not_a_pass_when_missing() -> None:
     with pytest.raises(CapabilityError) as missing:
         choose_encoder("h264", ["aac"])
     assert missing.value.state == "missing"
+
+
+def test_listed_nvenc_that_cannot_open_is_not_available(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("ai_engine.export.runner.encoder_opens", lambda _ffmpeg, _encoder: False)
+    encoder, state = resolve_encoder("ffmpeg", "h264", ["h264_nvenc", "libx264"], probe=True)
+    assert encoder == "libx264"
+    assert state == "missing"
 
 
 def test_existing_output_without_consent_is_refused(tmp_path: Path) -> None:

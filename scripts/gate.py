@@ -196,6 +196,8 @@ def check_biome(staged: bool) -> Check:
             if p.suffix in {".ts", ".tsx", ".js", ".mjs", ".json"}
             and p.exists()
             and "node_modules" not in p.parts
+            and "apps/desktop/src/lib/openapi"
+            not in p.as_posix()  # biome.json ignore; a lone generated file is not a failure
             and any(p.resolve().is_relative_to(r) for r in roots)  # same scope as the full gate
         ]
         if not js:

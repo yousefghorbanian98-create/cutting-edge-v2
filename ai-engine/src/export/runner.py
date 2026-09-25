@@ -46,6 +46,42 @@ def choose_encoder(codec: str, encoders: list[str] | None) -> tuple[str, str]:
     raise CapabilityError("missing", f"{software} missing")
 
 
+def encoder_opens(ffmpeg: str, encoder: str) -> bool:
+    """A listed NVENC name is not available until a frame actually encodes."""
+    try:
+        proc = subprocess.run(
+            [
+                ffmpeg,
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-f",
+                "lavfi",
+                "-i",
+                "color=c=black:s=16x16:r=30:d=0.04",
+                "-c:v",
+                encoder,
+                "-f",
+                "null",
+                "-",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=20,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return proc.returncode == 0
+
+
+def resolve_encoder(ffmpeg: str, codec: str, encoders: list[str] | None, *, probe: bool) -> tuple[str, str]:
+    encoder, nvenc = choose_encoder(codec, encoders)
+    if nvenc == "available" and probe and not encoder_opens(ffmpeg, encoder):
+        return SOFTWARE[codec], "missing"
+    return encoder, nvenc
+
+
 def list_encoders(ffmpeg: str) -> list[str] | None:
     try:
         proc = subprocess.run([ffmpeg, "-hide_banner", "-encoders"], capture_output=True, text=True, timeout=15)
@@ -321,7 +357,7 @@ def run_export(
         partial.unlink()
     ffmpeg = find_ffmpeg()
     found = encoders if encoders is not None else list_encoders(ffmpeg)
-    encoder, nvenc = choose_encoder(plan["settings"]["codec"], found)
+    encoder, nvenc = resolve_encoder(ffmpeg, plan["settings"]["codec"], found, probe=encoders is None)
     have = filters if filters is not None else list_filters(ffmpeg)
     if have is None:
         raise CapabilityError("unknown", "filter list unknown")
