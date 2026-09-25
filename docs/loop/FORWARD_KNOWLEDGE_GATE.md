@@ -10,9 +10,12 @@ Before writing code for any new stage, Builder MUST read:
 2. the latest `docs/loop/evidence/*/REVIEW.md` files for the dependency chain;
 3. `docs/loop/STYLE_MATCH_ARCHITECTURE.md`;
 4. this file;
-5. accepted architecture updates and open bugs in `docs/loop/06_BUGS.md`.
+5. `docs/loop/KNOWLEDGE_REFRESH_AUDIT.md`;
+6. accepted architecture updates and open bugs in `docs/loop/06_BUGS.md`.
 
 The Builder MUST then add a short `Forward-knowledge compliance` section to the new stage `CONTRACT.md`. If the section is missing, the stage has not entered implementation.
+
+Before the next implementation batch after an accepted reference or newly discovered failure, the Builder MUST also complete `docs/loop/KNOWLEDGE_REFRESH_AUDIT.md` for the historical path already built. For the current roadmap, this means auditing S-001 through the current stage before starting S-023. If that audit is missing, the next batch has not entered implementation.
 
 ## Required contract contents
 

@@ -93,6 +93,18 @@ The workflow layer complements Style Match; it does not replace shot analysis, v
 
 The `docs/loop/FORWARD_KNOWLEDGE_GATE.md` is a mandatory pre-implementation gate for every future Builder stage. A new stage must explicitly state which accepted architecture and review findings it applies, which are deferred, which unsafe inputs it rejects, and how compliance will be evidenced. This is a process constraint; it does not silently expand the current stage's scope or authorize a ledger change.
 
+A knowledge refresh is also required before the next batch: `docs/loop/KNOWLEDGE_REFRESH_AUDIT.md` requires a retrospective audit of the historical path, not only a forward-looking contract.
+
+## External reference lenses — adopted principles, not dependencies
+
+### Iris (`brijr/iris`)
+
+Iris is a reference for an optional visual camera: stable render waiting, selector-specific screenshots, viewport/device variants, and structured capture results. It must remain separate from behavioral acceptance: Playwright assertions, CDP performance budgets, CI, Windows, and installer evidence remain authoritative. Iris is not a product dependency, runtime integration, or vendor source.
+
+### anti-slop (`miqdadbadjuber/anti-slop`)
+
+anti-slop is a reference for process/design quality: purpose before decoration, real interaction evidence, responsive and accessibility review, no fake metrics, and an explicit delivery gate. Only selected principles may be adapted into project contracts or `DESIGN.md` after audit. Its plugin system, rules, dependencies, and repository are not copied or installed into Cutting Edge.
+
 ## FFmpeg execution direction (reference from `ffmpeg-skill`)
 
 The project may adopt the following execution principles, but must keep its own Python/Tauri implementation rather than vendor the external repository:
