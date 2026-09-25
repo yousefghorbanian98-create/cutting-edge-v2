@@ -27,3 +27,11 @@ Under the current evidence policy, a successful job summary alone is not enough 
 ## Verdict
 
 **REVIEW — not approved.** Keep S-022 `RED`; do not GREEN it and do not start S-023. First reconcile `EVIDENCE.md` with run `36099355863` and either provide independently readable evidence or record an explicit user decision accepting the public CI annotations as the evidence basis for this stage.
+
+## Independent review — round 2 — target `fe68381b2e6472eb070099fa06772767aaa825c5`
+
+The Builder reconciled `EVIDENCE.md` with final run `36099355863` and explicitly recorded the user's S-022 evidence policy: public CI annotations are accepted when the evidence zips cannot be opened with EOF. This resolves the prior evidence-policy blocker for this stage only.
+
+The public run was independently checked: Ubuntu and Windows and loop-audit completed successfully; Ubuntu reported 26 Playwright tests with the S-022 track spec included, Windows reported 112 pytest tests, and the Windows job completed cargo fmt, clippy, cargo test, NSIS build, installer smoke 17/17, and installer upload. The installer SHA256 is recorded in evidence. No threshold was loosened and no skipped step was treated as pass.
+
+Verdict: **approved for Builder's next ledger decision**. This is not a GREEN instruction: keep the S-022 ledger row `RED` until the Builder/user performs the separate ledger decision. Do not start S-023 from this review alone.
