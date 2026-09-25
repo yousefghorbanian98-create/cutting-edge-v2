@@ -45,8 +45,16 @@ test('import, arrange, trim, split, undo, and preview stay within 0.1% three tim
     await page.mouse.click(rulerBox.x + 80, rulerBox.y + 8);
     await page.keyboard.press('Control+b');
     await page.keyboard.press('Control+z');
+    await expect(page.getByTestId('timeline-clip')).toHaveCount(1);
     await expect(page.getByTestId('sequence-player')).toBeVisible();
-    await page.evaluate(() => document.fonts.ready);
+    await page.evaluate(async () => {
+      const active = document.activeElement;
+      if (active instanceof HTMLElement) active.blur();
+      await document.fonts.ready;
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      });
+    });
     shots.push(await page.getByTestId('timeline-scroll').screenshot());
   }
   expect(pixelDiffRatio(shots[0] ?? Buffer.alloc(0), shots[1] ?? Buffer.alloc(0))).toBeLessThan(0.001);
