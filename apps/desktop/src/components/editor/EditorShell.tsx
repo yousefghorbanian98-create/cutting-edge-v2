@@ -15,10 +15,10 @@ export function EditorShell() {
       <main className="min-h-screen bg-surface-base p-4 text-white">
         <Shortcuts />
         <MediaBin />
+        <Timeline />
         <SequencePlayer />
         <ExportDialog />
         <ExportProgress />
-        <Timeline />
         <HistoryPanel />
       </main>
     </PlaybackProvider>

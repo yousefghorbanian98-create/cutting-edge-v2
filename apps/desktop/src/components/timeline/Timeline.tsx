@@ -53,6 +53,7 @@ export function Timeline() {
       const rect = node.getBoundingClientRect();
       const cursorX = event.clientX - rect.left;
       const next = zoomBy(node.scrollLeft, cursorX, event.deltaY < 0 ? 1.25 : 0.8);
+      node.dataset.px = String(next.pxPerSecond);
       node.scrollLeft = next.scrollLeft;
     };
     node.addEventListener('wheel', onWheel, { passive: false });

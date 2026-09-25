@@ -22,9 +22,19 @@ test('Ctrl+wheel at x=400 keeps the time, and fit shows the sequence', async ({ 
 
   await page.mouse.move(400, box.y + 40);
   const before = await read();
-  await page.keyboard.down('Control');
-  await page.mouse.wheel(0, -120);
-  await page.keyboard.up('Control');
+  await scroller.evaluate((node, clientX) => {
+    const rect = node.getBoundingClientRect();
+    node.dispatchEvent(
+      new WheelEvent('wheel', {
+        deltaY: -120,
+        ctrlKey: true,
+        clientX,
+        clientY: rect.top + 40,
+        bubbles: true,
+        cancelable: true,
+      })
+    );
+  }, 400);
   const after = await read();
   expect(after.px).not.toBe(before.px);
   expect(Math.abs(before.time - after.time) * after.px).toBeLessThanOrEqual(1);

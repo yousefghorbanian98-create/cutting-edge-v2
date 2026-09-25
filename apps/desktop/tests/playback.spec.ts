@@ -28,7 +28,7 @@ async function load(page: import('@playwright/test').Page, fixture: PlaybackFixt
 test('playhead stays within one frame, and ten arrow steps match fps', async ({ page }) => {
   for (const fixture of fixtures) {
     await load(page, fixture);
-    await page.getByRole('button', { name: 'پخش' }).click();
+    await page.getByRole('button', { name: 'پخش', exact: true }).click();
     await page.waitForFunction(() => {
       const video = document.querySelector('[data-testid=preview-video]');
       return video instanceof HTMLVideoElement && video.currentTime >= 3;

@@ -35,7 +35,7 @@ test('lock ignores a clip drag, and mute silences the audio analyser', async ({ 
   await expect(clip).toHaveAttribute('data-start', '8000');
   await expect(clip).toHaveAttribute('data-track', 'track-v1');
 
-  await page.getByRole('button', { name: 'پخش' }).click();
+  await page.getByRole('button', { name: 'پخش', exact: true }).click();
   const meter = page.getByTestId('track-audio');
   await expect(meter).toHaveAttribute('data-capability', 'available');
   await expect(meter).toHaveAttribute('data-context-state', 'running', { timeout: 3_000 });
