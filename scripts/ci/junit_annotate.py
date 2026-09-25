@@ -15,6 +15,15 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 MAX_ANNOTATIONS = 10  # GitHub keeps at most 10 error annotations per step
+# Named result notices are evidence for open gaps only. A missing name is not a pass.
+NAMED_GAPS = (
+    "timeline-canvas.spec.ts",
+    "zoom.spec.ts",
+    "playback.spec.ts",
+    "e2e/timeline.spec.ts",
+    "timeline.spec.ts",
+    "test_ffmpeg_overwrite.py",
+)
 
 
 def _one_line(s: str, limit: int = 900) -> str:
@@ -64,6 +73,11 @@ def main(paths: list[str]) -> int:
             body = problems[0].text or ""
             print(f"::error {_params(tc, name)}::{_one_line(msg + ' | ' + body)}")
             emitted += 1
+        else:
+            identity = f"{tc.get('classname', '')} {tc.get('file', '')} {tc.get('name', '')}"
+            if any(gap in identity for gap in NAMED_GAPS):
+                name = f"{tc.get('classname', '')}::{tc.get('name', '')}".replace("::", " › ").replace(",", " ")
+                print(f"::notice title=named result::{_one_line(name)} passed")
     print(f"::notice title=junit summary::{failed} failed / {total} total across {len(paths)} report(s)")
     return 0
 
