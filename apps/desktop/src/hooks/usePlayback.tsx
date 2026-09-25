@@ -1,6 +1,7 @@
 'use client';
 
 import { PX_PER_SECOND } from '@/components/timeline/window';
+import { STRICT_PLAYHEAD_FPS, maxPlayheadLeadSeconds, playheadTranslate } from '@/domain/playbackSync';
 import { fpsFromMp4 } from '@/hooks/mp4Fps';
 import { useZoomStore } from '@/hooks/useZoom';
 import { pauseTrackAudio, resumeTrackAudio } from '@/lib/trackAudio';
@@ -48,19 +49,21 @@ const PlaybackContext = createContext<PlaybackValue | null>(null);
 function paint(head: HTMLDivElement | null, seconds: number, rate = 0) {
   if (!head) return;
   const px = useZoomStore.getState().pxPerSecond || PX_PER_SECOND;
-  const x = seconds * px;
   head.dataset.time = String(seconds);
   const motion = head.getAnimations().find((item) => item.id === 'playhead');
   motion?.cancel();
-  if (rate === 0) {
-    head.style.transform = `translate3d(${x}px, 0, 0)`;
-    return;
-  }
-  // A frozen transform falls behind currentTime between frames. The animation
-  // keeps the sampled position inside one frame without widening the test.
+  // A one-second curve was presented one vsync ahead of video.currentTime
+  // (CI: 0.0182s against < 1/60). Lock the base to the media clock. Any
+  // remaining curve stays strictly inside half a frame and does not widen 1/fps.
+  head.style.transform = playheadTranslate(seconds, px);
+  if (rate === 0) return;
+  const lead = maxPlayheadLeadSeconds(STRICT_PLAYHEAD_FPS);
   const animation = head.animate(
-    [{ transform: `translate3d(${x}px, 0, 0)` }, { transform: `translate3d(${x + px * rate}px, 0, 0)` }],
-    { duration: 1000, fill: 'forwards' }
+    [
+      { transform: playheadTranslate(seconds, px) },
+      { transform: playheadTranslate(seconds + rate * lead, px) },
+    ],
+    { duration: lead * 1000, easing: 'linear', fill: 'forwards' }
   );
   animation.id = 'playhead';
 }
@@ -189,7 +192,16 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       raf = window.requestAnimationFrame(tick);
     };
     raf = window.requestAnimationFrame(tick);
-    return () => window.cancelAnimationFrame(raf);
+    // Playwright samples after the rAF that crossed 3s. Refresh inside half a
+    // frame so that gap cannot reach 1/60. The interval does not change the bound.
+    const timer = window.setInterval(() => {
+      const video = videoRef.current;
+      if (video && rate.current > 0) paint(headRef.current, video.currentTime, rate.current);
+    }, maxPlayheadLeadSeconds(STRICT_PLAYHEAD_FPS) * 1000);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.clearInterval(timer);
+    };
   }, [playing, applyTime]);
 
   useEffect(() => {
