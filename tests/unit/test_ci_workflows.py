@@ -77,6 +77,7 @@ def test_ubuntu_job_steps():
     assert re.search(r"pnpm (run )?build", runs)
     assert "playwright install" in runs and "chromium" in runs
     assert "playwright test" in runs
+    assert "tests/tracks.spec.ts" in runs
     dump = yaml.safe_dump(job)
     assert "actions/upload-artifact" in uses
     for artefact in ("junit", "playwright-report", "home-1440x900.png"):
