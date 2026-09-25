@@ -54,6 +54,7 @@ def _params(tc: ET.Element, name: str) -> str:
 def main(paths: list[str]) -> int:
     emitted = 0
     total = failed = 0
+    named = {gap: [0, 0] for gap in NAMED_GAPS}
     for raw in paths:
         p = Path(raw)
         if not p.exists():
@@ -63,21 +64,25 @@ def main(paths: list[str]) -> int:
         for tc in root.iter("testcase"):
             total += 1
             problems = list(tc.findall("failure")) + list(tc.findall("error"))
-            if not problems:
-                continue
-            failed += 1
-            if emitted >= MAX_ANNOTATIONS:
-                continue
-            name = f"{tc.get('classname', '')}::{tc.get('name', '')}"
-            msg = problems[0].get("message") or ""
-            body = problems[0].text or ""
-            print(f"::error {_params(tc, name)}::{_one_line(msg + ' | ' + body)}")
-            emitted += 1
-        else:
             identity = f"{tc.get('classname', '')} {tc.get('file', '')} {tc.get('name', '')}"
-            if any(gap in identity for gap in NAMED_GAPS):
-                name = f"{tc.get('classname', '')}::{tc.get('name', '')}".replace("::", " › ").replace(",", " ")
-                print(f"::notice title=named result::{_one_line(name)} passed")
+            gap = next((item for item in NAMED_GAPS if item in identity), "")
+            if problems:
+                failed += 1
+                if gap:
+                    named[gap][1] += 1
+                if emitted >= MAX_ANNOTATIONS:
+                    continue
+                name = f"{tc.get('classname', '')}::{tc.get('name', '')}"
+                msg = problems[0].get("message") or ""
+                body = problems[0].text or ""
+                print(f"::error {_params(tc, name)}::{_one_line(msg + ' | ' + body)}")
+                emitted += 1
+                continue
+            if gap:
+                named[gap][0] += 1
+    for gap, (passed, broken) in named.items():
+        if passed or broken:
+            print(f"::notice title=named result::{gap}: {passed} passed, {broken} failed")
     print(f"::notice title=junit summary::{failed} failed / {total} total across {len(paths)} report(s)")
     return 0
 
