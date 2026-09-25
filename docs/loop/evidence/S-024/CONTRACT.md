@@ -21,6 +21,8 @@
 
 ## Forward-knowledge compliance
 
+- Registry IDs: `K-004` برای نگاشت زمان و ممنوعیت mutation مستقیم. `K-005` اسکرین‌شات را جایگزین assertion پخش نمی‌کند. `K-006` آستانهٔ یک فریم را شل نمی‌کند. `K-007` اینجا اعمال نمی‌شود. `K-008` مجوز ادامه نیست. `K-011` رد می‌شود. `K-001` فقط به‌عنوان رد raw command؛ اجرای FFmpeg این مرحله نیست.
+- Open gaps: رانش پلی‌هد تا evidence نام‌دار باز می‌ماند. اجرای `36139485294` این شکاف را نمی‌بندد، چون نام تست در حاشیهٔ پاس نیامده است. `user-gpu` و `BUG-18` باز می‌مانند.
 - Contract و dependencyهای خوانده‌شده: این CONTRACT؛ CONTRACT مرحلهٔ `S-023`؛ کارت S-024؛ REVIEWهای `S-016` و `S-022`؛ گیت و `STYLE_MATCH_ARCHITECTURE.md` و `06_BUGS.md`.
 - REVIEWها و architecture updateهای اعمال‌شده: S-023 در همین batch و هنوز GREEN نیست. وابستگی زنجیره‌ای رعایت می‌شود: integration پلیر بعد از دامنهٔ زوم و عبور static/unit/typecheck. S-022 سبز نمی‌شود.
 - اصول جدیدی که در همین مرحله اجرا می‌شوند: نگاشت زمان سکانس به منبع یک domain operation است. رسم از همان تابع فریم است، نه یک data-attribute جعلی. capability صدا فقط `available` / `missing` / `unknown` است و `missing` پاس نیست. کیفیت پایین Reheal L2 یک حالت صریح است.

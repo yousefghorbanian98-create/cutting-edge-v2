@@ -23,10 +23,12 @@
 
 ## Forward-knowledge compliance
 
+- Registry IDs: `K-004` اینجا اعمال می‌شود، چون زوم view state است و sequence را mutate نمی‌کند. `K-005` فقط مرجع دیداری است و اسکرین‌شات پذیرش نیست. `K-006` یعنی تعامل واقعی و شل نکردن آستانه. `K-007` خارج از S-022 اعمال نمی‌شود. `K-008` فقط ممیزی فرآیند است و مجوز ادامهٔ implementation نیست. `K-011` برای runtime رد می‌شود. `K-001` `K-002` `K-003` `K-009` `K-010` در این مرحله اجرا نمی‌شوند.
+- Open gaps: شکاف زوم و fit این مرحله، و شکاف بودجهٔ فریم `S-015`، تا evidence نام‌دار باز می‌مانند. نبودن نام در حاشیهٔ شکست پاس نام‌دار نیست. `BUG-18` و `user-gpu` باز می‌مانند.
 - Contract و dependencyهای خوانده‌شده: این CONTRACT؛ کارت S-023؛ CONTRACT و REVIEW مرحلهٔ `S-022`؛ CONTRACTهای `S-015` و `S-017` و `S-021`؛ `docs/loop/FORWARD_KNOWLEDGE_GATE.md`؛ `docs/loop/STYLE_MATCH_ARCHITECTURE.md`؛ `docs/loop/00_INDEX.md`؛ `docs/loop/06_BUGS.md`.
 - REVIEWها و architecture updateهای اعمال‌شده: S-022 approved برای تصمیم ledger است و GREEN نیست. وابستگی S-022 برابر `REVIEW` است. شروع این batch با دستور صریح کاربر است و آن ردیف را GREEN نمی‌کند. Style Match فقط roadmap است و `submit_inference()` اینجا صدا زده نمی‌شود.
 - اصول جدیدی که در همین مرحله اجرا می‌شوند: زوم view state است، نه mutation سکانس. فرمول زوم حول نشانگر در دامنه است و UI فقط از action فروشگاهٔ زوم می‌خواند. `PX_PER_SECOND` پیش‌فرض `100` می‌ماند تا تست‌های قبلی شل نشوند.
 - Deferred: پخش سکانس → S-024. شورتکات `?` → S-025. export و overwrite → S-028. اعتبار خروجی → S-033 که شروع نمی‌شود. GPU کاربر → S-027 و `unverified` است، نه پاس.
 - Negative boundary: `useTimelineStore.setState` برای sequence ممنوع است. زوم history سکانس را دور نمی‌زند چون اصلاً sequence را عوض نمی‌کند. raw command، filter graph، و overwrite فایل در این مرحله وجود ندارد و رد می‌شود.
-- Evidence plan: vitest دامنه پیش از integration. بعد از static و unit و typecheck، Playwright. پیش از تحویل batch، CI کامل Ubuntu و Windows. local pass جایگزین CI نیست. آستانهٔ `±1px` شل نمی‌شود. عرض قفل نشانگر باید در state بماند. ستون هدر داخل `scrollWidth` است. CI `36133043615` باز هم `1617` را در برابر `1407` گرفت؛ پس قفل fit باید بعد از commit ریکت هم روی ترک و sheet بماند. selector تست عوض نمی‌شود.
+- Evidence plan: vitest دامنه پیش از integration. بعد از static و unit و typecheck، Playwright. پیش از تحویل batch، CI کامل Ubuntu و Windows. local pass جایگزین CI نیست. آستانهٔ `±1px` و `scrollWidth <= clientWidth + 1` شل نمی‌شود. عرض قفل نشانگر باید در state بماند. ستون هدر داخل `scrollWidth` است. CI `36133043615` مقدار `1617` را در برابر `1407` گرفت. اجرای `36139485294` رویداد جدا است و این شکاف را نمی‌بندد. selector تست عوض نمی‌شود. نقشهٔ شواهد: `docs/loop/evidence/EVIDENCE-MAP-2026-09-25.md`.
 - Status: `REVIEW` تا verdict مستقل. GREEN نمی‌شود.

@@ -25,6 +25,8 @@
 
 ## Forward-knowledge compliance
 
+- Registry IDs: `K-001` برای زنجیرهٔ probe تا provenance در مسیر export همین مرحله. `K-002` و `BUG-18` باز می‌مانند؛ `run_ffmpeg()` همچنان همیشه `-y` دارد و این مرحله آن را برای همیشه نمی‌بندد. `K-003` یعنی ffprobe JSON اول است و ابعاد تهی fail-closed است. `K-004` برای منبع timeline. `K-009` فقط اصول allow-list است و vendor نمی‌شود. `K-007` اعمال نمی‌شود. `K-008` مجوز GREEN نیست. `K-010` و `K-011` رد یا فقط مرجع‌اند.
+- Open gaps: فهرست encoder برابر GPU available نیست. `user-gpu` باز است. شکاف‌های UI نام‌دار `S-015` `S-023` `S-024` `S-026` با export بسته نمی‌شوند.
 - Contract و dependencyهای خوانده‌شده: این CONTRACT؛ کارت S-028؛ CONTRACT و REVIEW مرحله‌های `S-012` و `S-013` و `S-004`؛ `BUG-18` در `06_BUGS.md`؛ گیت و `STYLE_MATCH_ARCHITECTURE.md` و ایندکس.
 - REVIEWها و architecture updateهای اعمال‌شده: S-012 و S-013 هر دو `REVIEW` هستند و GREEN نمی‌شوند. job از `submit()` موجود می‌گذرد، نه از یک thread خام در route. Style Match مدل بار نمی‌کند.
 - اصول جدیدی که در همین مرحله اجرا می‌شوند: probe با ffprobe JSON اول است. operation فقط allow-list است: `trim` `setpts` `concat` `scale` `pad` `fps` `amix` `afade` `encode`. capability فقط `available` / `missing` / `unknown`. اجرای امن به فایل موقت می‌نویسد و بدون consent روی مقصد `-y` نمی‌زند. verify مدت و stream و codec را می‌خواند. provenance ساخت plan و encoder واقعی را ثبت می‌کند.

@@ -19,6 +19,8 @@
 
 ## Forward-knowledge compliance
 
+- Registry IDs: `K-004` چون چیدن و undo از store action است. `K-005` تفاوت بصری مشاهده است و آستانهٔ `0.001` را جایگزین نمی‌کند. `K-006` سفر واقعی را به helper خالص ترجیح می‌دهد. `K-007` اعمال نمی‌شود. `K-008` مجوز ادامه نیست. `K-011` رد می‌شود.
+- Open gaps: تفاوت سه‌بارهٔ `e2e/timeline.spec.ts` تا evidence نام‌دار باز می‌ماند. اجرای `36139485294` این شکاف را نمی‌بندد. `BUG-18` و `user-gpu` باز می‌مانند.
 - Contract و dependencyهای خوانده‌شده: این CONTRACT؛ CONTRACT مرحلهٔ `S-025`؛ کارت S-026؛ REVIEWهای `S-014` و `S-018` و `S-019` و `S-021`؛ گیت و معماری و ایندکس و باگ‌ها.
 - REVIEWها و architecture updateهای اعمال‌شده: چیدن کلیپ از store action `addClip` است. undo از `undoTimeline` است، نه setState. S-025 هنوز GREEN نیست.
 - اصول جدیدی که در همین مرحله اجرا می‌شوند: سفر از UI واقعی می‌گذرد، نه helper خالص. سه تکرار پشت سر هم flake check است و retry پیکربندی Playwright برای پنهان کردن flake زیاد نمی‌شود.

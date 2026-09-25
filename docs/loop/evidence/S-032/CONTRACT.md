@@ -21,6 +21,8 @@
 
 ## Forward-knowledge compliance
 
+- Registry IDs: `K-001` و `K-009` فقط به‌صورت allow-list تایپ‌شده، بدون vendor. `K-002` overwrite ناایمن را رد می‌کند و `BUG-18` را باز نگه می‌دارد. `K-003` probe فیلتر را fail-closed می‌کند. `K-007` اعمال نمی‌شود. `K-008` مجوز ادامه نیست. `K-010` و `K-011` وارد runtime نمی‌شوند.
+- Open gaps: `missing` برای فیلتر پاس یا skip نیست. `user-gpu` باز است. شکاف‌های نام‌دار UI با این مرحله بسته نمی‌شوند.
 - Contract و dependencyهای خوانده‌شده: این CONTRACT؛ CONTRACT مرحلهٔ `S-028`؛ کارت S-032؛ گیت و معماری و ایندکس و `BUG-18`.
 - REVIEWها و architecture updateهای اعمال‌شده: S-032 به S-028 وابسته است، نه به S-031. می‌تواند بعد از compiler با S-029 موازی باشد، ولی integration صدا بعد از عبور static/unit/typecheck همان دامنه است. S-028 هنوز GREEN نیست.
 - اصول جدیدی که در همین مرحله اجرا می‌شوند: گین و fade و sidechain و loudnorm operation typed هستند. graph از ops ساخته می‌شود. probe فیلترها capability را تعیین می‌کند. خروجی verify مدت و stream صدا را دارد و provenance فیلترهای استفاده‌شده را ثبت می‌کند.
