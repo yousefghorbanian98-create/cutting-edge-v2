@@ -45,7 +45,7 @@ export function Timeline() {
   clipsRef.current = sequence.clips;
   const pending = useRef({ left: 0, width: 800 });
   const sequenceWidth = contentWidth(sequence.clips, px);
-  const width = Math.max(sequenceWidth, extra);
+  const sheetPixels = Math.max(sequenceWidth, extra);
   const seconds = Math.max(1, sequenceWidth / px);
   const startSec = Math.max(0, scrollLeft / px - 1);
   const endSec = (scrollLeft + viewport) / px + 1;
@@ -67,8 +67,8 @@ export function Timeline() {
       const rect = node.getBoundingClientRect();
       const cursorX = event.clientX - rect.left;
       const next = zoomBy(node.scrollLeft, cursorX, event.deltaY < 0 ? 1.25 : 0.8);
-      const sequenceWidth = contentWidth(clipsRef.current, next.pxPerSecond);
-      const needed = sheetWidth(sequenceWidth, node.clientWidth, next.scrollLeft);
+      const nextSequence = contentWidth(clipsRef.current, next.pxPerSecond);
+      const needed = sheetWidth(nextSequence, node.clientWidth, next.scrollLeft);
       lockRef.current = { scroll: next.scrollLeft, width: needed };
       setExtra(needed);
       if (sheet.current) sheet.current.style.width = `${needed}px`;
@@ -83,9 +83,9 @@ export function Timeline() {
     const lock = lockRef.current;
     const node = scroller.current;
     if (!lock || !node || !sheet.current) return;
-    sheet.current.style.width = `${Math.max(width, lock.width)}px`;
+    sheet.current.style.width = `${Math.max(sheetPixels, lock.width)}px`;
     node.scrollLeft = lock.scroll;
-  }, [width]);
+  }, [sheetPixels]);
 
   return (
     <section aria-label="تایم‌لاین" className="mt-4" dir="ltr">
@@ -140,13 +140,20 @@ export function Timeline() {
           const fitted = contentWidth(sequence.clips, next.pxPerSecond);
           lockRef.current = null;
           setExtra(0);
-          if (sheet.current) sheet.current.style.width = `${fitted}px`;
+          if (sheet.current) {
+            sheet.current.style.width = `${fitted}px`;
+            for (const child of sheet.current.querySelectorAll<HTMLElement>(
+              '[data-testid=timeline-ruler],[data-testid=timeline-lane]'
+            )) {
+              child.style.width = `${fitted}px`;
+            }
+          }
           node.scrollLeft = next.scrollLeft;
           node.dataset.px = String(next.pxPerSecond);
           node.dataset.fit = fitted <= view + 1 ? '1' : '0';
         }}
       />
-      <Minimap content={width} viewport={viewport} scrollLeft={scrollLeft} />
+      <Minimap content={sequenceWidth} viewport={viewport} scrollLeft={scrollLeft} />
       <PlaybackBar />
       <TrackAudioMeter />
       <div
@@ -156,8 +163,8 @@ export function Timeline() {
         data-rendered={shown.length}
         data-px={px}
         data-scroll={scrollLeft}
-        data-total-width={width}
-        data-fit={width <= viewport + 1 ? '1' : '0'}
+        data-total-width={sequenceWidth}
+        data-fit={sheetPixels <= viewport + 1 ? '1' : '0'}
         className="relative overflow-x-auto rounded-md border border-surface-border bg-surface-raised"
         onPointerDown={(event) => startMarquee(event, selectRect, setMarquee)}
         onScroll={(event) => {
@@ -171,13 +178,13 @@ export function Timeline() {
           });
         }}
       >
-        <div ref={sheet} className="relative" style={{ width }}>
+        <div ref={sheet} className="relative" style={{ width: sheetPixels }}>
           <Playhead />
           <Marquee rect={marquee} />
           <Ruler
             startSec={startSec}
             endSec={endSec}
-            width={width}
+            width={sequenceWidth}
             pxPerSecond={px}
             onScrub={(event) => scrubFromRuler(event, setTime)}
           />
@@ -188,7 +195,7 @@ export function Timeline() {
               <Track
                 key={track.id}
                 track={track}
-                width={width}
+                width={sequenceWidth}
                 pxPerSecond={px}
                 clips={sequence.clips.filter((clip) => clip.trackId === track.id && shownIds.has(clip.id))}
               />
