@@ -107,7 +107,7 @@ anti-slop is a reference for process/design quality: purpose before decoration, 
 
 ### HotClip (`xixihhhh/hotclip`)
 
-HotClip is an external reference for a local-first clipping workflow: ffprobe-backed media discovery, reference-clip pacing, measurable caption/clip quality fixtures, processing receipts, and a platform-agnostic API seam. These principles fit future Style Match/export planning, but HotClip is AGPL-3.0 and must not be vendored, copied, or added as a runtime dependency without a separate legal and architecture decision. Its local-first and receipt ideas do not replace our typed executor, capability states, verification, provenance, or CI evidence.
+HotClip is an external reference for a local-first clipping workflow: ffprobe-backed media discovery, reference-clip pacing, measurable caption/clip quality fixtures, processing receipts, and a platform-agnostic API seam. Additional useful patterns are review-first highlight candidates, word-aligned speech-safe cuts, private atomic export staging, cancel cleanup, resumable checkpoints, bounded local cache, source relinking, stream-consistent analysis, and evidence-gated HDR/SDR handling. These principles fit future Style Match/export planning, but HotClip is AGPL-3.0 and must not be vendored, copied, or added as a runtime dependency without a separate legal and architecture decision. Its local-first and receipt ideas do not replace our typed executor, capability states, verification, provenance, or CI evidence.
 
 ## FFmpeg execution direction (reference from `ffmpeg-skill`)
 
