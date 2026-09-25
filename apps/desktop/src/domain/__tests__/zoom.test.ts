@@ -24,4 +24,12 @@ describe('zoom around the cursor', () => {
     const lane = Math.ceil(10 * fitPx(10, fitViewport(client, header)));
     expect(header + lane).toBeLessThanOrEqual(client + 1);
   });
+
+  it('fits when the header column is 211px, the width that made scrollWidth 1617', () => {
+    const client = 1406;
+    const header = 211;
+    const lane = Math.ceil(10 * fitPx(10, fitViewport(client, header)));
+    expect(header + lane).toBeLessThanOrEqual(client + 1);
+    expect(header + Math.ceil(10 * fitPx(10, client))).toBe(1617);
+  });
 });

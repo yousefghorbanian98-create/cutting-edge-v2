@@ -42,10 +42,11 @@ export function Timeline() {
   const clipsRef = useRef(sequence.clips);
   const lockRef = useRef<{ scroll: number; width: number } | null>(null);
   const [extra, setExtra] = useState(0);
+  const [headerPx, setHeaderPx] = useState(0);
   clipsRef.current = sequence.clips;
   const pending = useRef({ left: 0, width: 800 });
   const sequenceWidth = contentWidth(sequence.clips, px);
-  const sheetPixels = Math.max(sequenceWidth, extra);
+  const sheetPixels = Math.max(sequenceWidth + headerPx, extra);
   const seconds = Math.max(1, sequenceWidth / px);
   const startSec = Math.max(0, scrollLeft / px - 1);
   const endSec = (scrollLeft + viewport) / px + 1;
@@ -80,8 +81,12 @@ export function Timeline() {
   }, [zoomBy]);
 
   useLayoutEffect(() => {
-    const lock = lockRef.current;
     const node = scroller.current;
+    if (node) {
+      const next = measuredHeader(node);
+      setHeaderPx((current) => (Math.abs(current - next) < 0.5 ? current : next));
+    }
+    const lock = lockRef.current;
     if (!lock || !node || !sheet.current) return;
     sheet.current.style.width = `${Math.max(sheetPixels, lock.width)}px`;
     node.scrollLeft = lock.scroll;
@@ -135,15 +140,17 @@ export function Timeline() {
         onFit={() => {
           const node = scroller.current;
           if (!node) return;
-          const client = node.clientWidth || viewport;
-          const header = node.querySelector('[data-testid=timeline-track] > :first-child');
-          const headerWidth = header instanceof HTMLElement ? header.offsetWidth : 0;
-          const next = fitTo(seconds, fitViewport(client, headerWidth));
+          const view = node.clientWidth || viewport;
+          const header = measuredHeader(node);
+          const next = fitTo(seconds, fitViewport(view, header));
           const fitted = contentWidth(sequence.clips, next.pxPerSecond);
+          const sheetFit = fitted + header;
           lockRef.current = null;
           setExtra(0);
+          setHeaderPx(header);
+          setViewport(view);
           if (sheet.current) {
-            sheet.current.style.width = `${fitted + headerWidth}px`;
+            sheet.current.style.width = `${sheetFit}px`;
             for (const child of sheet.current.querySelectorAll<HTMLElement>(
               '[data-testid=timeline-ruler],[data-testid=timeline-lane]'
             )) {
@@ -152,7 +159,7 @@ export function Timeline() {
           }
           node.scrollLeft = next.scrollLeft;
           node.dataset.px = String(next.pxPerSecond);
-          node.dataset.fit = fitted + headerWidth <= client + 1 ? '1' : '0';
+          node.dataset.fit = sheetFit <= view + 1 ? '1' : '0';
         }}
       />
       <Minimap content={sequenceWidth} viewport={viewport} scrollLeft={scrollLeft} />
@@ -206,6 +213,16 @@ export function Timeline() {
       </div>
     </section>
   );
+}
+
+function measuredHeader(node: HTMLElement): number {
+  const header = node.querySelector('[data-testid=track-header]');
+  if (header instanceof HTMLElement) {
+    const width = header.getBoundingClientRect().width;
+    if (width > 0) return width;
+  }
+  const root = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+  return (Number.isFinite(root) && root > 0 ? root : 16) * 11;
 }
 
 function TrackInsert({ kind, label }: { kind: TrackKind; label: string }) {

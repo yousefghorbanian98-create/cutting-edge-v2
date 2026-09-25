@@ -18,7 +18,7 @@ export function Track({
   const active = useTimelineStore((state) => trackIsActive(state.sequence, track.id));
   return (
     <div
-      className="grid grid-cols-[11rem_1fr] border-b border-surface-border"
+      className="grid grid-cols-[11rem_minmax(0,1fr)] border-b border-surface-border"
       data-testid="timeline-track"
       data-track-id={track.id}
       data-kind={track.kind}
@@ -28,8 +28,10 @@ export function Track({
       data-locked={track.locked ? '1' : '0'}
       data-active={active ? '1' : '0'}
     >
-      <TrackHeader track={track} />
-      <div data-testid="timeline-lane" className="relative h-14" style={{ width }}>
+      <div data-testid="track-header" className="w-[11rem] min-w-[11rem] max-w-[11rem] overflow-hidden">
+        <TrackHeader track={track} />
+      </div>
+      <div data-testid="timeline-lane" className="relative h-14 min-w-0" style={{ width }}>
         {clips.map((clip) => (
           <ClipView key={clip.id} clip={clip} pxPerSecond={pxPerSecond} />
         ))}
