@@ -67,7 +67,7 @@ export function TrackHeader({ track }: { track: Track }) {
             setReject(ok ? null : occupied ? 'ترک کلیپ دارد' : 'حذف رد شد');
           }}
         >
-          حذف
+          برداشتن
         </button>
       </div>
       {reject ? (

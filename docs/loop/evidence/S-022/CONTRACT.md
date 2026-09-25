@@ -2,11 +2,11 @@
 
 > نوشته‌شده پیش از implementation. اگر در این فایل نیست، در این مرحله وجود ندارد.
 > منبع: کارت S-022 در `docs/loop/03_STEPS.md` و `docs/loop/steps.json`.
-> ledger تغییر نکرده است. ردیف S-022 همچنان `TODO` است. این مرحله GREEN نیست.
+> ردیف S-022 در ledger برابر `RED` است، نه `GREEN`. `TODO` بعد از کامیت نام‌دار، supervisor را STOP می‌کند.
 
 ## وضعیت فعلی
 
-- ledger: `TODO`، iter 0. این ردیف در این کار تغییر نمی‌کند.
+- ledger: `RED`، iter 1. GREEN نیست. S-006 تا S-021 همچنان `REVIEW` هستند.
 - وابستگی S-021 هنوز `REVIEW` است، نه `GREEN`. شروع implementation با دستور صریح همین سشن است و مجوز GREEN نیست.
 - implementation در درخت است: هدر ترک، `tracks.ts`، و باس AudioContext. GREEN نیست.
 - vitest و typecheck محلی پاس شده‌اند. Playwright محلی اجرا نشد چون دانلود Chromium با `ECONNRESET` قطع شد. این local pass جایگزین CI نیست.
@@ -55,4 +55,4 @@
 - Rejected inputs: raw FFmpeg command، arbitrary filter graph، `useTimelineStore.setState` برای sequence، overwrite فایل، و نتیجهٔ `unverified` به‌عنوان پاس. kind خارج از `video | audio | text` رد می‌شود.
 - Evidence plan: vitest برای دامنه و undo؛ typecheck و static پس از اسکلت؛ Playwright برای قفل و سکوت analyser پس از integration؛ پیش از review، CI کامل Ubuntu و Windows شامل cargo و Tauri و installer smoke. failure به skip تبدیل نمی‌شود و آستانهٔ RMS شل نمی‌شود.
 - Parallel: دامنهٔ `tracks.ts`، هدر ترک، اسکلت Playwright، و گراف صدا از هم مستقل‌اند و بعد از این بخش با هم نوشته می‌شوند. integration زمانی است که static و unit و typecheck پاس شده باشند.
-- Status: ledger `TODO` می‌ماند. این مرحله تا verdict مستقل `REVIEW` گزارش می‌شود و GREEN نمی‌شود.
+- Status: ledger `RED` تا تست واقعی در CI سبز شود. GREEN نمی‌شود.
