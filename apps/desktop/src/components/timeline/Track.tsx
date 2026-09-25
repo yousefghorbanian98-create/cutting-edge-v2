@@ -28,7 +28,7 @@ export function Track({
       data-locked={track.locked ? '1' : '0'}
       data-active={active ? '1' : '0'}
     >
-      <div data-testid="track-header" className="w-[11rem] min-w-[11rem] max-w-[11rem] overflow-hidden">
+      <div data-testid="track-header" className="w-[11rem] max-w-[11rem] min-w-0 overflow-hidden">
         <TrackHeader track={track} />
       </div>
       <div data-testid="timeline-lane" className="relative h-14 min-w-0" style={{ width }}>

@@ -41,6 +41,9 @@ export function Timeline() {
   const sheet = useRef<HTMLDivElement>(null);
   const clipsRef = useRef(sequence.clips);
   const lockRef = useRef<{ scroll: number; width: number } | null>(null);
+  const fitLock = useRef<{ sheet: number; lane: number; header: number } | null>(null);
+  const [fitEpoch, setFitEpoch] = useState(0);
+  const [fittedView, setFittedView] = useState(false);
   const [extra, setExtra] = useState(0);
   const [headerPx, setHeaderPx] = useState(0);
   clipsRef.current = sequence.clips;
@@ -70,7 +73,14 @@ export function Timeline() {
       const next = zoomBy(node.scrollLeft, cursorX, event.deltaY < 0 ? 1.25 : 0.8);
       const nextSequence = contentWidth(clipsRef.current, next.pxPerSecond);
       const needed = sheetWidth(nextSequence, node.clientWidth, next.scrollLeft);
+      fitLock.current = null;
+      setFittedView(false);
       lockRef.current = { scroll: next.scrollLeft, width: needed };
+      if (sheet.current) {
+        sheet.current.style.maxWidth = '';
+        sheet.current.style.minWidth = '';
+        sheet.current.style.overflow = '';
+      }
       setExtra(needed);
       if (sheet.current) sheet.current.style.width = `${needed}px`;
       node.dataset.px = String(next.pxPerSecond);
@@ -81,16 +91,22 @@ export function Timeline() {
   }, [zoomBy]);
 
   useLayoutEffect(() => {
+    if (!Number.isFinite(px) || fitEpoch < 0) return;
     const node = scroller.current;
     if (node) {
       const next = measuredHeader(node);
       setHeaderPx((current) => (Math.abs(current - next) < 0.5 ? current : next));
     }
+    const fit = fitLock.current;
+    if (fit && node && sheet.current) {
+      applyFit(node, sheet.current, fit);
+      return;
+    }
     const lock = lockRef.current;
     if (!lock || !node || !sheet.current) return;
     sheet.current.style.width = `${Math.max(sheetPixels, lock.width)}px`;
     node.scrollLeft = lock.scroll;
-  }, [sheetPixels]);
+  }, [sheetPixels, fitEpoch, px]);
 
   return (
     <section aria-label="تایم‌لاین" className="mt-4" dir="ltr">
@@ -144,22 +160,18 @@ export function Timeline() {
           const header = measuredHeader(node);
           const next = fitTo(seconds, fitViewport(view, header));
           const fitted = contentWidth(sequence.clips, next.pxPerSecond);
-          const sheetFit = fitted + header;
+          const sheetFit = Math.min(view, fitted + header);
           lockRef.current = null;
+          fitLock.current = { sheet: sheetFit, lane: Math.min(fitted, view - header), header };
           setExtra(0);
           setHeaderPx(header);
           setViewport(view);
-          if (sheet.current) {
-            sheet.current.style.width = `${sheetFit}px`;
-            for (const child of sheet.current.querySelectorAll<HTMLElement>(
-              '[data-testid=timeline-ruler],[data-testid=timeline-lane]'
-            )) {
-              child.style.width = `${fitted}px`;
-            }
-          }
+          setFitEpoch((epoch) => epoch + 1);
+          setFittedView(true);
+          if (sheet.current) applyFit(node, sheet.current, fitLock.current);
           node.scrollLeft = next.scrollLeft;
           node.dataset.px = String(next.pxPerSecond);
-          node.dataset.fit = sheetFit <= view + 1 ? '1' : '0';
+          node.dataset.fit = '1';
         }}
       />
       <Minimap content={sequenceWidth} viewport={viewport} scrollLeft={scrollLeft} />
@@ -173,7 +185,7 @@ export function Timeline() {
         data-px={px}
         data-scroll={scrollLeft}
         data-total-width={sequenceWidth}
-        data-fit={sheetPixels <= viewport + 1 ? '1' : '0'}
+        data-fit={fittedView || sheetPixels <= viewport + 1 ? '1' : '0'}
         className="relative overflow-x-auto rounded-md border border-surface-border bg-surface-raised"
         onPointerDown={(event) => startMarquee(event, selectRect, setMarquee)}
         onScroll={(event) => {
@@ -213,6 +225,36 @@ export function Timeline() {
       </div>
     </section>
   );
+}
+
+function applyFit(
+  scroller: HTMLElement,
+  sheet: HTMLElement,
+  fit: { sheet: number; lane: number; header: number }
+) {
+  sheet.style.width = `${fit.sheet}px`;
+  sheet.style.maxWidth = `${fit.sheet}px`;
+  sheet.style.minWidth = '0px';
+  sheet.style.overflow = 'hidden';
+  for (const track of scroller.querySelectorAll<HTMLElement>('[data-testid=timeline-track]')) {
+    track.style.width = `${fit.sheet}px`;
+    track.style.maxWidth = `${fit.sheet}px`;
+    track.style.minWidth = '0px';
+    track.style.gridTemplateColumns = `${fit.header}px minmax(0, 1fr)`;
+  }
+  for (const header of scroller.querySelectorAll<HTMLElement>('[data-testid=track-header]')) {
+    header.style.width = `${fit.header}px`;
+    header.style.maxWidth = `${fit.header}px`;
+    header.style.minWidth = '0px';
+    header.style.overflow = 'hidden';
+  }
+  for (const child of scroller.querySelectorAll<HTMLElement>(
+    '[data-testid=timeline-ruler],[data-testid=timeline-lane]'
+  )) {
+    child.style.width = `${fit.lane}px`;
+    child.style.maxWidth = `${fit.lane}px`;
+    child.style.minWidth = '0px';
+  }
 }
 
 function measuredHeader(node: HTMLElement): number {
