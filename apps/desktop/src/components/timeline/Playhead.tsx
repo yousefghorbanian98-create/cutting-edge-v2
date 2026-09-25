@@ -55,7 +55,6 @@ export function Playhead() {
       data-testid="playhead"
       data-time="0"
       className="pointer-events-none absolute top-0 z-10 h-full w-px bg-info"
-      style={{ transform: 'translate3d(0px, 0, 0)' }}
     >
       <span className="sr-only">پلی‌هد</span>
       <button

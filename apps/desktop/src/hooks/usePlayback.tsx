@@ -45,11 +45,24 @@ interface PlaybackValue {
 
 const PlaybackContext = createContext<PlaybackValue | null>(null);
 
-function paint(head: HTMLDivElement | null, seconds: number) {
+function paint(head: HTMLDivElement | null, seconds: number, rate = 0) {
   if (!head) return;
   const px = useZoomStore.getState().pxPerSecond || PX_PER_SECOND;
-  head.style.transform = `translate3d(${seconds * px}px, 0, 0)`;
+  const x = seconds * px;
   head.dataset.time = String(seconds);
+  const motion = head.getAnimations().find((item) => item.id === 'playhead');
+  motion?.cancel();
+  if (rate === 0) {
+    head.style.transform = `translate3d(${x}px, 0, 0)`;
+    return;
+  }
+  // A frozen transform falls behind currentTime between frames. The animation
+  // keeps the sampled position inside one frame without widening the test.
+  const animation = head.animate(
+    [{ transform: `translate3d(${x}px, 0, 0)` }, { transform: `translate3d(${x + px * rate}px, 0, 0)` }],
+    { duration: 1000, fill: 'forwards' }
+  );
+  animation.id = 'playhead';
 }
 
 async function sampleFps(video: HTMLVideoElement): Promise<number> {
@@ -149,10 +162,15 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     const video = videoRef.current;
     if (!video || !playing || rate.current <= 0) return;
     let handle = 0;
+    let shown = 0;
     const onFrame = () => {
       const now = video.currentTime;
-      paint(headRef.current, now);
-      setTimeState(now);
+      paint(headRef.current, now, rate.current);
+      const stamp = performance.now();
+      if (stamp - shown >= 100) {
+        shown = stamp;
+        setTimeState(now);
+      }
       handle = video.requestVideoFrameCallback(onFrame);
     };
     handle = video.requestVideoFrameCallback(onFrame);
@@ -164,10 +182,9 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     let raf = 0;
     let last = performance.now();
     const tick = (now: number) => {
-      if (rate.current < 0) {
-        const video = videoRef.current;
-        if (video) applyTime(video.currentTime + (rate.current * (now - last)) / 1000);
-      }
+      const video = videoRef.current;
+      if (video && rate.current > 0) paint(headRef.current, video.currentTime, rate.current);
+      if (video && rate.current < 0) applyTime(video.currentTime + (rate.current * (now - last)) / 1000);
       last = now;
       raf = window.requestAnimationFrame(tick);
     };

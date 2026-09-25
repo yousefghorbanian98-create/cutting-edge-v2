@@ -6,7 +6,14 @@ import { usePlayback } from '@/hooks/usePlayback';
 import { useZoomStore } from '@/hooks/useZoom';
 import { useSelectionStore } from '@/stores/selectionStore';
 import { useTimelineStore } from '@/stores/timelineStore';
-import { type PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type PointerEvent as ReactPointerEvent,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Marquee } from './Marquee';
 import { PlaybackBar, Playhead, scrubFromRuler } from './Playhead';
 import { Ruler } from './Ruler';
@@ -33,10 +40,13 @@ export function Timeline() {
   const scroller = useRef<HTMLDivElement>(null);
   const sheet = useRef<HTMLDivElement>(null);
   const clipsRef = useRef(sequence.clips);
+  const lockRef = useRef<{ scroll: number; width: number } | null>(null);
+  const [extra, setExtra] = useState(0);
   clipsRef.current = sequence.clips;
   const pending = useRef({ left: 0, width: 800 });
-  const width = contentWidth(sequence.clips, px);
-  const seconds = Math.max(1, width / px);
+  const sequenceWidth = contentWidth(sequence.clips, px);
+  const width = Math.max(sequenceWidth, extra);
+  const seconds = Math.max(1, sequenceWidth / px);
   const startSec = Math.max(0, scrollLeft / px - 1);
   const endSec = (scrollLeft + viewport) / px + 1;
   const shown = useMemo(
@@ -58,15 +68,24 @@ export function Timeline() {
       const cursorX = event.clientX - rect.left;
       const next = zoomBy(node.scrollLeft, cursorX, event.deltaY < 0 ? 1.25 : 0.8);
       const sequenceWidth = contentWidth(clipsRef.current, next.pxPerSecond);
-      if (sheet.current) {
-        sheet.current.style.width = `${sheetWidth(sequenceWidth, node.clientWidth, next.scrollLeft)}px`;
-      }
+      const needed = sheetWidth(sequenceWidth, node.clientWidth, next.scrollLeft);
+      lockRef.current = { scroll: next.scrollLeft, width: needed };
+      setExtra(needed);
+      if (sheet.current) sheet.current.style.width = `${needed}px`;
       node.dataset.px = String(next.pxPerSecond);
       node.scrollLeft = next.scrollLeft;
     };
     node.addEventListener('wheel', onWheel, { passive: false });
     return () => node.removeEventListener('wheel', onWheel);
   }, [zoomBy]);
+
+  useLayoutEffect(() => {
+    const lock = lockRef.current;
+    const node = scroller.current;
+    if (!lock || !node || !sheet.current) return;
+    sheet.current.style.width = `${Math.max(width, lock.width)}px`;
+    node.scrollLeft = lock.scroll;
+  }, [width]);
 
   return (
     <section aria-label="تایم‌لاین" className="mt-4" dir="ltr">
@@ -119,6 +138,8 @@ export function Timeline() {
           const view = node.clientWidth || viewport;
           const next = fitTo(seconds, view);
           const fitted = contentWidth(sequence.clips, next.pxPerSecond);
+          lockRef.current = null;
+          setExtra(0);
           if (sheet.current) sheet.current.style.width = `${fitted}px`;
           node.scrollLeft = next.scrollLeft;
           node.dataset.px = String(next.pxPerSecond);

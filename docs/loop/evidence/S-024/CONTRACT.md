@@ -25,6 +25,7 @@
 - REVIEWها و architecture updateهای اعمال‌شده: S-023 در همین batch و هنوز GREEN نیست. وابستگی زنجیره‌ای رعایت می‌شود: integration پلیر بعد از دامنهٔ زوم و عبور static/unit/typecheck. S-022 سبز نمی‌شود.
 - اصول جدیدی که در همین مرحله اجرا می‌شوند: نگاشت زمان سکانس به منبع یک domain operation است. رسم از همان تابع فریم است، نه یک data-attribute جعلی. capability صدا فقط `available` / `missing` / `unknown` است و `missing` پاس نیست. کیفیت پایین Reheal L2 یک حالت صریح است.
 - Deferred: شورتکات و مودال → S-025. سفر E2E → S-026. export و provenance فایل → S-028. اعتبار SSIM خروجی فایل → S-033 که شروع نمی‌شود. CPU فرآیند اگر در مرورگر قابل خواندن نباشد `unverified:cpu` می‌ماند و پاس شمرده نمی‌شود.
+- Evidence note: CI `36120355492` فاصلهٔ پلی‌هد را `0.0259s` در برابر `< 1/60` گرفت. آستانه شل نمی‌شود. transform ثابت قفل فریم نیست؛ پخش انیمیشن هم‌نرخ می‌کشد و در هر فریم state ریکت را عوض نمی‌کند.
 - Negative boundary: mutation مستقیم sequence ممنوع است. فریم مرجع تست از زمان منبع ساخته می‌شود، نه کپی بوم پلیر. raw FFmpeg command و filter graph دلخواه اینجا اجرا نمی‌شود.
 - Evidence plan: vitest برای نگاشت زمان. Playwright برای SSIM و گپ و متن و صدا بعد از integration. آستانهٔ SSIM `0.9` و گپ `100ms` شل نمی‌شود. CI کامل پیش از تحویل.
 - Status: `REVIEW` تا verdict مستقل. GREEN نمی‌شود.
