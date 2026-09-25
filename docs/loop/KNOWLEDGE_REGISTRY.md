@@ -26,6 +26,9 @@ Do not duplicate a rule with conflicting wording. This registry points to the ca
 | K-006 | anti-slop: purpose, real interaction, responsive/accessibility review, no fake metrics, delivery gate | `STYLE_MATCH_ARCHITECTURE.md`; `KNOWLEDGE_REFRESH_AUDIT.md` | UI/design stages | Adopt selected principles; do not install/vendor |
 | K-007 | Public CI annotations may be accepted for S-022 only when evidence archives fail with EOF | `docs/loop/evidence/S-022/EVIDENCE.md` and `REVIEW.md` | S-022 only | Explicitly resolved exception; not general policy |
 | K-008 | Retrospective audit is required before the next batch after accepted new knowledge | `KNOWLEDGE_REFRESH_AUDIT.md`; `FORWARD_KNOWLEDGE_GATE.md` | S-023 onward | Mandatory process gate |
+| K-009 | `video-editing-skill` patterns: typed edit request, operation graph, source-to-timeline mapping, allow-list, workspace boundary, executor, provenance | `STYLE_MATCH_ARCHITECTURE.md`; `FORWARD_KNOWLEDGE_GATE.md` | S-046, S-048, S-056, S-086 | Adopt principles; do not copy/vendor |
+| K-010 | Hypit-inspired reusable, source-controlled production workflow; license constraints require independent implementation and review | `STYLE_MATCH_ARCHITECTURE.md`; `13_INTEGRATIONS_ADOPTION.md` | S-045, S-046, S-048, S-055 | Reference only; no code/dependency |
+| K-011 | Generic AI Supervisor stack: observability ideas are useful, but the large dependency/Docker/plugin stack is rejected for current runtime | `KNOWLEDGE_REGISTRY.md`; `KNOWLEDGE_REFRESH_AUDIT.md` | S-023 onward; future observability stage only | Adopt selected principles; do not vendor/install |
 
 ## Status vocabulary
 
@@ -34,7 +37,7 @@ adopted       operative project principle
 reference     informs design; not a dependency
 reference-only external observation; no runtime use
 rejected      explicitly not allowed
- deferred     accepted but owned by a later stage/bug
+deferred      accepted but owned by a later stage/bug
 exception     narrow evidence/process exception with explicit scope
 ```
 
