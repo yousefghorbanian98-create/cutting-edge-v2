@@ -1,0 +1,40 @@
+/** View zoom math (S-023). This does not edit the sequence. */
+
+export const BASE_PX = 100;
+export const MIN_PX = 20;
+export const MAX_PX = 400;
+
+export function clampPx(px: number): number {
+  if (!Number.isFinite(px)) return BASE_PX;
+  return Math.min(MAX_PX, Math.max(MIN_PX, px));
+}
+
+/** Keep the time under `cursorX` fixed. Pixel error stays within 1 when unclamped. */
+export function zoomAround(
+  px: number,
+  scrollLeft: number,
+  cursorX: number,
+  factor: number
+): { pxPerSecond: number; scrollLeft: number } {
+  const current = px > 0 ? px : BASE_PX;
+  const time = (scrollLeft + cursorX) / current;
+  const next = clampPx(current * (factor > 0 ? factor : 1));
+  return { pxPerSecond: next, scrollLeft: Math.max(0, time * next - cursorX) };
+}
+
+export function fitPx(seconds: number, viewport: number): number {
+  if (!(seconds > 0) || !(viewport > 0)) return BASE_PX;
+  return clampPx(viewport / seconds);
+}
+
+export function pixelError(
+  beforePx: number,
+  beforeScroll: number,
+  afterPx: number,
+  afterScroll: number,
+  cursorX: number
+): number {
+  const before = (beforeScroll + cursorX) / beforePx;
+  const after = (afterScroll + cursorX) / afterPx;
+  return Math.abs(before - after) * afterPx;
+}

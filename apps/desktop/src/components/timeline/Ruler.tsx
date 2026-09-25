@@ -5,11 +5,13 @@ export function Ruler({
   startSec,
   endSec,
   width,
+  pxPerSecond = PX_PER_SECOND,
   onScrub,
 }: {
   startSec: number;
   endSec: number;
   width: number;
+  pxPerSecond?: number;
   onScrub: (event: ReactPointerEvent<HTMLDivElement>) => void;
 }) {
   const ticks: number[] = [];
@@ -27,7 +29,7 @@ export function Ruler({
         <span
           key={second}
           className="absolute top-1 text-xs text-white/60"
-          style={{ transform: `translate3d(${second * PX_PER_SECOND}px, 0, 0)` }}
+          style={{ transform: `translate3d(${second * pxPerSecond}px, 0, 0)` }}
         >
           {second}s
         </span>

@@ -22,6 +22,46 @@ export function benchSequence(count = 200): Sequence {
   return { ...sequence, clips };
 }
 
+export function sequenceFixture(): Sequence {
+  const sequence = emptySequence('seq-play', 30);
+  return {
+    ...sequence,
+    tracks: [
+      ...sequence.tracks,
+      { id: 'track-t1', kind: 'text', name: 'متن ۱', muted: false, solo: false, locked: false, order: 2 },
+    ],
+    clips: [
+      clip('A', 'clipA', 'track-v1', 0, 3000, 0),
+      clip('B', 'clipB', 'track-v1', 3000, 3000, 5000),
+      clip('title', 'text', 'track-t1', 0, 3000, 0, 'عنوان'),
+      clip('tone', 'tone', 'track-a1', 0, 3000, 0, 'صدا'),
+    ],
+  };
+}
+
+function clip(
+  id: string,
+  mediaId: string,
+  trackId: string,
+  start: number,
+  duration: number,
+  inPoint: number,
+  label = id
+): Clip {
+  return {
+    id,
+    mediaId,
+    trackId,
+    start,
+    duration,
+    inPoint,
+    sourceDuration: 8000,
+    transform: identityTransform(),
+    effects: [],
+    label,
+  };
+}
+
 export function splitFixture(): Sequence {
   const sequence = emptySequence('split', 30);
   return {

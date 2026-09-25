@@ -16,7 +16,7 @@ from typing import Any
 import psutil
 import requests
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
@@ -28,6 +28,9 @@ from ai_engine.core.storage import (
     PayloadTooLargeError,
     Storage,
 )
+from ai_engine.core.ws import progress_message
+from ai_engine.export.compiler import PlanRejected, compile_plan
+from ai_engine.export.runner import ExportCancelled, run_export
 
 # Load ai-engine/.env before anything reads config (S-002: python-dotenv).
 # When run as an installed package the working dir is still ai-engine/, so a
@@ -404,6 +407,86 @@ async def style_compare(reference: UploadFile = File(...), source: UploadFile = 
     ref_path = await asyncio.to_thread(save_upload, reference)  # validate type/size first (S-003 fail-fast)
     src_path = await asyncio.to_thread(save_upload, source)
     return _accept(lambda control: _style_compare_work(ref_path, src_path, control))
+
+
+class ExportBody(BaseModel):
+    model_config = {"extra": "forbid"}
+    w: int
+    h: int
+    fps: int
+    codec: str
+    clips: list[dict[str, Any]] = Field(default_factory=list)
+    output_name: str = "export.mp4"
+    overwrite: bool = False
+    crf: int = 23
+    pace: str = "fast"
+    mix: str = "copy"
+    audio_codec: str = "aac"
+
+
+def _export_work(plan: dict, control: JobControl) -> dict[str, Any]:
+    control.attach_partial(plan["output_name"])
+
+    def _report(fraction: float) -> None:
+        control.report(fraction)
+        jobs.set_meter(control.job_id, fps=float(plan["settings"]["fps"]), stage="encode")
+
+    try:
+        return run_export(plan, Path(storage.base_dir), cancel=control.cancel_event, on_progress=_report)
+    except ExportCancelled as exc:
+        raise Cancelled from exc
+
+
+@app.post("/export", status_code=202, response_model=JobAccepted, operation_id="post_export")
+def post_export(body: ExportBody) -> JobAccepted:
+    """Compile a typed plan and run it off the event loop. Raw commands are rejected."""
+    try:
+        payload = body.model_dump()
+        plan = compile_plan(
+            {
+                "clips": payload["clips"],
+                "settings": {
+                    "width": payload["w"],
+                    "height": payload["h"],
+                    "fps": payload["fps"],
+                    "codec": payload["codec"],
+                    "output_name": payload["output_name"],
+                    "overwrite": payload["overwrite"],
+                    "crf": payload["crf"],
+                    "pace": payload["pace"],
+                    "mix": payload["mix"],
+                    "audio_codec": payload["audio_codec"],
+                },
+            },
+            Path(storage.base_dir),
+        )
+    except (PlanRejected, KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return _accept(lambda control: _export_work(plan, control))
+
+
+@app.websocket("/ws/jobs/{job_id}")
+async def job_progress(websocket: WebSocket, job_id: str) -> None:
+    await websocket.accept()
+    last = -1
+    try:
+        while True:
+            view = jobs.get(job_id)
+            if view is None:
+                await websocket.send_json(progress_message({"percent": 0, "status": "missing", "error": "job missing"}))
+                break
+            jobs.set_meter(job_id, stage=view["status"])
+            message = progress_message(view)
+            if message["percent"] != last or view["status"] in {"done", "error", "cancelled"}:
+                if view["status"] in {"done", "error", "cancelled"}:
+                    message = {**message, "stage": view["status"]}
+                await websocket.send_json(message)
+                last = message["percent"]
+            if view["status"] in {"done", "error", "cancelled"}:
+                break
+            await asyncio.sleep(0.05)
+    except WebSocketDisconnect:
+        return
 
 
 if __name__ == "__main__":

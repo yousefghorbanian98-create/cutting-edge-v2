@@ -2,6 +2,7 @@
 
 import type { Sequence } from '@/domain/timeline';
 import { rollTrim, trimBy } from '@/domain/trim';
+import { useZoomStore } from '@/hooks/useZoom';
 import { useTimelineStore } from '@/stores/timelineStore';
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef } from 'react';
 import { PX_PER_SECOND } from './window';
@@ -30,7 +31,8 @@ export function TrimHandle({ clipId, edge }: { clipId: string; edge: 'in' | 'out
     node.setPointerCapture(event.pointerId);
     const onUp = (next: PointerEvent) => {
       node.removeEventListener('pointerup', onUp);
-      const delta = Math.round(((next.clientX - originX) / PX_PER_SECOND) * 1000);
+      const px = useZoomStore.getState().pxPerSecond || PX_PER_SECOND;
+      const delta = Math.round(((next.clientX - originX) / px) * 1000);
       const signed = edge === 'out' ? delta : -delta;
       const sequence = useTimelineStore.getState().sequence;
       const rolled = next.shiftKey ? rollNeighbor(sequence, clipId, edge, signed) : null;

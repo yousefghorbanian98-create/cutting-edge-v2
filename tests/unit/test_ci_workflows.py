@@ -78,6 +78,15 @@ def test_ubuntu_job_steps():
     assert "playwright install" in runs and "chromium" in runs
     assert "playwright test" in runs
     assert "tests/tracks.spec.ts" in runs
+    for spec in (
+        "tests/zoom.spec.ts",
+        "tests/sequence.spec.ts",
+        "tests/shortcuts.spec.ts",
+        "tests/export-dialog.spec.ts",
+        "tests/export-progress.spec.ts",
+        "e2e/timeline.spec.ts",
+    ):
+        assert spec in runs, spec
     dump = yaml.safe_dump(job)
     assert "actions/upload-artifact" in uses
     for artefact in ("junit", "playwright-report", "home-1440x900.png"):

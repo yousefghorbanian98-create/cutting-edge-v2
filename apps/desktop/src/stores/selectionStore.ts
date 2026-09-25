@@ -5,6 +5,7 @@
 
 import { PX_PER_SECOND, msToSeconds } from '@/components/timeline/window';
 import { type Clip, type Sequence, addClip } from '@/domain/timeline';
+import { useZoomStore } from '@/hooks/useZoom';
 import { useTimelineStore } from '@/stores/timelineStore';
 import { create } from 'zustand';
 
@@ -15,11 +16,11 @@ export interface Rect {
   height: number;
 }
 
-export function clipsInRect(clips: Clip[], rect: Rect): string[] {
+export function clipsInRect(clips: Clip[], rect: Rect, pxPerSecond = PX_PER_SECOND): string[] {
   const left = Math.min(rect.x, rect.x + rect.width);
   const right = Math.max(rect.x, rect.x + rect.width);
-  const start = (left / PX_PER_SECOND) * 1000;
-  const end = (right / PX_PER_SECOND) * 1000;
+  const start = (left / pxPerSecond) * 1000;
+  const end = (right / pxPerSecond) * 1000;
   return clips
     .filter((clip) => clip.start < end && clip.start + clip.duration > start)
     .map((clip) => clip.id);
@@ -75,12 +76,12 @@ export const useSelectionStore = create<SelectionState>()((set, get) => ({
   },
   selectRect: (rect, additive) => {
     const sequence = useTimelineStore.getState().sequence;
-    const hit = clipsInRect(sequence.clips, rect);
+    const hit = clipsInRect(sequence.clips, rect, useZoomStore.getState().pxPerSecond || PX_PER_SECOND);
     const selection = additive ? [...new Set([...sequence.selection, ...hit])] : hit;
     useTimelineStore.getState().setSelection(selection);
   },
 }));
 
 export function clipLeftPx(clip: Clip): number {
-  return msToSeconds(clip.start) * PX_PER_SECOND;
+  return msToSeconds(clip.start) * (useZoomStore.getState().pxPerSecond || PX_PER_SECOND);
 }

@@ -35,9 +35,9 @@ export function timeFromPointer(
   return Math.max(0, (clientX - laneLeft - borderLeft + scrollLeft) / pxPerSecond);
 }
 
-export function contentWidth(clips: WindowClip[]): number {
+export function contentWidth(clips: WindowClip[], pxPerSecond = PX_PER_SECOND): number {
   const end = clips.reduce((max, clip) => Math.max(max, msToSeconds(clip.start + clip.duration)), 1);
-  return Math.ceil(end * PX_PER_SECOND);
+  return Math.ceil(end * pxPerSecond);
 }
 
 export function barsFor(id: string, count = 16): number[] {

@@ -76,6 +76,10 @@ describe('timeline history path', () => {
       resolve(here, '../../components/timeline/TrimHandle.tsx'),
       resolve(here, '../../components/timeline/Shortcuts.tsx'),
       resolve(here, '../../components/timeline/TrackHeader.tsx'),
+      resolve(here, '../../components/timeline/ZoomControls.tsx'),
+      resolve(here, '../../components/preview/SequencePlayer.tsx'),
+      resolve(here, '../../components/export/ExportDialog.tsx'),
+      resolve(here, '../../components/media-bin/MediaBin.tsx'),
       resolve(here, '../selectionStore.ts'),
     ];
     for (const file of files) {

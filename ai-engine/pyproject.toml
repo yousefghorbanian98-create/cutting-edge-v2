@@ -45,4 +45,5 @@ packages = [
     "ai_engine.muscle",
     "ai_engine.reheal",
     "ai_engine.style_match",
+    "ai_engine.export",
 ]

@@ -2,6 +2,7 @@
 
 import { snapTargetsFor, snapTime } from '@/domain/snap';
 import { usePlayback } from '@/hooks/usePlayback';
+import { useZoomStore } from '@/hooks/useZoom';
 import { useTimelineStore } from '@/stores/timelineStore';
 import { type PointerEvent as ReactPointerEvent, useState } from 'react';
 import { PX_PER_SECOND } from './window';
@@ -32,8 +33,9 @@ export function useClipDrag(clipId: string) {
     const onMove = (next: PointerEvent) => {
       const lane = document.querySelector('[data-testid=timeline-scroll]');
       if (!(lane instanceof HTMLElement)) return;
+      const px = useZoomStore.getState().pxPerSecond || PX_PER_SECOND;
       const dx = next.clientX - originX;
-      const raw = Math.max(0, Math.round(originStart + (dx / PX_PER_SECOND) * 1000));
+      const raw = Math.max(0, Math.round(originStart + (dx / px) * 1000));
       const sequence = useTimelineStore.getState().sequence;
       const snapped = snapTime(
         raw,
@@ -43,7 +45,7 @@ export function useClipDrag(clipId: string) {
           Math.round(time * 1000),
           sequence.markers.map((marker) => marker.time)
         ),
-        PX_PER_SECOND,
+        px,
         8,
         next.shiftKey
       );

@@ -1,13 +1,33 @@
 'use client';
 
+import { identityTransform } from '@/domain/timeline';
+import { rememberMedia } from '@/lib/mediaFiles';
 import { formatSeconds, probeVideo } from '@/lib/probe';
 import { readSnapshot, useMediaStore } from '@/stores/mediaStore';
+import { useTimelineStore } from '@/stores/timelineStore';
 import { useEffect, useRef } from 'react';
+
+function placeOnTimeline(mediaId: string, duration: number | null) {
+  const ms = Math.max(500, Math.round((duration ?? 1) * 1000));
+  useTimelineStore.getState().addClip({
+    id: `clip-${mediaId.slice(0, 8)}`,
+    mediaId,
+    trackId: 'track-v1',
+    start: 0,
+    duration: ms,
+    inPoint: 0,
+    sourceDuration: ms,
+    transform: identityTransform(),
+    effects: [],
+    label: mediaId,
+  });
+}
 
 async function importFiles(files: File[]) {
   const { addPending, complete, fail } = useMediaStore.getState();
   for (const file of files) {
     const id = crypto.randomUUID();
+    rememberMedia(id, file);
     addPending(id, file.name);
     try {
       complete(id, await probeVideo(file));
@@ -127,6 +147,15 @@ export function MediaBin() {
             <button type="button" className="mt-2 text-sm text-white/80" onClick={() => remove(item.id)}>
               حذف
             </button>
+            {item.status === 'ready' ? (
+              <button
+                type="button"
+                className="mt-2 ms-2 text-sm text-white/80"
+                onClick={() => placeOnTimeline(item.id, item.duration)}
+              >
+                به تایم‌لاین
+              </button>
+            ) : null}
           </li>
         ))}
       </ul>

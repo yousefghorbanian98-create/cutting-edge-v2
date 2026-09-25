@@ -1,14 +1,20 @@
 'use client';
 
+import { ShortcutsModal } from '@/components/shared/ShortcutsModal';
 import { removeClips, splitAtPlayhead } from '@/domain/split';
 import { usePlayback } from '@/hooks/usePlayback';
-import { shortcutAction } from '@/lib/shortcuts';
+import { type ShortcutAction, shortcutAction } from '@/lib/shortcuts';
 import { useSelectionStore } from '@/stores/selectionStore';
 import { redoTimeline, undoTimeline, useTimelineStore } from '@/stores/timelineStore';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+
+const EMPTY: Record<string, number> = {};
 
 export function Shortcuts() {
   const { time } = usePlayback();
+  const [open, setOpen] = useState(false);
+  const [counts, setCounts] = useState<Record<string, number>>(EMPTY);
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const tag = (event.target as HTMLElement | null)?.tagName;
@@ -16,43 +22,62 @@ export function Shortcuts() {
       const action = shortcutAction(event);
       if (!action) return;
       event.preventDefault();
-      const sequence = useTimelineStore.getState().sequence;
-      if (action === 'copy') {
-        useSelectionStore.getState().copy();
-        return;
-      }
-      if (action === 'paste') {
-        useSelectionStore.getState().paste(Math.round(time * 1000));
-        return;
-      }
-      if (action === 'duplicate') {
-        useSelectionStore.getState().duplicate();
-        return;
-      }
-      if (action === 'undo') {
-        undoTimeline(1);
-        return;
-      }
-      if (action === 'redo') {
-        redoTimeline(1);
-        return;
-      }
-      if (action === 'split') {
-        const head = document.querySelector('[data-testid=playhead]');
-        const fromHead = Number(head instanceof HTMLElement ? head.dataset.time : time);
-        const at = Number.isFinite(fromHead) ? Math.round(fromHead * 1000) : Math.round(time * 1000);
-        const next = splitAtPlayhead(sequence, at, sequence.selection, sequence.selection.length > 0);
-        const added = Math.max(0, next.clips.length - sequence.clips.length);
-        useTimelineStore.getState().commitEdit(next, added);
-        return;
-      }
-      const ids = sequence.selection.length > 0 ? sequence.selection : [];
-      if (ids.length === 0) return;
-      const next = removeClips(sequence, ids, action === 'ripple-delete');
-      useTimelineStore.getState().commitEdit(next);
+      setCounts((current) => ({ ...current, [action]: (current[action] ?? 0) + 1 }));
+      runShortcut(action, time, () => setOpen(true));
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [time]);
-  return null;
+
+  return (
+    <>
+      <div data-testid="shortcut-log" data-counts={JSON.stringify(counts)} hidden />
+      <ShortcutsModal open={open} onClose={() => setOpen(false)} />
+    </>
+  );
+}
+
+function runShortcut(action: ShortcutAction, time: number, openSheet: () => void) {
+  if (action === 'cheat-sheet') {
+    openSheet();
+    return;
+  }
+  if (action === 'palette') {
+    window.dispatchEvent(new CustomEvent('ce-palette'));
+    return;
+  }
+  const sequence = useTimelineStore.getState().sequence;
+  if (action === 'copy') {
+    useSelectionStore.getState().copy();
+    return;
+  }
+  if (action === 'paste') {
+    useSelectionStore.getState().paste(Math.round(time * 1000));
+    return;
+  }
+  if (action === 'duplicate') {
+    useSelectionStore.getState().duplicate();
+    return;
+  }
+  if (action === 'undo') {
+    undoTimeline(1);
+    return;
+  }
+  if (action === 'redo') {
+    redoTimeline(1);
+    return;
+  }
+  if (action === 'split') {
+    const head = document.querySelector('[data-testid=playhead]');
+    const fromHead = Number(head instanceof HTMLElement ? head.dataset.time : time);
+    const at = Number.isFinite(fromHead) ? Math.round(fromHead * 1000) : Math.round(time * 1000);
+    const next = splitAtPlayhead(sequence, at, sequence.selection, sequence.selection.length > 0);
+    const added = Math.max(0, next.clips.length - sequence.clips.length);
+    useTimelineStore.getState().commitEdit(next, added);
+    return;
+  }
+  const ids = sequence.selection.length > 0 ? sequence.selection : [];
+  if (ids.length === 0) return;
+  const next = removeClips(sequence, ids, action === 'ripple-delete');
+  useTimelineStore.getState().commitEdit(next);
 }

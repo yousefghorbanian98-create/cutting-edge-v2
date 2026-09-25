@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { CancelJobData, CancelJobErrors, CancelJobResponses, ChatAiChatPostData, ChatAiChatPostErrors, ChatAiChatPostResponses, DownloadEnhancedMuscleDownloadFilenameGetData, DownloadEnhancedMuscleDownloadFilenameGetErrors, DownloadEnhancedMuscleDownloadFilenameGetResponses, GetJobData, GetJobErrors, GetJobResponses, HealthHealthGetData, HealthHealthGetResponses, PostBeatSyncData, PostBeatSyncErrors, PostBeatSyncResponses, PostMoodDnaData, PostMoodDnaErrors, PostMoodDnaResponses, PostMuscleEnhanceData, PostMuscleEnhanceErrors, PostMuscleEnhanceResponses, PostStyleCompareData, PostStyleCompareErrors, PostStyleCompareResponses, PostViralCutData, PostViralCutErrors, PostViralCutResponses, VoiceCommandEditorVoiceCommandPostData, VoiceCommandEditorVoiceCommandPostErrors, VoiceCommandEditorVoiceCommandPostResponses } from './types.gen';
+import type { CancelJobData, CancelJobErrors, CancelJobResponses, ChatAiChatPostData, ChatAiChatPostErrors, ChatAiChatPostResponses, DownloadEnhancedMuscleDownloadFilenameGetData, DownloadEnhancedMuscleDownloadFilenameGetErrors, DownloadEnhancedMuscleDownloadFilenameGetResponses, GetJobData, GetJobErrors, GetJobResponses, HealthHealthGetData, HealthHealthGetResponses, PostBeatSyncData, PostBeatSyncErrors, PostBeatSyncResponses, PostExportData, PostExportErrors, PostExportResponses, PostMoodDnaData, PostMoodDnaErrors, PostMoodDnaResponses, PostMuscleEnhanceData, PostMuscleEnhanceErrors, PostMuscleEnhanceResponses, PostStyleCompareData, PostStyleCompareErrors, PostStyleCompareResponses, PostViralCutData, PostViralCutErrors, PostViralCutResponses, VoiceCommandEditorVoiceCommandPostData, VoiceCommandEditorVoiceCommandPostErrors, VoiceCommandEditorVoiceCommandPostResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -17,6 +17,25 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
      */
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
+
+/**
+ * Get Job
+ *
+ * Progress, percent, eta, and error for one job. 404 if the id is unknown.
+ */
+export const getJob = <ThrowOnError extends boolean = false>(options: Options<GetJobData, ThrowOnError>): RequestResult<GetJobResponses, GetJobErrors, ThrowOnError> => (options.client ?? client).get<GetJobResponses, GetJobErrors, ThrowOnError>({ url: '/jobs/{job_id}', ...options });
+
+/**
+ * Cancel Job
+ *
+ * Ask a running job to stop. The worker drops the partial file on the next frame.
+ */
+export const cancelJob = <ThrowOnError extends boolean = false>(options: Options<CancelJobData, ThrowOnError>): RequestResult<CancelJobResponses, CancelJobErrors, ThrowOnError> => (options.client ?? client).post<CancelJobResponses, CancelJobErrors, ThrowOnError>({ url: '/jobs/{job_id}/cancel', ...options });
+
+/**
+ * Health
+ */
+export const healthHealthGet = <ThrowOnError extends boolean = false>(options?: Options<HealthHealthGetData, ThrowOnError>): RequestResult<HealthHealthGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<HealthHealthGetResponses, unknown, ThrowOnError>({ url: '/health', ...options });
 
 /**
  * Chat
@@ -57,37 +76,6 @@ export const postViralCut = <ThrowOnError extends boolean = false>(options: Opti
 });
 
 /**
- * Voice Command
- */
-export const voiceCommandEditorVoiceCommandPost = <ThrowOnError extends boolean = false>(options: Options<VoiceCommandEditorVoiceCommandPostData, ThrowOnError>): RequestResult<VoiceCommandEditorVoiceCommandPostResponses, VoiceCommandEditorVoiceCommandPostErrors, ThrowOnError> => (options.client ?? client).post<VoiceCommandEditorVoiceCommandPostResponses, VoiceCommandEditorVoiceCommandPostErrors, ThrowOnError>({
-    url: '/editor/voice-command',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Health
- */
-export const healthHealthGet = <ThrowOnError extends boolean = false>(options?: Options<HealthHealthGetData, ThrowOnError>): RequestResult<HealthHealthGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<HealthHealthGetResponses, unknown, ThrowOnError>({ url: '/health', ...options });
-
-/**
- * Get Job
- *
- * Progress, percent, eta, and error for one job. 404 if the id is unknown.
- */
-export const getJob = <ThrowOnError extends boolean = false>(options: Options<GetJobData, ThrowOnError>): RequestResult<GetJobResponses, GetJobErrors, ThrowOnError> => (options.client ?? client).get<GetJobResponses, GetJobErrors, ThrowOnError>({ url: '/jobs/{job_id}', ...options });
-
-/**
- * Cancel Job
- *
- * Ask a running job to stop. The worker drops the partial file on the next frame.
- */
-export const cancelJob = <ThrowOnError extends boolean = false>(options: Options<CancelJobData, ThrowOnError>): RequestResult<CancelJobResponses, CancelJobErrors, ThrowOnError> => (options.client ?? client).post<CancelJobResponses, CancelJobErrors, ThrowOnError>({ url: '/jobs/{job_id}/cancel', ...options });
-
-/**
  * Mood Dna
  */
 export const postMoodDna = <ThrowOnError extends boolean = false>(options: Options<PostMoodDnaData, ThrowOnError>): RequestResult<PostMoodDnaResponses, PostMoodDnaErrors, ThrowOnError> => (options.client ?? client).post<PostMoodDnaResponses, PostMoodDnaErrors, ThrowOnError>({
@@ -99,11 +87,6 @@ export const postMoodDna = <ThrowOnError extends boolean = false>(options: Optio
         ...options.headers
     }
 });
-
-/**
- * Download Enhanced
- */
-export const downloadEnhancedMuscleDownloadFilenameGet = <ThrowOnError extends boolean = false>(options: Options<DownloadEnhancedMuscleDownloadFilenameGetData, ThrowOnError>): RequestResult<DownloadEnhancedMuscleDownloadFilenameGetResponses, DownloadEnhancedMuscleDownloadFilenameGetErrors, ThrowOnError> => (options.client ?? client).get<DownloadEnhancedMuscleDownloadFilenameGetResponses, DownloadEnhancedMuscleDownloadFilenameGetErrors, ThrowOnError>({ url: '/muscle/download/{filename}', ...options });
 
 /**
  * Muscle Enhance
@@ -119,6 +102,23 @@ export const postMuscleEnhance = <ThrowOnError extends boolean = false>(options:
 });
 
 /**
+ * Download Enhanced
+ */
+export const downloadEnhancedMuscleDownloadFilenameGet = <ThrowOnError extends boolean = false>(options: Options<DownloadEnhancedMuscleDownloadFilenameGetData, ThrowOnError>): RequestResult<DownloadEnhancedMuscleDownloadFilenameGetResponses, DownloadEnhancedMuscleDownloadFilenameGetErrors, ThrowOnError> => (options.client ?? client).get<DownloadEnhancedMuscleDownloadFilenameGetResponses, DownloadEnhancedMuscleDownloadFilenameGetErrors, ThrowOnError>({ url: '/muscle/download/{filename}', ...options });
+
+/**
+ * Voice Command
+ */
+export const voiceCommandEditorVoiceCommandPost = <ThrowOnError extends boolean = false>(options: Options<VoiceCommandEditorVoiceCommandPostData, ThrowOnError>): RequestResult<VoiceCommandEditorVoiceCommandPostResponses, VoiceCommandEditorVoiceCommandPostErrors, ThrowOnError> => (options.client ?? client).post<VoiceCommandEditorVoiceCommandPostResponses, VoiceCommandEditorVoiceCommandPostErrors, ThrowOnError>({
+    url: '/editor/voice-command',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Style Compare
  */
 export const postStyleCompare = <ThrowOnError extends boolean = false>(options: Options<PostStyleCompareData, ThrowOnError>): RequestResult<PostStyleCompareResponses, PostStyleCompareErrors, ThrowOnError> => (options.client ?? client).post<PostStyleCompareResponses, PostStyleCompareErrors, ThrowOnError>({
@@ -127,6 +127,20 @@ export const postStyleCompare = <ThrowOnError extends boolean = false>(options: 
     ...options,
     headers: {
         'Content-Type': null,
+        ...options.headers
+    }
+});
+
+/**
+ * Post Export
+ *
+ * Compile a typed plan and run it off the event loop. Raw commands are rejected.
+ */
+export const postExport = <ThrowOnError extends boolean = false>(options: Options<PostExportData, ThrowOnError>): RequestResult<PostExportResponses, PostExportErrors, ThrowOnError> => (options.client ?? client).post<PostExportResponses, PostExportErrors, ThrowOnError>({
+    url: '/export',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
         ...options.headers
     }
 });

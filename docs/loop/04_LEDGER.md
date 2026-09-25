@@ -38,16 +38,16 @@
 | S-020 | Selection (click/shift/marquee), copy/paste/duplicate | REVIEW | 1 | local-linux | docs/loop/evidence/S-020/CONTRACT.md; EVIDENCE.md; apps/desktop/src/stores/selectionStore.ts; apps/desktop/src/components/timeline/Marquee.tsx; apps/desktop/tests/selection.spec.ts | Selection math green. Marquee gesture unverified:browser. Not GREEN.  Independent review imported from de352774. Status stays REVIEW. Not GREEN. |
 | S-021 | Undo/Redo UI (Ctrl+Z / Ctrl+Shift+Z) + history panel | REVIEW | 1 | local-linux | docs/loop/evidence/S-021/CONTRACT.md; EVIDENCE.md; apps/desktop/src/components/shared/HistoryPanel.tsx; apps/desktop/tests/history.spec.ts | Undo/redo hash green. Keyboard panel unverified:browser. Not GREEN.  Independent review imported from de352774. Status stays REVIEW. Not GREEN. |
 | S-022 | Multi-track: add/remove tracks, mute/solo/lock, text track | REVIEW | 1 | ci-ubuntu; ci-windows | docs/loop/evidence/S-022/CONTRACT.md; EVIDENCE.md; REVIEW.md (approved for next ledger decision @ 165c6d8, imported 0691df5) | Not GREEN. Overseer approved the reconciled evidence at fe68381 for the builder ledger decision. CI 36099355863: Ubuntu Playwright 0 failed / 26 including tests/tracks.spec.ts, unit 0 failed / 83, Windows pytest 0 failed / 112, cargo fmt/clippy/test, NSIS, installer smoke 17/17, installer upload. Public annotations accepted for this stage only after artifact EOF. Dependency S-021 is REVIEW, so verify_ledger forbids GREEN. S-006 through S-021 stay REVIEW. S-023 not started. |
-| S-023 | Timeline zoom (Ctrl+wheel, slider, fit) + horizontal scroll + minimap | TODO | 0 |  |  |  |
-| S-024 | Sequence preview player: multi-clip compositing playback | TODO | 0 |  |  |  |
-| S-025 | Keyboard shortcuts registry + in-app cheat sheet (?) | TODO | 0 |  |  |  |
-| S-026 | E2E journey v0.3: import → arrange → trim → split → undo → preview | TODO | 0 |  |  |  |
-| S-027 | MILESTONE v0.3.0: regression, tag, CI installer, pre-release, user smoke test | TODO | 0 |  |  |  |
-| S-028 | FFmpeg export engine: timeline JSON → filter_complex, progress, cancel, NVENC detect | TODO | 0 |  |  |  |
-| S-029 | WebSocket progress channel /ws/jobs/{id} (BUG 6) + frontend hook | TODO | 0 |  |  |  |
-| S-030 | Export dialog: resolution/fps/codec/bitrate/presets/destination | TODO | 0 |  |  |  |
-| S-031 | Export progress UI, cancel, open output folder, export history | TODO | 0 |  |  |  |
-| S-032 | Audio mixdown: track gains, fades, ducking, music bed | TODO | 0 |  |  |  |
+| S-023 | Timeline zoom (Ctrl+wheel, slider, fit) + horizontal scroll + minimap | REVIEW | 1 | local-linux | docs/loop/evidence/S-023/CONTRACT.md | Not GREEN. Playwright Ctrl+wheel and fit are not a local pass. No REVIEW.md. |
+| S-024 | Sequence preview player: multi-clip compositing playback | REVIEW | 1 | local-linux | docs/loop/evidence/S-024/CONTRACT.md | Not GREEN. SSIM and CPU budget are not measured. No REVIEW.md. |
+| S-025 | Keyboard shortcuts registry + in-app cheat sheet (?) | REVIEW | 1 | local-linux | docs/loop/evidence/S-025/CONTRACT.md | Not GREEN. RTL shortcut spec is not a local Playwright pass. No REVIEW.md. |
+| S-026 | E2E journey v0.3: import → arrange → trim → split → undo → preview | REVIEW | 1 | local-linux | docs/loop/evidence/S-026/CONTRACT.md | Not GREEN. Journey spec is in the Ubuntu Playwright command and has not run here. No REVIEW.md. |
+| S-027 | MILESTONE v0.3.0: regression, tag, CI installer, pre-release, user smoke test | REVIEW | 1 |  | docs/loop/evidence/S-027/CONTRACT.md | Not GREEN. No tag, no pre-release, user-gpu unverified. Dry-run is not a GPU pass. No REVIEW.md. |
+| S-028 | FFmpeg export engine: timeline JSON → filter_complex, progress, cancel, NVENC detect | REVIEW | 1 | local-linux | docs/loop/evidence/S-028/CONTRACT.md | Not GREEN. Local duration, cancel, overwrite, and missing capability passed. Click onset needs librosa on CI. No REVIEW.md. |
+| S-029 | WebSocket progress channel /ws/jobs/{id} (BUG 6) + frontend hook | REVIEW | 1 | local-linux | docs/loop/evidence/S-029/CONTRACT.md | Not GREEN. Local uvicorn socket saw 10 increasing percents and a closed-socket poll. CI not yet a pass. No REVIEW.md. |
+| S-030 | Export dialog: resolution/fps/codec/bitrate/presets/destination | REVIEW | 1 | local-linux | docs/loop/evidence/S-030/CONTRACT.md | Not GREEN. Reels body is typed. Dialog spec has not run in Playwright. No REVIEW.md. |
+| S-031 | Export progress UI, cancel, open output folder, export history | REVIEW | 1 | local-linux | docs/loop/evidence/S-031/CONTRACT.md | Not GREEN. Progress UI spec has not run in Playwright. No REVIEW.md. |
+| S-032 | Audio mixdown: track gains, fades, ducking, music bed | REVIEW | 1 | local-linux | docs/loop/evidence/S-032/CONTRACT.md | Not GREEN. Local ebur128 and ducking passed on imageio ffmpeg. CI not yet a pass. No REVIEW.md. |
 | S-033 | Export quality validation suite (ffprobe + SSIM + browser playback) | TODO | 0 |  |  |  |
 | S-034 | MILESTONE v0.4.0 | TODO | 0 |  |  |  |
 | S-035 | Muscle Enhancer: 478-pt Face Mesh protection with feathering + temporal smoothing (BUG 3) | TODO | 0 |  |  |  |

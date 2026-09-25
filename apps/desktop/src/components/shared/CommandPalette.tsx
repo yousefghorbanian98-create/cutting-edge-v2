@@ -1,14 +1,15 @@
 'use client';
+import { shortcutAction } from '@/lib/shortcuts';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Brain, Dumbbell, Mic, Palette, Scissors, Search, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-const COMMANDS = [
+export const COMMANDS = [
   { id: 'cut', label: 'برش هوشمند ویدیو', icon: Scissors, category: 'Editor', shortcut: 'Ctrl+X' },
-  { id: 'beat-sync', label: 'Beat Sync خودکار', icon: Zap, category: 'Editor', shortcut: 'Ctrl+B' },
+  { id: 'beat-sync', label: 'Beat Sync خودکار', icon: Zap, category: 'Editor', shortcut: 'از پالت' },
   { id: 'voice-edit', label: 'فرمان صوتی', icon: Mic, category: 'Editor', shortcut: 'Ctrl+M' },
   { id: 'style-match', label: 'مچ کردن استایل', icon: Palette, category: 'Style', shortcut: 'Ctrl+Shift+S' },
-  { id: 'mood-dna', label: 'استخراج Mood DNA', icon: Brain, category: 'Style', shortcut: 'Ctrl+D' },
+  { id: 'mood-dna', label: 'استخراج Mood DNA', icon: Brain, category: 'Style', shortcut: 'از پالت' },
   {
     id: 'muscle-enhance',
     label: 'شارپ و تعریف عضلات',
@@ -24,7 +25,7 @@ export function CommandPalette() {
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      if (shortcutAction(e) === 'palette') {
         e.preventDefault();
         setOpen((v) => !v);
       }

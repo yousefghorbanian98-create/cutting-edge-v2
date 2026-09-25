@@ -2,16 +2,18 @@
 
 import type { TrackKind } from '@/domain/timeline';
 import { usePlayback } from '@/hooks/usePlayback';
+import { useZoomStore } from '@/hooks/useZoom';
 import { useSelectionStore } from '@/stores/selectionStore';
 import { useTimelineStore } from '@/stores/timelineStore';
-import { type PointerEvent as ReactPointerEvent, useMemo, useRef, useState } from 'react';
+import { type PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Marquee } from './Marquee';
 import { PlaybackBar, Playhead, scrubFromRuler } from './Playhead';
 import { Ruler } from './Ruler';
 import { Track } from './Track';
 import { TrackAudioMeter } from './TrackAudioMeter';
-import { benchSequence, snapFixture, splitFixture } from './bench';
-import { PX_PER_SECOND, contentWidth, visibleClips } from './window';
+import { Minimap, ZoomControls } from './ZoomControls';
+import { benchSequence, sequenceFixture, snapFixture, splitFixture } from './bench';
+import { contentWidth, visibleClips } from './window';
 
 export function Timeline() {
   const sequence = useTimelineStore((state) => state.sequence);
@@ -21,18 +23,41 @@ export function Timeline() {
   const [marquee, setMarquee] = useState<{ x: number; y: number; width: number; height: number } | null>(
     null
   );
+  const px = useZoomStore((state) => state.pxPerSecond);
+  const zoomBy = useZoomStore((state) => state.zoomBy);
+  const fitTo = useZoomStore((state) => state.fitTo);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [viewport, setViewport] = useState(800);
   const frame = useRef(0);
+  const scroller = useRef<HTMLDivElement>(null);
   const pending = useRef({ left: 0, width: 800 });
-  const width = contentWidth(sequence.clips);
-  const startSec = Math.max(0, scrollLeft / PX_PER_SECOND - 1);
-  const endSec = (scrollLeft + viewport) / PX_PER_SECOND + 1;
+  const width = contentWidth(sequence.clips, px);
+  const seconds = Math.max(1, width / px);
+  const startSec = Math.max(0, scrollLeft / px - 1);
+  const endSec = (scrollLeft + viewport) / px + 1;
   const shown = useMemo(
     () => visibleClips(sequence.clips, startSec, endSec),
     [sequence.clips, startSec, endSec]
   );
   const shownIds = new Set(shown.map((clip) => clip.id));
+
+  useEffect(() => {
+    const node = scroller.current;
+    if (!node) return undefined;
+    const onWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey) {
+        node.scrollLeft += event.deltaY;
+        return;
+      }
+      event.preventDefault();
+      const rect = node.getBoundingClientRect();
+      const cursorX = event.clientX - rect.left;
+      const next = zoomBy(node.scrollLeft, cursorX, event.deltaY < 0 ? 1.25 : 0.8);
+      node.scrollLeft = next.scrollLeft;
+    };
+    node.addEventListener('wheel', onWheel, { passive: false });
+    return () => node.removeEventListener('wheel', onWheel);
+  }, [zoomBy]);
 
   return (
     <section aria-label="تایم‌لاین" className="mt-4" dir="ltr">
@@ -62,13 +87,43 @@ export function Timeline() {
         <TrackInsert kind="video" label="ترک ویدیو" />
         <TrackInsert kind="audio" label="ترک صدا" />
         <TrackInsert kind="text" label="ترک متن" />
+        <button
+          type="button"
+          className="rounded-md border border-surface-border px-2 py-1 text-sm"
+          onClick={() => reset(sequenceFixture())}
+        >
+          نمونه سکانس
+        </button>
       </div>
+      <ZoomControls
+        seconds={seconds}
+        viewport={viewport}
+        onZoom={(factor) => {
+          const node = scroller.current;
+          if (!node) return;
+          const next = zoomBy(node.scrollLeft, 400, factor);
+          node.scrollLeft = next.scrollLeft;
+        }}
+        onFit={() => {
+          const node = scroller.current;
+          if (!node) return;
+          const next = fitTo(seconds, node.clientWidth || viewport);
+          node.scrollLeft = next.scrollLeft;
+          node.dataset.fit = '1';
+        }}
+      />
+      <Minimap content={width} viewport={viewport} scrollLeft={scrollLeft} />
       <PlaybackBar />
       <TrackAudioMeter />
       <div
+        ref={scroller}
         data-testid="timeline-scroll"
         data-total={sequence.clips.length}
         data-rendered={shown.length}
+        data-px={px}
+        data-scroll={scrollLeft}
+        data-total-width={width}
+        data-fit={width <= viewport ? '1' : '0'}
         className="relative overflow-x-auto rounded-md border border-surface-border bg-surface-raised"
         onPointerDown={(event) => startMarquee(event, selectRect, setMarquee)}
         onScroll={(event) => {
@@ -88,6 +143,7 @@ export function Timeline() {
           startSec={startSec}
           endSec={endSec}
           width={width}
+          pxPerSecond={px}
           onScrub={(event) => scrubFromRuler(event, setTime)}
         />
         {sequence.tracks
@@ -98,6 +154,7 @@ export function Timeline() {
               key={track.id}
               track={track}
               width={width}
+              pxPerSecond={px}
               clips={sequence.clips.filter((clip) => clip.trackId === track.id && shownIds.has(clip.id))}
             />
           ))}

@@ -52,6 +52,8 @@ class Job:
     kind: str = "cpu"
     device: str = "cpu"
     gpu: str = "unverified"
+    fps: float | None = None
+    stage: str = "queued"
     created_at: float = field(default_factory=time.monotonic)
     started_at: float | None = None
     cancel_event: threading.Event = field(default_factory=threading.Event)
@@ -68,6 +70,14 @@ class JobControl:
     @property
     def cancelled(self) -> bool:
         return self._job.cancel_event.is_set()
+
+    @property
+    def job_id(self) -> str:
+        return self._job.id
+
+    @property
+    def cancel_event(self) -> threading.Event:
+        return self._job.cancel_event
 
     def raise_if_cancelled(self) -> None:
         if self.cancelled:
@@ -147,6 +157,14 @@ class JobManager:
             job.cancel_event.set()
             return self._view(job)
 
+    def set_meter(self, job_id: str, *, fps: float | None = None, stage: str | None = None) -> None:
+        with self._lock:
+            job = self._jobs[job_id]
+            if fps is not None:
+                job.fps = fps
+            if stage is not None:
+                job.stage = stage
+
     def set_progress(self, job_id: str, progress: float) -> None:
         bounded = max(0.0, min(1.0, float(progress)))
         with self._lock:
@@ -220,4 +238,6 @@ class JobManager:
             "kind": job.kind,
             "device": job.device,
             "gpu": job.gpu,
+            "fps": job.fps,
+            "stage": job.stage or job.status,
         }

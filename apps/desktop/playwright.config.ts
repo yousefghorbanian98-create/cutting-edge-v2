@@ -12,7 +12,8 @@ import { defineConfig, devices } from '@playwright/test';
  * uploaded as CI artifacts by S-009.
  */
 export default defineConfig({
-  testDir: './tests',
+  testDir: '.',
+  testMatch: ['tests/**/*.spec.ts', 'e2e/**/*.spec.ts'],
   fullyParallel: false,
   retries: 0,
   timeout: 60_000,

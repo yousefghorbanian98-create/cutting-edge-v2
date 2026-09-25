@@ -2,6 +2,7 @@
 
 import { PX_PER_SECOND } from '@/components/timeline/window';
 import { fpsFromMp4 } from '@/hooks/mp4Fps';
+import { useZoomStore } from '@/hooks/useZoom';
 import { pauseTrackAudio, resumeTrackAudio } from '@/lib/trackAudio';
 import { useTimelineStore } from '@/stores/timelineStore';
 import {
@@ -46,7 +47,8 @@ const PlaybackContext = createContext<PlaybackValue | null>(null);
 
 function paint(head: HTMLDivElement | null, seconds: number) {
   if (!head) return;
-  head.style.transform = `translate3d(${seconds * PX_PER_SECOND}px, 0, 0)`;
+  const px = useZoomStore.getState().pxPerSecond || PX_PER_SECOND;
+  head.style.transform = `translate3d(${seconds * px}px, 0, 0)`;
   head.dataset.time = String(seconds);
 }
 

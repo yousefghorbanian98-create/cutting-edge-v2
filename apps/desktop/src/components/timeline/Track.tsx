@@ -4,7 +4,17 @@ import { useTimelineStore } from '@/stores/timelineStore';
 import { ClipView } from './ClipView';
 import { TrackHeader } from './TrackHeader';
 
-export function Track({ track, clips, width }: { track: TrackModel; clips: Clip[]; width: number }) {
+export function Track({
+  track,
+  clips,
+  width,
+  pxPerSecond,
+}: {
+  track: TrackModel;
+  clips: Clip[];
+  width: number;
+  pxPerSecond: number;
+}) {
   const active = useTimelineStore((state) => trackIsActive(state.sequence, track.id));
   return (
     <div
@@ -21,7 +31,7 @@ export function Track({ track, clips, width }: { track: TrackModel; clips: Clip[
       <TrackHeader track={track} />
       <div data-testid="timeline-lane" className="relative h-14" style={{ width }}>
         {clips.map((clip) => (
-          <ClipView key={clip.id} clip={clip} />
+          <ClipView key={clip.id} clip={clip} pxPerSecond={pxPerSecond} />
         ))}
       </div>
     </div>
