@@ -37,7 +37,6 @@ export function Timeline() {
   const fitTo = useZoomStore((state) => state.fitTo);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [viewport, setViewport] = useState(800);
-  const frame = useRef(0);
   const scroller = useRef<HTMLDivElement>(null);
   const sheet = useRef<HTMLDivElement>(null);
   const clipsRef = useRef(sequence.clips);
@@ -45,6 +44,8 @@ export function Timeline() {
   const fitLock = useRef<{ sheet: number; lane: number; header: number } | null>(null);
   const [fitEpoch, setFitEpoch] = useState(0);
   const [fittedView, setFittedView] = useState(false);
+  const [fittedBox, setFittedBox] = useState<{ sheet: number; lane: number; header: number } | null>(null);
+  const settle = useRef(0);
   const [extra, setExtra] = useState(0);
   const [headerPx, setHeaderPx] = useState(0);
   clipsRef.current = sequence.clips;
@@ -85,6 +86,7 @@ export function Timeline() {
       const nextSequence = contentWidth(clipsRef.current, next.pxPerSecond);
       const needed = sheetWidth(nextSequence, node.clientWidth, next.scrollLeft);
       fitLock.current = null;
+      setFittedBox(null);
       setFittedView(false);
       lockRef.current = { scroll: next.scrollLeft, width: needed };
       if (sheet.current) {
@@ -173,7 +175,9 @@ export function Timeline() {
           const fitted = contentWidth(sequence.clips, next.pxPerSecond);
           const sheetFit = Math.min(view, fitted + header);
           lockRef.current = null;
-          fitLock.current = { sheet: sheetFit, lane: Math.min(fitted, view - header), header };
+          const box = { sheet: sheetFit, lane: Math.min(fitted, view - header), header };
+          fitLock.current = box;
+          setFittedBox(box);
           setExtra(0);
           setHeaderPx(header);
           setViewport(view);
@@ -200,23 +204,22 @@ export function Timeline() {
         className="relative overflow-x-auto rounded-md border border-surface-border bg-surface-raised"
         onPointerDown={(event) => startMarquee(event, selectRect, setMarquee)}
         onScroll={(event) => {
-          // Do not read clientWidth here. That forced layout inside the scroll
-          // frame and pushed the 200-clip trace to 0.06 against < 0.05.
+          // Do not read layout or render React in this frame. The 200-clip trace
+          // received 0.06 against < 0.05 when each scroll committed a render.
           pending.current.left = event.currentTarget.scrollLeft;
-          if (frame.current) return;
-          frame.current = window.requestAnimationFrame(() => {
-            frame.current = 0;
+          window.clearTimeout(settle.current);
+          settle.current = window.setTimeout(() => {
             startTransition(() => setScrollLeft(pending.current.left));
-          });
+          }, 80);
         }}
       >
-        <div ref={sheet} className="relative" style={{ width: sheetPixels }}>
+        <div ref={sheet} className="relative" style={{ width: fittedBox ? fittedBox.sheet : sheetPixels }}>
           <Playhead />
           <Marquee rect={marquee} />
           <Ruler
             startSec={startSec}
             endSec={endSec}
-            width={sequenceWidth}
+            width={fittedBox ? fittedBox.lane : sequenceWidth}
             pxPerSecond={px}
             onScrub={(event) => scrubFromRuler(event, setTime)}
           />
@@ -227,8 +230,9 @@ export function Timeline() {
               <Track
                 key={track.id}
                 track={track}
-                width={sequenceWidth}
+                width={fittedBox ? fittedBox.lane : sequenceWidth}
                 pxPerSecond={px}
+                fit={fittedBox}
                 clips={sequence.clips.filter((clip) => clip.trackId === track.id && shownIds.has(clip.id))}
               />
             ))}

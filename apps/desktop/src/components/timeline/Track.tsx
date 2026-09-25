@@ -9,16 +9,23 @@ export function Track({
   clips,
   width,
   pxPerSecond,
+  fit,
 }: {
   track: TrackModel;
   clips: Clip[];
   width: number;
   pxPerSecond: number;
+  fit?: { sheet: number; lane: number; header: number } | null;
 }) {
   const active = useTimelineStore((state) => trackIsActive(state.sequence, track.id));
   return (
     <div
       className="grid grid-cols-[11rem_minmax(0,1fr)] border-b border-surface-border"
+      style={
+        fit
+          ? { width: fit.sheet, maxWidth: fit.sheet, gridTemplateColumns: `${fit.header}px minmax(0, 1fr)` }
+          : undefined
+      }
       data-testid="timeline-track"
       data-track-id={track.id}
       data-kind={track.kind}
