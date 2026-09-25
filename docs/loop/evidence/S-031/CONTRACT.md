@@ -20,7 +20,7 @@
 
 ## Forward-knowledge compliance
 
-- Registry IDs: `K-001` لغو را از raw command جدا می‌کند. `K-002` فایل لغوشده را خروجی موفق نمی‌کند و `BUG-18` را باز نگه می‌دارد. `K-004` setState روی sequence را رد می‌کند. `K-006` toast بدون وضعیت واقعی را رد می‌کند. `K-007` اعمال نمی‌شود. `K-008` مجوز ادامه نیست. `K-011` رد می‌شود.
+- Registry IDs: `K-001` لغو را از raw command جدا می‌کند. `K-002` فایل لغوشده را خروجی موفق نمی‌کند و `BUG-18` را باز نگه می‌دارد. `K-004` setState روی sequence را رد می‌کند. `K-006` toast بدون وضعیت واقعی را رد می‌کند. `K-007` اعمال نمی‌شود. `K-008` مجوز ادامه نیست. `K-011` رد می‌شود. `K-012` و `K-013` cleanup لغو را اینجا برای همیشه نمی‌بندند. `K-014` گیت دات‌نت اضافه نمی‌کند.
 - Open gaps: `unverified:tauri-opener` پاس وب نیست. `user-gpu` باز است.
 - Contract و dependencyهای خوانده‌شده: این CONTRACT؛ CONTRACT مرحلهٔ `S-030`؛ کارت S-031؛ گیت و معماری و ایندکس و `BUG-18`.
 - REVIEWها و architecture updateهای اعمال‌شده: لغو از route موجود `/jobs/{id}/cancel` می‌گذرد. UI sequence را با setState عوض نمی‌کند. S-030 هنوز GREEN نیست.

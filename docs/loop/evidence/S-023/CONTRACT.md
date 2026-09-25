@@ -23,7 +23,7 @@
 
 ## Forward-knowledge compliance
 
-- Registry IDs: `K-004` اینجا اعمال می‌شود، چون زوم view state است و sequence را mutate نمی‌کند. `K-005` فقط مرجع دیداری است و اسکرین‌شات پذیرش نیست. `K-006` یعنی تعامل واقعی و شل نکردن آستانه. `K-007` خارج از S-022 اعمال نمی‌شود. `K-008` فقط ممیزی فرآیند است و مجوز ادامهٔ implementation نیست. `K-011` برای runtime رد می‌شود. `K-001` `K-002` `K-003` `K-009` `K-010` در این مرحله اجرا نمی‌شوند.
+- Registry IDs: `K-004` اینجا اعمال می‌شود، چون زوم view state است و sequence را mutate نمی‌کند. `K-005` فقط مرجع دیداری است و اسکرین‌شات پذیرش نیست. `K-006` یعنی تعامل واقعی و شل نکردن آستانه. `K-007` خارج از S-022 اعمال نمی‌شود. `K-008` فقط ممیزی فرآیند است و مجوز ادامهٔ implementation نیست. `K-011` برای runtime رد می‌شود. `K-001` `K-002` `K-003` `K-009` `K-010` در این مرحله اجرا نمی‌شوند. `K-012` و `K-013` اینجا اجرا نمی‌شوند و HotClip وارد runtime نمی‌شود. `K-014` فقط مرجع است؛ ابزار دات‌نت و گیت تکراری رد می‌شود.
 - Open gaps: شکاف زوم و fit این مرحله، و شکاف بودجهٔ فریم `S-015`، تا evidence نام‌دار باز می‌مانند. نبودن نام در حاشیهٔ شکست پاس نام‌دار نیست. `BUG-18` و `user-gpu` باز می‌مانند.
 - Contract و dependencyهای خوانده‌شده: این CONTRACT؛ کارت S-023؛ CONTRACT و REVIEW مرحلهٔ `S-022`؛ CONTRACTهای `S-015` و `S-017` و `S-021`؛ `docs/loop/FORWARD_KNOWLEDGE_GATE.md`؛ `docs/loop/STYLE_MATCH_ARCHITECTURE.md`؛ `docs/loop/00_INDEX.md`؛ `docs/loop/06_BUGS.md`.
 - REVIEWها و architecture updateهای اعمال‌شده: S-022 approved برای تصمیم ledger است و GREEN نیست. وابستگی S-022 برابر `REVIEW` است. شروع این batch با دستور صریح کاربر است و آن ردیف را GREEN نمی‌کند. Style Match فقط roadmap است و `submit_inference()` اینجا صدا زده نمی‌شود.
