@@ -21,16 +21,16 @@
 | NG-2 | دیالوگ و پریست UI | بعد از کانال | S-030 |
 | NG-3 | میکس داکینگ و LUFS | کارت صدا | S-032 |
 | NG-4 | سوییت SSIM خروجی و faststart | شروع نمی‌شود | S-033 |
-| NG-5 | عوض کردن `run_ffmpeg()` که همیشه `-y` دارد | ACهای S-004 معتبرند | مسیر export جدا است؛ ممیزی license همچنان S-086 |
+| NG-5 | بستن سهم S-033 و S-086 از BUG-18 | این مرحله quality suite و ممیزی license نیست | S-033 شروع نمی‌شود؛ S-086 مالک license می‌ماند |
 
 ## Forward-knowledge compliance
 
-- Registry IDs: `K-001` برای زنجیرهٔ probe تا provenance در مسیر export همین مرحله. `K-002` و `BUG-18` باز می‌مانند؛ `run_ffmpeg()` همچنان همیشه `-y` دارد و این مرحله آن را برای همیشه نمی‌بندد. `K-003` یعنی ffprobe JSON اول است و ابعاد تهی fail-closed است. `K-004` برای منبع timeline. `K-009` فقط اصول allow-list است و vendor نمی‌شود. `K-007` اعمال نمی‌شود. `K-008` مجوز GREEN نیست. `K-010` و `K-011` رد یا فقط مرجع‌اند. `K-012` و `K-013` receipt و staging اتمیک را اینجا نمی‌بندند. `K-014` گیت دات‌نت اضافه نمی‌کند.
+- Registry IDs: `K-001` برای زنجیرهٔ probe تا provenance در مسیر export همین مرحله. `K-002` یعنی `run_ffmpeg()` بدون consent فایل موجود را عوض نمی‌کند، به partial می‌نویسد، و شکست partial را پاک می‌کند. `BUG-18` تا بستن S-033 و S-086 باز می‌ماند. `K-003` یعنی ffprobe JSON اول است و ابعاد تهی fail-closed است. `K-004` برای منبع timeline. `K-009` فقط اصول allow-list است و vendor نمی‌شود. `K-007` اعمال نمی‌شود. `K-008` مجوز GREEN نیست. `K-010` و `K-011` رد یا فقط مرجع‌اند. `K-012` و `K-013` receipt و staging اتمیک را اینجا نمی‌بندند. `K-014` گیت دات‌نت اضافه نمی‌کند.
 - Open gaps: فهرست encoder برابر GPU available نیست. `user-gpu` باز است. شکاف‌های UI نام‌دار `S-015` `S-023` `S-024` `S-026` با export بسته نمی‌شوند.
 - Contract و dependencyهای خوانده‌شده: این CONTRACT؛ کارت S-028؛ CONTRACT و REVIEW مرحله‌های `S-012` و `S-013` و `S-004`؛ `BUG-18` در `06_BUGS.md`؛ گیت و `STYLE_MATCH_ARCHITECTURE.md` و ایندکس.
 - REVIEWها و architecture updateهای اعمال‌شده: S-012 و S-013 هر دو `REVIEW` هستند و GREEN نمی‌شوند. job از `submit()` موجود می‌گذرد، نه از یک thread خام در route. Style Match مدل بار نمی‌کند.
 - اصول جدیدی که در همین مرحله اجرا می‌شوند: probe با ffprobe JSON اول است. operation فقط allow-list است: `trim` `setpts` `concat` `scale` `pad` `fps` `amix` `afade` `encode`. capability فقط `available` / `missing` / `unknown`. اجرای امن به فایل موقت می‌نویسد و بدون consent روی مقصد `-y` نمی‌زند. verify مدت و stream و codec را می‌خواند. provenance ساخت plan و encoder واقعی را ثبت می‌کند.
-- Deferred: WebSocket → S-029. UI پیشرفت → S-031. داکینگ و `-14 LUFS` → S-032. SSIM فایل و moov/faststart → S-033 که شروع نمی‌شود. ممیزی license FFmpeg → S-086. `BUG-18` در `run_ffmpeg()` باز می‌ماند چون آن تابع مسیر S-004 است.
+- Deferred: WebSocket → S-029. UI پیشرفت → S-031. داکینگ و `-14 LUFS` → S-032. SSIM فایل و moov/faststart → S-033 که شروع نمی‌شود. ممیزی license FFmpeg → S-086. ردیف `BUG-18` تا همان ownerها باز می‌ماند؛ ACهای S-004 معتبرند.
 - Negative boundary: فیلد `raw_command` و `filter_graph` از assistant رد می‌شود. graph دلخواه که با بازکامپایل ops یکی نباشد رد می‌شود. `missing` و `unknown` پاس نیستند. overwrite ناایمن رد می‌شود. مسیر با `..` یا خارج از workspace رد می‌شود. نتیجهٔ verify نشده provenance موفق ندارد.
 - Evidence plan: واحد compiler بدون شبکه، بعد از static. pytest رسانه روی Windows CI چون Ubuntu فقط `tests/unit` را اجرا می‌کند. رفتار offline یعنی هیچ socket در compiler نیست. رفتار Windows یعنی مرز مسیر با جداکنندهٔ ویندوز هم رد می‌شود. failure به skip تبدیل نمی‌شود. آستانهٔ `±1 frame` و `±20ms` و `1s` شل نمی‌شود.
 - Status: `REVIEW` تا verdict مستقل. GREEN نمی‌شود.

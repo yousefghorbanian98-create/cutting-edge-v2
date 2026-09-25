@@ -246,10 +246,10 @@ def _correct_bed_loudness(ffmpeg: str, path: Path, target: float = -14.0) -> Non
     if abs(gain) <= 0.4:
         return
     corrected = path.with_name(f"{path.stem}.loud{path.suffix}")
+    corrected.unlink(missing_ok=True)
     proc = subprocess.run(
         [
             ffmpeg,
-            "-y",
             "-i",
             str(path),
             "-af",

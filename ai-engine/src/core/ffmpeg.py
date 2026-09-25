@@ -19,6 +19,10 @@ class FFmpegNotFoundError(RuntimeError):
     """Raised when no FFmpeg binary can be located."""
 
 
+class OverwriteRefused(RuntimeError):
+    """An existing output was not replaced because consent was not given."""
+
+
 def find_ffmpeg() -> str:
     """Return a usable ffmpeg executable path.
 
@@ -45,14 +49,47 @@ def find_ffmpeg() -> str:
         ) from exc
 
 
-def run_ffmpeg(args: list[str]) -> subprocess.CompletedProcess:
-    """Run ffmpeg with `args` (after `-y`) and raise on non-zero exit."""
+def output_path(args: list[str]) -> Path | None:
+    """The destination is the last positional argument. Stdout is not a file."""
+    if not args:
+        return None
+    last = args[-1]
+    if last.startswith("-") or last in {"-", "pipe:1", "pipe:0"}:
+        return None
+    return Path(last)
+
+
+def run_ffmpeg(args: list[str], *, overwrite: bool = False) -> subprocess.CompletedProcess:
+    """Run ffmpeg without an implicit `-y`.
+
+    Default is no overwrite. Consent is the `overwrite=True` keyword, not a raw
+    flag stuffed into `args`. An existing file is left untouched when consent is
+    absent. A consented replace is written to a sibling partial and moved only
+    after ffmpeg exits 0; a failed run deletes the partial and keeps the original.
+    """
+    dest = output_path(args)
+    if dest is not None and dest.exists() and not overwrite:
+        raise OverwriteRefused(str(dest))
     ff = find_ffmpeg()
-    cmd = [ff, "-y", *args]
-    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if dest is None:
+        proc = subprocess.run([ff, *args], capture_output=True, text=True)
+        if proc.returncode != 0:
+            tail = (proc.stderr or "").strip()[-800:]
+            raise RuntimeError(f"ffmpeg failed (rc={proc.returncode}): {tail}")
+        return proc
+    partial = dest.with_name(dest.name + ".partial")
+    partial.unlink(missing_ok=True)
+    staged = [*args[:-1], str(partial)]
+    try:
+        proc = subprocess.run([ff, *staged], capture_output=True, text=True)
+    except Exception:
+        partial.unlink(missing_ok=True)
+        raise
     if proc.returncode != 0:
+        partial.unlink(missing_ok=True)
         tail = (proc.stderr or "").strip()[-800:]
         raise RuntimeError(f"ffmpeg failed (rc={proc.returncode}): {tail}")
+    os.replace(partial, dest)
     return proc
 
 
@@ -71,6 +108,8 @@ def extract_audio(
     if out_path is None:
         out_path = str(Path(video_path).with_name(Path(video_path).stem + "_audio.wav"))
 
+    if Path(out_path).exists():
+        raise OverwriteRefused(str(out_path))
     try:
         args = ["-i", video_path, "-vn"]
         if mono:
@@ -78,6 +117,8 @@ def extract_audio(
         args += ["-ar", str(sample_rate), str(out_path)]
         run_ffmpeg(args)
         return str(out_path)
+    except OverwriteRefused:
+        raise
     except (FFmpegNotFoundError, RuntimeError, subprocess.SubprocessError):
         return _extract_audio_moviepy(video_path, str(out_path), sample_rate, mono)
 
