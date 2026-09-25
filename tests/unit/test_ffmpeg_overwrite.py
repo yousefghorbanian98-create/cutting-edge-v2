@@ -30,7 +30,7 @@ def test_existing_output_without_consent_is_refused(tmp_path: Path, monkeypatch:
         run_ffmpeg(["-i", "in.mp4", str(dest)])
     assert dest.read_bytes() == b"keep"
     assert called is False
-    assert not (tmp_path / "out.wav.partial").exists()
+    assert not (tmp_path / "out.partial.wav").exists()
 
 
 def test_failed_consented_replace_rolls_back(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -44,7 +44,7 @@ def test_failed_consented_replace_rolls_back(tmp_path: Path, monkeypatch: pytest
 
     def fake_run(cmd, **_kwargs):
         partial = Path(cmd[-1])
-        assert partial.name == "out.wav.partial"
+        assert partial.name == "out.partial.wav"
         partial.write_bytes(b"torn")
         return Proc()
 
@@ -52,7 +52,7 @@ def test_failed_consented_replace_rolls_back(tmp_path: Path, monkeypatch: pytest
     with pytest.raises(RuntimeError, match="ffmpeg failed"):
         run_ffmpeg(["-i", "in.mp4", str(dest)], overwrite=True)
     assert dest.read_bytes() == b"keep"
-    assert not (tmp_path / "out.wav.partial").exists()
+    assert not (tmp_path / "out.partial.wav").exists()
 
 
 def test_consented_replace_publishes_only_after_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -73,4 +73,4 @@ def test_consented_replace_publishes_only_after_success(tmp_path: Path, monkeypa
     monkeypatch.setattr("ai_engine.core.ffmpeg.subprocess.run", fake_run)
     run_ffmpeg(["-i", "in.mp4", str(dest)], overwrite=True)
     assert dest.read_bytes() == b"new"
-    assert not (tmp_path / "out.wav.partial").exists()
+    assert not (tmp_path / "out.partial.wav").exists()

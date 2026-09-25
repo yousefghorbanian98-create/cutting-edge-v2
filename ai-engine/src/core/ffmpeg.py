@@ -49,6 +49,11 @@ def find_ffmpeg() -> str:
         ) from exc
 
 
+def staged_output(dest: Path) -> Path:
+    """Sibling partial that keeps the media suffix so ffmpeg can pick a muxer."""
+    return dest.with_name(f"{dest.stem}.partial{dest.suffix}")
+
+
 def output_path(args: list[str]) -> Path | None:
     """The destination is the last positional argument. Stdout is not a file."""
     if not args:
@@ -77,7 +82,7 @@ def run_ffmpeg(args: list[str], *, overwrite: bool = False) -> subprocess.Comple
             tail = (proc.stderr or "").strip()[-800:]
             raise RuntimeError(f"ffmpeg failed (rc={proc.returncode}): {tail}")
         return proc
-    partial = dest.with_name(dest.name + ".partial")
+    partial = staged_output(dest)
     partial.unlink(missing_ok=True)
     staged = [*args[:-1], str(partial)]
     try:
