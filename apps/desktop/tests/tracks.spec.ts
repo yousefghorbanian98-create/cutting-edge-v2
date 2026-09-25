@@ -59,6 +59,6 @@ test('adds a text track, reorders it, and refuses to remove a track that still h
 
   await page.getByRole('button', { name: 'نمونه اسنپ' }).click();
   await page.locator('[data-track-id=track-v1]').getByRole('button', { name: 'برداشتن' }).click();
-  await expect(page.getByRole('alert')).toContainText('ترک کلیپ دارد');
+  await expect(page.locator('[data-track-id=track-v1]').getByRole('alert')).toContainText('ترک کلیپ دارد');
   await expect(page.locator('[data-track-id=track-v1]')).toHaveCount(1);
 });
