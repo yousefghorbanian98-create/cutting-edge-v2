@@ -105,6 +105,10 @@ Iris is a reference for an optional visual camera: stable render waiting, select
 
 anti-slop is a reference for process/design quality: purpose before decoration, real interaction evidence, responsive and accessibility review, no fake metrics, and an explicit delivery gate. Only selected principles may be adapted into project contracts or `DESIGN.md` after audit. Its plugin system, rules, dependencies, and repository are not copied or installed into Cutting Edge.
 
+### HotClip (`xixihhhh/hotclip`)
+
+HotClip is an external reference for a local-first clipping workflow: ffprobe-backed media discovery, reference-clip pacing, measurable caption/clip quality fixtures, processing receipts, and a platform-agnostic API seam. These principles fit future Style Match/export planning, but HotClip is AGPL-3.0 and must not be vendored, copied, or added as a runtime dependency without a separate legal and architecture decision. Its local-first and receipt ideas do not replace our typed executor, capability states, verification, provenance, or CI evidence.
+
 ## FFmpeg execution direction (reference from `ffmpeg-skill`)
 
 The project may adopt the following execution principles, but must keep its own Python/Tauri implementation rather than vendor the external repository:
