@@ -89,6 +89,10 @@ Reference analysis
 
 The workflow layer complements Style Match; it does not replace shot analysis, visual scoring or human confirmation.
 
+## Forward knowledge is binding for future stages
+
+The `docs/loop/FORWARD_KNOWLEDGE_GATE.md` is a mandatory pre-implementation gate for every future Builder stage. A new stage must explicitly state which accepted architecture and review findings it applies, which are deferred, which unsafe inputs it rejects, and how compliance will be evidenced. This is a process constraint; it does not silently expand the current stage's scope or authorize a ledger change.
+
 ## FFmpeg execution direction (reference from `ffmpeg-skill`)
 
 The project may adopt the following execution principles, but must keep its own Python/Tauri implementation rather than vendor the external repository:
