@@ -8,6 +8,7 @@ import { useSelectionStore } from '@/stores/selectionStore';
 import { useTimelineStore } from '@/stores/timelineStore';
 import {
   type PointerEvent as ReactPointerEvent,
+  startTransition,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -58,6 +59,16 @@ export function Timeline() {
     [sequence.clips, startSec, endSec]
   );
   const shownIds = new Set(shown.map((clip) => clip.id));
+
+  useEffect(() => {
+    const node = scroller.current;
+    if (!node || typeof ResizeObserver === 'undefined') return undefined;
+    const measure = () => setViewport(node.clientWidth || 800);
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    measure();
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const node = scroller.current;
@@ -189,13 +200,13 @@ export function Timeline() {
         className="relative overflow-x-auto rounded-md border border-surface-border bg-surface-raised"
         onPointerDown={(event) => startMarquee(event, selectRect, setMarquee)}
         onScroll={(event) => {
-          const target = event.currentTarget;
-          pending.current = { left: target.scrollLeft, width: target.clientWidth };
+          // Do not read clientWidth here. That forced layout inside the scroll
+          // frame and pushed the 200-clip trace to 0.06 against < 0.05.
+          pending.current.left = event.currentTarget.scrollLeft;
           if (frame.current) return;
           frame.current = window.requestAnimationFrame(() => {
             frame.current = 0;
-            setScrollLeft(pending.current.left);
-            setViewport(pending.current.width);
+            startTransition(() => setScrollLeft(pending.current.left));
           });
         }}
       >

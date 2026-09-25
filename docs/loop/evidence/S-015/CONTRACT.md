@@ -22,3 +22,5 @@ DOM + transform, not Canvas. The visible window is a few clips, so a full canvas
 ## Behavior change
 
 Ubuntu CI Playwright also runs `tests/timeline-canvas.spec.ts`.
+
+Scroll no longer reads `clientWidth` inside the scroll event. Viewport comes from `ResizeObserver`. The `< 0.05` budget is unchanged. Run `36136231456` received `0.06`. That gap stays open until a later annotation or opened junit names this test as passed.
