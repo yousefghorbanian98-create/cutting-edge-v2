@@ -93,7 +93,7 @@ The workflow layer complements Style Match; it does not replace shot analysis, v
 
 The `docs/loop/FORWARD_KNOWLEDGE_GATE.md` is a mandatory pre-implementation gate for every future Builder stage. A new stage must explicitly state which accepted architecture and review findings it applies, which are deferred, which unsafe inputs it rejects, and how compliance will be evidenced. This is a process constraint; it does not silently expand the current stage's scope or authorize a ledger change.
 
-A knowledge refresh is also required before the next batch: `docs/loop/KNOWLEDGE_REFRESH_AUDIT.md` requires a retrospective audit of the historical path, not only a forward-looking contract.
+A knowledge refresh is also required before the next batch: `docs/loop/KNOWLEDGE_REFRESH_AUDIT.md` requires a retrospective audit of the historical path, not only a forward-looking contract. Durable accepted findings are indexed in `docs/loop/KNOWLEDGE_REGISTRY.md`; chat-only knowledge is not an implementation input.
 
 ## External reference lenses — adopted principles, not dependencies
 
