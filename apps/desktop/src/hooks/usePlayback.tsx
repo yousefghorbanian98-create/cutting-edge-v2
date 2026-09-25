@@ -46,26 +46,16 @@ interface PlaybackValue {
 
 const PlaybackContext = createContext<PlaybackValue | null>(null);
 
-function paint(head: HTMLDivElement | null, seconds: number, rate = 0) {
+function paint(head: HTMLDivElement | null, seconds: number, _rate = 0) {
   if (!head) return;
   const px = useZoomStore.getState().pxPerSecond || PX_PER_SECOND;
   head.dataset.time = String(seconds);
-  const motion = head.getAnimations().find((item) => item.id === 'playhead');
-  motion?.cancel();
-  // A one-second curve was presented one vsync ahead of video.currentTime
-  // (CI: 0.0182s against < 1/60). Lock the base to the media clock. Any
-  // remaining curve stays strictly inside half a frame and does not widen 1/fps.
+  for (const motion of head.getAnimations()) {
+    if (motion.id === 'playhead') motion.cancel();
+  }
+  // Geometry is the media clock, not a predicted curve. CI measured a one-second
+  // animation one vsync ahead of video.currentTime (0.0182s against < 1/60).
   head.style.transform = playheadTranslate(seconds, px);
-  if (rate === 0) return;
-  const lead = maxPlayheadLeadSeconds(STRICT_PLAYHEAD_FPS);
-  const animation = head.animate(
-    [
-      { transform: playheadTranslate(seconds, px) },
-      { transform: playheadTranslate(seconds + rate * lead, px) },
-    ],
-    { duration: lead * 1000, easing: 'linear', fill: 'forwards' }
-  );
-  animation.id = 'playhead';
 }
 
 async function sampleFps(video: HTMLVideoElement): Promise<number> {
