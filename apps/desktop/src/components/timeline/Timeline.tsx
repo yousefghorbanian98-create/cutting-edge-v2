@@ -1,7 +1,7 @@
 'use client';
 
 import type { TrackKind } from '@/domain/timeline';
-import { sheetWidth } from '@/domain/zoom';
+import { fitViewport, sheetWidth } from '@/domain/zoom';
 import { usePlayback } from '@/hooks/usePlayback';
 import { useZoomStore } from '@/hooks/useZoom';
 import { useSelectionStore } from '@/stores/selectionStore';
@@ -135,13 +135,15 @@ export function Timeline() {
         onFit={() => {
           const node = scroller.current;
           if (!node) return;
-          const view = node.clientWidth || viewport;
-          const next = fitTo(seconds, view);
+          const client = node.clientWidth || viewport;
+          const header = node.querySelector('[data-testid=timeline-track] > :first-child');
+          const headerWidth = header instanceof HTMLElement ? header.offsetWidth : 0;
+          const next = fitTo(seconds, fitViewport(client, headerWidth));
           const fitted = contentWidth(sequence.clips, next.pxPerSecond);
           lockRef.current = null;
           setExtra(0);
           if (sheet.current) {
-            sheet.current.style.width = `${fitted}px`;
+            sheet.current.style.width = `${fitted + headerWidth}px`;
             for (const child of sheet.current.querySelectorAll<HTMLElement>(
               '[data-testid=timeline-ruler],[data-testid=timeline-lane]'
             )) {
@@ -150,7 +152,7 @@ export function Timeline() {
           }
           node.scrollLeft = next.scrollLeft;
           node.dataset.px = String(next.pxPerSecond);
-          node.dataset.fit = fitted <= view + 1 ? '1' : '0';
+          node.dataset.fit = fitted + headerWidth <= client + 1 ? '1' : '0';
         }}
       />
       <Minimap content={sequenceWidth} viewport={viewport} scrollLeft={scrollLeft} />

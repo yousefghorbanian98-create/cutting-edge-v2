@@ -28,5 +28,5 @@
 - اصول جدیدی که در همین مرحله اجرا می‌شوند: زوم view state است، نه mutation سکانس. فرمول زوم حول نشانگر در دامنه است و UI فقط از action فروشگاهٔ زوم می‌خواند. `PX_PER_SECOND` پیش‌فرض `100` می‌ماند تا تست‌های قبلی شل نشوند.
 - Deferred: پخش سکانس → S-024. شورتکات `?` → S-025. export و overwrite → S-028. اعتبار خروجی → S-033 که شروع نمی‌شود. GPU کاربر → S-027 و `unverified` است، نه پاس.
 - Negative boundary: `useTimelineStore.setState` برای sequence ممنوع است. زوم history سکانس را دور نمی‌زند چون اصلاً sequence را عوض نمی‌کند. raw command، filter graph، و overwrite فایل در این مرحله وجود ندارد و رد می‌شود.
-- Evidence plan: vitest دامنه پیش از integration. بعد از static و unit و typecheck، Playwright. پیش از تحویل batch، CI کامل Ubuntu و Windows. local pass جایگزین CI نیست. آستانهٔ `±1px` شل نمی‌شود. عرض قفل نشانگر باید در state بماند تا رندر React آن را قبل از assertion جمع نکند.
+- Evidence plan: vitest دامنه پیش از integration. بعد از static و unit و typecheck، Playwright. پیش از تحویل batch، CI کامل Ubuntu و Windows. local pass جایگزین CI نیست. آستانهٔ `±1px` شل نمی‌شود. عرض قفل نشانگر باید در state بماند تا رندر React آن را قبل از assertion جمع نکند. CI `36125925821` اندازه را `1582` در برابر `1407` گرفت؛ اختلاف `176` برابر ستون `11rem` است و fit نباید عرض خط را برابر کل client بگذارد.
 - Status: `REVIEW` تا verdict مستقل. GREEN نمی‌شود.

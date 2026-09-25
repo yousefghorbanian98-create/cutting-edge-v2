@@ -27,6 +27,11 @@ export function fitPx(seconds: number, viewport: number): number {
   return clampPx(viewport / seconds);
 }
 
+/** The track header sits in the same scroll row, so fit cannot use the full client width. */
+export function fitViewport(clientWidth: number, headerWidth: number): number {
+  return Math.max(1, clientWidth - Math.max(0, headerWidth));
+}
+
 /** Wide enough that the browser can apply `scrollLeft` instead of clamping it to 0. */
 export function sheetWidth(sequenceWidth: number, viewport: number, scrollLeft: number): number {
   const room = Math.max(0, viewport) + Math.max(0, scrollLeft);
