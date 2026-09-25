@@ -1,6 +1,6 @@
 # S-022 evidence
 
-Ledger row stays `RED`. This file is not a GREEN record and does not approve the stage.
+Ledger row is `REVIEW`, not `GREEN`. This file is not a GREEN record. `S-021` is still `REVIEW`, so `verify_ledger` forbids `GREEN`.
 
 Target SHA: `d9841c706d397a21ed8e752e0ebbb40cc2631d00`
 

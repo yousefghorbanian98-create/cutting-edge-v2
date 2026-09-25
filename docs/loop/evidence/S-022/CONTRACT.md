@@ -2,12 +2,12 @@
 
 > نوشته‌شده پیش از implementation. اگر در این فایل نیست، در این مرحله وجود ندارد.
 > منبع: کارت S-022 در `docs/loop/03_STEPS.md` و `docs/loop/steps.json`.
-> ردیف S-022 در ledger برابر `RED` است، نه `GREEN`. `TODO` بعد از کامیت نام‌دار، supervisor را STOP می‌کند.
+> ردیف S-022 در ledger برابر `REVIEW` است، نه `GREEN`. `TODO` بعد از کامیت نام‌دار، supervisor را STOP می‌کند.
 
 ## وضعیت فعلی
 
-- ledger: `RED`، iter 1. GREEN نیست. S-006 تا S-021 همچنان `REVIEW` هستند.
-- وابستگی S-021 هنوز `REVIEW` است، نه `GREEN`. شروع implementation با دستور صریح همین سشن است و مجوز GREEN نیست.
+- ledger: `REVIEW`، iter 1. GREEN نیست. S-006 تا S-021 همچنان `REVIEW` هستند.
+- وابستگی S-021 هنوز `REVIEW` است، نه `GREEN`. تأیید ناظر مجوز GREEN نیست، چون `verify_ledger` وابستگی غیرسبز را رد می‌کند.
 - implementation در درخت است: هدر ترک، `tracks.ts`، و باس AudioContext. GREEN نیست.
 - vitest و typecheck محلی پاس شده‌اند. Playwright محلی اجرا نشد چون دانلود Chromium با `ECONNRESET` قطع شد. این local pass جایگزین CI نیست.
 
