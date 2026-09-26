@@ -86,7 +86,15 @@ def _evidence(tc: ET.Element) -> str:
     return " | ".join(lines)
 
 
+def _configure_stdio() -> None:
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8", errors="replace")
+
+
 def main(paths: list[str]) -> int:
+    _configure_stdio()
     emitted = 0
     total = failed = 0
     named = {gap: [0, 0] for gap in NAMED_GAPS}

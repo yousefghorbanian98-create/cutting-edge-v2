@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -85,10 +86,12 @@ def test_required_gap_missing_from_junit_is_not_run(tmp_path: Path) -> None:
         text=True,
         check=True,
         env={
+            **os.environ,
             "CE_EVIDENCE_REQUIRE": "zoom.spec.ts,sequence.spec.ts",
             "GITHUB_SHA": "deadbeef",
             "RUNNER_OS": "Linux",
             "GITHUB_RUN_ID": "9",
+            "PYTHONUTF8": "1",
         },
     )
     out = proc.stdout

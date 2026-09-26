@@ -320,8 +320,10 @@ jobs:
       - name: Publish evidence manifest (public annotations)
         if: always()
         shell: pwsh
+        env:
+          CE_INSTALLER_GLOB: apps/desktop/src-tauri/target/release/bundle/nsis/*_x64-setup.exe
         run: |
-          python scripts/ci/evidence_manifest.py --out reports/evidence-manifest.txt --require reports/junit-windows.xml --optional reports/installer-smoke.jsonl --optional reports/smoke-gpu-dry.json --optional apps/desktop/src-tauri/Cargo.lock --require-glob "apps/desktop/src-tauri/target/release/bundle/nsis/*_x64-setup.exe" --glob-outcome "${{ steps.tauri.outcome }}" --note "node=$(node -v)" --note "python=$(python -V 2>&1)" --note "user-gpu=unverified" --note "seed=none"
+          python scripts/ci/evidence_manifest.py --out reports/evidence-manifest.txt --require reports/junit-windows.xml --optional reports/installer-smoke.jsonl --optional reports/smoke-gpu-dry.json --optional apps/desktop/src-tauri/Cargo.lock --require-glob $env:CE_INSTALLER_GLOB --glob-outcome "${{ steps.tauri.outcome }}" --note "node=$(node -v)" --note "python=$(python --version)" --note "user-gpu=unverified" --note "seed=none"
 
       - name: Upload installer (downloadable .exe on every push)
         if: always()
