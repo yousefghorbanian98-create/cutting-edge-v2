@@ -6,6 +6,9 @@ makes the first failures visible to the loop even when logs are not.
 
 Usage: python scripts/ci/junit_annotate.py reports/junit-unit.xml [more.xml ...]
 Exit code is always 0 (the test step already failed the job).
+
+GitHub keeps the first 10 annotations of a step. Named results are therefore
+one notice each, and the required names are printed before the count line.
 """
 
 from __future__ import annotations
@@ -24,11 +27,14 @@ NAMED_GAPS = (
     "e2e/timeline.spec.ts",
     "timeline.spec.ts",
     "sequence.spec.ts",
-    "test_ffmpeg_overwrite.py",
+    "test_existing_output_without_consent_is_refused",
+    "test_failed_consented_replace_rolls_back",
+    "test_consented_replace_publishes_only_after_success",
     "test_ffmpeg_extract_aac",
 )
 
 # Real thresholds already in the specs. This map does not change them.
+# These strings are expected contracts, never a substitute for a measured value.
 THRESHOLDS = {
     "timeline-canvas.spec.ts": "drop-ratio<0.05 rendered<40 seed=none",
     "zoom.spec.ts": "cursor-lock<=1px fit=scrollWidth<=clientWidth+1 seed=none",
@@ -38,8 +44,22 @@ THRESHOLDS = {
     "test_ffmpeg_extract_aac": "wav=22050 channels=1",
 }
 
+# Concept tokens are named only when the owning test's stdout says so.
+# A passing owner without the token is not a concept pass. Running these
+# tests does not close BUG-18.
+CONCEPT_SOURCES = {
+    "refusal": ("test_existing_output_without_consent_is_refused",),
+    "no-overwrite": ("test_existing_output_without_consent_is_refused",),
+    "rollback": ("test_failed_consented_replace_rolls_back",),
+    "staging": ("test_consented_replace_publishes_only_after_success",),
+    "explicit-consent": (
+        "test_failed_consented_replace_rolls_back",
+        "test_consented_replace_publishes_only_after_success",
+    ),
+}
 
-def _one_line(s: str, limit: int = 900) -> str:
+
+def _one_line(s: str, limit: int = 3500) -> str:
     s = " ".join(s.split())
     return s[:limit] + ("…" if len(s) > limit else "")
 
@@ -93,56 +113,126 @@ def _configure_stdio() -> None:
             reconfigure(encoding="utf-8", errors="replace")
 
 
-def main(paths: list[str]) -> int:
-    _configure_stdio()
-    emitted = 0
-    total = failed = 0
-    named = {gap: [0, 0] for gap in NAMED_GAPS}
-    details: dict[str, list[str]] = {gap: [] for gap in NAMED_GAPS}
-    context = _context()
+def collect_cases(paths: list[str]) -> tuple[list[dict[str, str]], list[str], int, int]:
+    """Return cases, missing report paths, failure count, and total cases."""
+    cases: list[dict[str, str]] = []
+    missing: list[str] = []
+    failed = total = 0
     for raw in paths:
-        p = Path(raw)
-        if not p.exists():
-            print(f"::notice title=junit_annotate::{p} not found (step may have been skipped)")
+        path = Path(raw)
+        if not path.exists():
+            missing.append(str(path))
             continue
-        root = ET.parse(p).getroot()  # noqa: S314 — junit written by our own pytest/Playwright run, not untrusted input
+        root = ET.parse(path).getroot()  # noqa: S314 — junit from our pytest/Playwright, not untrusted input
         for tc in root.iter("testcase"):
             total += 1
             problems = list(tc.findall("failure")) + list(tc.findall("error"))
-            identity = f"{tc.get('classname', '')} {tc.get('file', '')} {tc.get('name', '')}"
-            gap = next((item for item in NAMED_GAPS if item in identity), "")
-            evidence = _evidence(tc) or "measured=not-in-junit"
             if problems:
                 failed += 1
-                if gap:
-                    named[gap][1] += 1
-                    details[gap].append(
-                        f"suite={tc.get('classname', '')} name={tc.get('name', '')} result=failed {evidence}"
-                    )
-                if emitted >= MAX_ANNOTATIONS:
-                    continue
-                name = f"{tc.get('classname', '')}::{tc.get('name', '')}"
-                msg = problems[0].get("message") or ""
-                body = problems[0].text or ""
-                print(f"::error {_params(tc, name)}::{_one_line(msg + ' | ' + body)}")
-                emitted += 1
-                continue
-            if gap:
-                named[gap][0] += 1
-                details[gap].append(
-                    f"suite={tc.get('classname', '')} name={tc.get('name', '')} result=passed {evidence}"
-                )
+            evidence = _evidence(tc) or "measured=not-in-junit"
+            cases.append(
+                {
+                    "identity": f"{tc.get('classname', '')} {tc.get('file', '')} {tc.get('name', '')}",
+                    "classname": tc.get("classname", ""),
+                    "name": tc.get("name", ""),
+                    "result": "failed" if problems else "passed",
+                    "evidence": evidence,
+                    "problem": _one_line((problems[0].get("message") or "") + " | " + (problems[0].text or ""))
+                    if problems
+                    else "",
+                    "file": tc.get("file") or "",
+                    "line": tc.get("line") or "",
+                }
+            )
+    return cases, missing, failed, total
+
+
+def _owns(case: dict[str, str], source: str) -> bool:
+    return case["name"] == source or source in case["identity"]
+
+
+def _identity_match(case: dict[str, str], key: str) -> bool:
+    if key in CONCEPT_SOURCES:
+        return False
+    return key == case["name"] or key in case["identity"]
+
+
+def named_records(paths: list[str], required: tuple[str, ...]) -> list[dict[str, str]]:
+    """One record per required name. Absence is not-run, never a pass."""
+    cases, _missing, _failed, _total = collect_cases(paths)
+    records: list[dict[str, str]] = []
+    for name in required:
+        if name in CONCEPT_SOURCES:
+            owned = [case for case in cases if any(_owns(case, source) for source in CONCEPT_SOURCES[name])]
+            passed = [case for case in owned if case["result"] == "passed" and f"concept={name}" in case["evidence"]]
+            broken = [case for case in owned if case["result"] == "failed"]
+            if not owned:
+                result = "not-run"
+            elif broken and not passed:
+                result = "failed"
+            elif passed and not broken:
+                result = "passed"
+            elif passed and broken:
+                result = "failed"
+            else:
+                result = "not-run"
+            detail = " | ".join(f"source={case['name']} result={case['result']} {case['evidence']}" for case in owned)
+            records.append(
+                {
+                    "name": name,
+                    "result": result,
+                    "passed": str(len(passed)),
+                    "failed": str(len(broken)),
+                    "detail": detail or "measured=not-in-junit",
+                }
+            )
+            continue
+        matched = [case for case in cases if _identity_match(case, name)]
+        if not matched:
+            records.append(
+                {"name": name, "result": "not-run", "passed": "0", "failed": "0", "detail": "measured=not-in-junit"}
+            )
+            continue
+        broken = [case for case in matched if case["result"] == "failed"]
+        result = "failed" if broken else "passed"
+        detail = " | ".join(
+            f"suite={case['classname']} name={case['name']} result={case['result']} {case['evidence']}"
+            for case in matched
+        )
+        records.append(
+            {
+                "name": name,
+                "result": result,
+                "passed": str(len(matched) - len(broken)),
+                "failed": str(len(broken)),
+                "detail": detail,
+            }
+        )
+    return records
+
+
+def main(paths: list[str]) -> int:
+    _configure_stdio()
+    emitted = 0
+    cases, missing, failed, total = collect_cases(paths)
+    context = _context()
+    for path in missing:
+        print(f"::notice title=junit_annotate::{path} not found (step may have been skipped)")
     required = _required()
-    for gap, (passed, broken) in named.items():
-        if gap not in required and not passed and not broken:
+    for record in named_records(paths, required):
+        name = record["name"]
+        result = record["result"]
+        if result == "not-run":
+            print(f"::notice title=named result::{name}: 0 passed, 0 failed result=not-run {context}")
             continue
-        if not passed and not broken:
-            print(f"::notice title=named result::{gap}: 0 passed, 0 failed result=not-run {context}")
-            continue
-        print(f"::notice title=named result::{gap}: {passed} passed, {broken} failed {context}")
-        threshold = THRESHOLDS.get(gap, "threshold=see-spec")
-        for line in details[gap]:
-            print(f"::notice title=named result::{_one_line(context + ' ' + line + ' ' + threshold)}")
+        passed = record["passed"]
+        broken = record["failed"]
+        threshold = THRESHOLDS.get(name)
+        expected = f" expected={threshold}" if threshold else ""
+        print(
+            "::notice title=named result::"
+            + _one_line(f"{name}: {passed} passed, {broken} failed {context} {record['detail']}{expected}")
+        )
     if "sequence.spec.ts" in required:
         print(
             "::notice title=historical failure::"
@@ -153,6 +243,13 @@ def main(paths: list[str]) -> int:
         "::notice title=junit summary::"
         f"{failed} failed / {total} total across {len(paths)} report(s); count is not a named pass"
     )
+    for case in cases:
+        if case["result"] != "failed" or emitted >= MAX_ANNOTATIONS:
+            continue
+        title = f"{case['classname']}::{case['name']}"
+        fake = ET.Element("testcase", {"file": case["file"], "line": case["line"]})
+        print(f"::error {_params(fake, title)}::{case['problem']}")
+        emitted += 1
     return 0
 
 

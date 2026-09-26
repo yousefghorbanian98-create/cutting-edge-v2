@@ -7,6 +7,8 @@
 #
 # Also emits gzip+base64 as ::notice annotations (title "Cargo.lock i/n") so a
 # failed PUT can still be reconstructed from the check-run annotations API.
+# Those chunks are omitted once the lock is already tracked: they filled the
+# 10-annotation step budget and dropped the evidence sidecar notice.
 
 [CmdletBinding()]
 param(
@@ -26,6 +28,12 @@ $bytes = [IO.File]::ReadAllBytes($full)
 $sha = (Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash
 Write-Output "::notice title=Cargo.lock::$($bytes.Length) bytes sha256 $sha"
 
+git ls-files --error-unmatch -- $LockPath *> $null
+if ($LASTEXITCODE -eq 0) {
+    Write-Output "::notice title=Cargo.lock::already tracked at HEAD; skip publish; base64 chunks omitted"
+    exit 0
+}
+
 $ms = New-Object IO.MemoryStream
 $gz = New-Object IO.Compression.GzipStream($ms, [IO.Compression.CompressionLevel]::Optimal)
 $gz.Write($bytes, 0, $bytes.Length)
@@ -39,12 +47,6 @@ for ($i = 0; $i -lt $n; $i++) {
     $part = $packed.Substring($i * $Chunk, $take)
     $idx = $i + 1
     Write-Output "::notice title=Cargo.lock ${idx}/${n}::$part"
-}
-
-git ls-files --error-unmatch -- $LockPath *> $null
-if ($LASTEXITCODE -eq 0) {
-    Write-Output "::notice title=Cargo.lock::already tracked at HEAD; skip publish"
-    exit 0
 }
 
 if ($env:GITHUB_EVENT_NAME -and $env:GITHUB_EVENT_NAME -ne "push") {

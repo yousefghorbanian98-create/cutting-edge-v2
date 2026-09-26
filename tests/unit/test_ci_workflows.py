@@ -74,10 +74,12 @@ def test_ubuntu_job_steps():
     assert "actions/setup-python" in uses and "cache: pip" in yaml.safe_dump(job)
     assert re.search(r"scripts/gate\.py --stage static.*--json.*--strict-missing", runs), runs
     assert "pytest" in runs and "tests/unit" in runs
+    assert "junit_logging=system-out" in runs
     assert re.search(r"pnpm (run )?build", runs)
     assert "playwright install" in runs and "chromium" in runs
     assert "playwright test" in runs
     assert "scripts/ci/evidence_manifest.py" in runs
+    assert (job.get("permissions") or {}).get("checks") == "write"
     assert "tests/tracks.spec.ts" in runs
     for spec in (
         "tests/zoom.spec.ts",
@@ -105,6 +107,7 @@ def test_windows_job_steps():
     assert "requirements.txt" in runs
     assert re.search(r"pytest .*-m ['\"]not gpu['\"]", runs), "GPU tests must be excluded on hosted runners"
     assert "--junitxml" in runs or "--junit-xml" in runs
+    assert "junit_logging=system-out" in runs
     assert "dtolnay/rust-toolchain" in uses
     assert "Swatinem/rust-cache" in uses
     assert "cargo fmt" in runs and "--check" in runs
@@ -127,6 +130,7 @@ def test_windows_job_steps():
     assert "make_icons.py --check" in runs
     # BUG-17: only this job may write, and only to commit the runner lockfile.
     assert (job.get("permissions") or {}).get("contents") == "write"
+    assert (job.get("permissions") or {}).get("checks") == "write"
     assert "_x64-setup.exe" in dump, "installer artifact must be uploaded"
     order = [str(s.get("name", "")) for s in _steps(job)]
     i_front = next(i for i, n in enumerate(order) if n.startswith("Frontend build"))

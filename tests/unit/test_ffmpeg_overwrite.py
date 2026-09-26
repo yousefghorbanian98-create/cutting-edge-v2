@@ -31,6 +31,10 @@ def test_existing_output_without_consent_is_refused(tmp_path: Path, monkeypatch:
     assert dest.read_bytes() == b"keep"
     assert called is False
     assert not (tmp_path / "out.partial.wav").exists()
+    print(
+        "EVIDENCE concept=refusal concept=no-overwrite "
+        "ffmpeg-called=false dest-unchanged=true partial-absent=true"
+    )
 
 
 def test_failed_consented_replace_rolls_back(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -53,6 +57,10 @@ def test_failed_consented_replace_rolls_back(tmp_path: Path, monkeypatch: pytest
         run_ffmpeg(["-i", "in.mp4", str(dest)], overwrite=True)
     assert dest.read_bytes() == b"keep"
     assert not (tmp_path / "out.partial.wav").exists()
+    print(
+        "EVIDENCE concept=explicit-consent concept=rollback "
+        "dest-unchanged=true partial-absent=true"
+    )
 
 
 def test_consented_replace_publishes_only_after_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -74,3 +82,7 @@ def test_consented_replace_publishes_only_after_success(tmp_path: Path, monkeypa
     run_ffmpeg(["-i", "in.mp4", str(dest)], overwrite=True)
     assert dest.read_bytes() == b"new"
     assert not (tmp_path / "out.partial.wav").exists()
+    print(
+        "EVIDENCE concept=explicit-consent concept=staging "
+        "partial-name=out.partial.wav published-after-success=true dash-y-absent=true"
+    )

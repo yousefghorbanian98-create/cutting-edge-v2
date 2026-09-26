@@ -101,3 +101,96 @@ def test_required_gap_missing_from_junit_is_not_run(tmp_path: Path) -> None:
     assert "sequence.spec.ts: 0 passed, 0 failed result=not-run" in out
     assert "count is not a named pass" in out
     assert "run=36194558289" in out
+
+
+def test_canonical_sidecar_is_not_circular(tmp_path: Path) -> None:
+    present = tmp_path / "junit.xml"
+    present.write_text("<ok/>", encoding="utf-8")
+    out = tmp_path / "evidence-manifest.txt"
+    proc = _run(
+        "evidence_manifest.py",
+        ["--out", str(out), "--require", str(present), "--job", "unit"],
+        {"RUNNER_OS": "Windows", "GITHUB_SHA": "abc", "GITHUB_RUN_ID": "9"},
+    )
+    assert proc.returncode == 0, proc.stderr
+    canonical = out.read_bytes()
+    sidecar = out.with_suffix(".sha256").read_text(encoding="utf-8")
+    digest = hashlib.sha256(canonical).hexdigest()
+    assert digest.encode("ascii") not in canonical
+    assert canonical.endswith(b"\n") and not canonical.endswith(b"\n\n")
+    assert b"\r" not in canonical
+    assert sidecar == f"{digest}  {out.as_posix()}\n" or sidecar.startswith(f"{digest}  ")
+    assert "circular=false" in canonical.decode("utf-8")
+    assert "hash-method=sha256" in proc.stdout
+    assert f"sha256={digest}" in proc.stdout
+    assert "body=" in proc.stdout
+    verify = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "ci" / "verify_evidence_manifest.py"),
+            "--canonical",
+            str(out),
+            "--sidecar",
+            str(out.with_suffix(".sha256")),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert verify.returncode == 0, verify.stderr
+    assert "result=passed" in verify.stdout
+
+
+def test_overwrite_concepts_and_extract_measurement_come_from_junit(tmp_path: Path) -> None:
+    junit = tmp_path / "j.xml"
+    junit.write_text(
+        "<testsuites><testsuite name='s'>"
+        "<testcase classname='tests.unit.test_ffmpeg_overwrite' "
+        "name='test_existing_output_without_consent_is_refused'>"
+        "<system-out>EVIDENCE concept=refusal concept=no-overwrite ffmpeg-called=false</system-out>"
+        "</testcase>"
+        "<testcase classname='tests.unit.test_ffmpeg_overwrite' "
+        "name='test_failed_consented_replace_rolls_back'>"
+        "<system-out>EVIDENCE concept=explicit-consent concept=rollback dest-unchanged=true</system-out>"
+        "</testcase>"
+        "<testcase classname='tests.unit.test_ffmpeg_overwrite' "
+        "name='test_consented_replace_publishes_only_after_success'>"
+        "<system-out>EVIDENCE concept=explicit-consent concept=staging partial-name=out.partial.wav</system-out>"
+        "</testcase>"
+        "<testcase classname='tests.test_beat_sync' name='test_ffmpeg_extract_aac'>"
+        "<system-out>EVIDENCE measured-rate=22050 measured-channels=1 measured-frames=9</system-out>"
+        "</testcase>"
+        "</testsuite></testsuites>",
+        encoding="utf-8",
+    )
+    proc = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "ci" / "junit_annotate.py"), str(junit)],
+        capture_output=True,
+        text=True,
+        check=False,
+        env={
+            **os.environ,
+            "CE_EVIDENCE_REQUIRE": (
+                "test_existing_output_without_consent_is_refused,refusal,no-overwrite,"
+                "explicit-consent,staging,rollback,test_ffmpeg_extract_aac,sequence.spec.ts"
+            ),
+            "GITHUB_SHA": "abc",
+            "RUNNER_OS": "Windows",
+            "GITHUB_RUN_ID": "9",
+            "PYTHONUTF8": "1",
+        },
+    )
+    assert proc.returncode == 0, proc.stderr
+    out = proc.stdout
+    assert "test_existing_output_without_consent_is_refused: 1 passed, 0 failed" in out
+    assert "refusal: 1 passed, 0 failed" in out
+    assert "no-overwrite: 1 passed, 0 failed" in out
+    assert "explicit-consent: 2 passed, 0 failed" in out
+    assert "staging: 1 passed, 0 failed" in out
+    assert "rollback: 1 passed, 0 failed" in out
+    assert "measured-rate=22050" in out
+    assert "measured-channels=1" in out
+    assert "measured-frames=9" in out
+    assert "expected=wav=22050 channels=1" in out
+    assert "measured=not-in-junit wav=22050" not in out
+    assert "sequence.spec.ts: 0 passed, 0 failed result=not-run" in out

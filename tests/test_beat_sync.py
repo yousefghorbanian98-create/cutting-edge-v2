@@ -145,8 +145,16 @@ def test_ffmpeg_extract_aac():
         assert path == str(out_wav) and out_wav.exists()
 
         with wave.open(str(out_wav), "rb") as w:
-            assert w.getframerate() == 22050, f"expected 22050, got {w.getframerate()}"
-            assert w.getnchannels() == 1, f"expected mono, got {w.getnchannels()}"
+            rate = w.getframerate()
+            channels = w.getnchannels()
+            sampwidth = w.getsampwidth()
+            frames = w.getnframes()
+            print(
+                f"EVIDENCE measured-rate={rate} measured-channels={channels} "
+                f"measured-sampwidth={sampwidth} measured-frames={frames}"
+            )
+            assert rate == 22050, f"expected 22050, got {rate}"
+            assert channels == 1, f"expected mono, got {channels}"
 
 
 def _run_all() -> int:

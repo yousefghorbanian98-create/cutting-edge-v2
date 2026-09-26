@@ -30,6 +30,11 @@ jobs:
     name: ubuntu
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    # checks: write publishes the canonical manifest as a check-run output.
+    # Artifact zips EOF from this sandbox; the Checks API does not.
+    permissions:
+      contents: read
+      checks: write
     steps:
       - name: Checkout (full history for gitleaks)
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.2.2
@@ -75,7 +80,7 @@ jobs:
         run: ai-engine/.venv/bin/python scripts/gate.py --stage static --json --strict-missing --skip cargo-clippy | tee gate-static.log
 
       - name: Unit tests (tests/unit) → junit
-        run: ai-engine/.venv/bin/python -m pytest tests/unit -q -p no:cacheprovider -rfEs --junitxml=reports/junit-unit.xml
+        run: ai-engine/.venv/bin/python -m pytest tests/unit -q -p no:cacheprovider -rfEs -o junit_logging=system-out --junitxml=reports/junit-unit.xml
 
       - name: Timeline domain (vitest + line coverage)
         working-directory: apps/desktop
@@ -84,7 +89,7 @@ jobs:
       - name: Annotate unit failures (public annotations, no token needed)
         if: always()
         env:
-          CE_EVIDENCE_REQUIRE: test_ffmpeg_overwrite.py
+          CE_EVIDENCE_REQUIRE: test_existing_output_without_consent_is_refused,test_failed_consented_replace_rolls_back,test_consented_replace_publishes_only_after_success,refusal,no-overwrite,explicit-consent,staging,rollback
         run: python scripts/ci/junit_annotate.py reports/junit-unit.xml
 
       - name: Frontend build (Turbo → next build, output export)
@@ -119,14 +124,31 @@ jobs:
           chrome=$(ls -d "$HOME/.cache/ms-playwright"/chromium-* 2>/dev/null | head -1 || true)
           python scripts/ci/evidence_manifest.py \
             --out reports/evidence-manifest.txt \
+            --job ubuntu \
             --require reports/junit-unit.xml \
             --require apps/desktop/playwright-report/junit.xml \
             --require gate-static.log \
+            --junit reports/junit-unit.xml \
+            --junit apps/desktop/playwright-report/junit.xml \
+            --name test_existing_output_without_consent_is_refused \
+            --name test_failed_consented_replace_rolls_back \
+            --name test_consented_replace_publishes_only_after_success \
+            --name refusal \
+            --name no-overwrite \
+            --name explicit-consent \
+            --name staging \
+            --name rollback \
+            --name timeline-canvas.spec.ts \
+            --name zoom.spec.ts \
+            --name playback.spec.ts \
+            --name e2e/timeline.spec.ts \
+            --name sequence.spec.ts \
             --note "node=$(node -v)" \
             --note "python=$(python -V 2>&1)" \
             --note "playwright=${pwv}" \
             --note "chromium-cache=${chrome:-unverified}" \
-            --note "seed=none"
+            --note "seed=none" \
+            --note "BUG-18=open"
 
       - name: Upload ubuntu evidence (junit, playwright-report, gate log, screenshot)
         if: always()
@@ -138,6 +160,7 @@ jobs:
           path: |
             reports/junit-unit.xml
             reports/evidence-manifest.txt
+            reports/evidence-manifest.sha256
             gate-static.log
             apps/desktop/playwright-report/
             docs/loop/evidence/S-007/home-1440x900.png
@@ -149,9 +172,10 @@ jobs:
     timeout-minutes: 90
     # Job-level override (workflow stays contents: read). Needed so this job can
     # commit the runner-resolved Cargo.lock (BUG-17); the sandbox cannot read
-    # blob artifacts or the job-summary body. Other jobs stay read-only.
+    # blob artifacts or the job-summary body. Other jobs do not get contents: write.
     permissions:
       contents: write
+      checks: write
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.2.2
@@ -218,13 +242,13 @@ jobs:
         shell: pwsh
         env:
           CE_TEST_VENV: ${{ github.workspace }}\ai-engine\.venv
-        run: ai-engine/.venv/Scripts/python.exe -m pytest tests -m "not gpu" -q -p no:cacheprovider -rfEs --junitxml=reports/junit-windows.xml
+        run: ai-engine/.venv/Scripts/python.exe -m pytest tests -m "not gpu" -q -p no:cacheprovider -rfEs -o junit_logging=system-out --junitxml=reports/junit-windows.xml
 
       - name: Annotate pytest failures (public annotations, no token needed)
         if: always()
         shell: pwsh
         env:
-          CE_EVIDENCE_REQUIRE: test_ffmpeg_extract_aac
+          CE_EVIDENCE_REQUIRE: test_ffmpeg_extract_aac,test_existing_output_without_consent_is_refused,test_failed_consented_replace_rolls_back,test_consented_replace_publishes_only_after_success,refusal,no-overwrite,explicit-consent,staging,rollback
         run: python scripts/ci/junit_annotate.py reports/junit-windows.xml
 
       # S-010: the crate compiles → fmt/clippy/tests are hard checks (BUG-16 closed).
@@ -323,7 +347,7 @@ jobs:
         env:
           CE_INSTALLER_GLOB: apps/desktop/src-tauri/target/release/bundle/nsis/*_x64-setup.exe
         run: |
-          python scripts/ci/evidence_manifest.py --out reports/evidence-manifest.txt --require reports/junit-windows.xml --optional reports/installer-smoke.jsonl --optional reports/smoke-gpu-dry.json --optional apps/desktop/src-tauri/Cargo.lock --require-glob $env:CE_INSTALLER_GLOB --glob-outcome "${{ steps.tauri.outcome }}" --note "node=$(node -v)" --note "python=$(python --version)" --note "user-gpu=unverified" --note "seed=none"
+          python scripts/ci/evidence_manifest.py --out reports/evidence-manifest.txt --job windows --require reports/junit-windows.xml --optional reports/installer-smoke.jsonl --optional reports/smoke-gpu-dry.json --optional apps/desktop/src-tauri/Cargo.lock --require-glob $env:CE_INSTALLER_GLOB --glob-outcome "${{ steps.tauri.outcome }}" --junit reports/junit-windows.xml --name test_ffmpeg_extract_aac --name test_existing_output_without_consent_is_refused --name test_failed_consented_replace_rolls_back --name test_consented_replace_publishes_only_after_success --name refusal --name no-overwrite --name explicit-consent --name staging --name rollback --note "node=$(node -v)" --note "python=$(python --version)" --note "user-gpu=unverified" --note "seed=none" --note "BUG-18=open"
 
       - name: Upload installer (downloadable .exe on every push)
         if: always()
@@ -345,6 +369,7 @@ jobs:
             reports/junit-windows.xml
             reports/installer-smoke.jsonl
             reports/evidence-manifest.txt
+            reports/evidence-manifest.sha256
             reports/smoke-gpu-dry.json
             apps/desktop/src-tauri/Cargo.lock
 
