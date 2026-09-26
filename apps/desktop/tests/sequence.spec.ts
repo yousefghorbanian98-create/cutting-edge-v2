@@ -54,6 +54,9 @@ test('sequence frame at 3.2s matches clip B at 5.2s and the cut gap stays under 
     const cells = Math.floor(player.height / windows) * Math.floor(player.width / windows);
     return cells ? acc / cells : 0;
   });
+  console.info(
+    `EVIDENCE clock=sequence-input fixture=sequenceFixture clipB-source-s=5.2 ssim=${ssim} ssim-threshold=0.9 seed=none`
+  );
   expect(ssim).toBeGreaterThan(0.9);
 
   await page.getByLabel('زمان سکانس').fill('2.9');
@@ -62,6 +65,7 @@ test('sequence frame at 3.2s matches clip B at 5.2s and the cut gap stays under 
     .poll(async () => page.getByTestId('sequence-player').getAttribute('data-cut-gap-ms'), { timeout: 4_000 })
     .not.toBe('');
   const gap = Number(await page.getByTestId('sequence-player').getAttribute('data-cut-gap-ms'));
+  console.info(`EVIDENCE clock=sequence-input gap-ms=${gap} gap-threshold-ms=100 seed=none`);
   expect(gap).toBeLessThan(100);
   await page.getByLabel('زمان سکانس').fill('1');
   await expect(page.getByTestId('sequence-text')).toHaveText('عنوان');

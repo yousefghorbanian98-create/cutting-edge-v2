@@ -37,7 +37,11 @@ test('Ctrl+wheel at x=400 keeps the time, and fit shows the sequence', async ({ 
   }, 400);
   const after = await read();
   expect(after.px).not.toBe(before.px);
-  expect(Math.abs(before.time - after.time) * after.px).toBeLessThanOrEqual(1);
+  const cursorLockPx = Math.abs(before.time - after.time) * after.px;
+  console.info(
+    `EVIDENCE cursor-lock-px=${cursorLockPx} threshold=1 before-time=${before.time} after-time=${after.time} seed=none`
+  );
+  expect(cursorLockPx).toBeLessThanOrEqual(1);
 
   await page.getByRole('button', { name: 'اندازه سکانس' }).click();
   await expect(scroller).toHaveAttribute('data-fit', '1');
@@ -45,6 +49,9 @@ test('Ctrl+wheel at x=400 keeps the time, and fit shows the sequence', async ({ 
     scrollWidth: node.scrollWidth,
     clientWidth: node.clientWidth,
   }));
+  console.info(
+    `EVIDENCE scrollWidth=${fitted.scrollWidth} clientWidth=${fitted.clientWidth} fit-threshold=clientWidth+1 seed=none`
+  );
   expect(fitted.scrollWidth).toBeLessThanOrEqual(fitted.clientWidth + 1);
   await expect(page.getByTestId('timeline-minimap')).toBeVisible();
   await expect(page.getByRole('slider', { name: 'زوم' })).toBeVisible();

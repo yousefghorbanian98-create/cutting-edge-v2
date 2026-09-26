@@ -10,6 +10,7 @@ Exit code is always 0 (the test step already failed the job).
 
 from __future__ import annotations
 
+import os
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -24,7 +25,18 @@ NAMED_GAPS = (
     "timeline.spec.ts",
     "sequence.spec.ts",
     "test_ffmpeg_overwrite.py",
+    "test_ffmpeg_extract_aac",
 )
+
+# Real thresholds already in the specs. This map does not change them.
+THRESHOLDS = {
+    "timeline-canvas.spec.ts": "drop-ratio<0.05 rendered<40 seed=none",
+    "zoom.spec.ts": "cursor-lock<=1px fit=scrollWidth<=clientWidth+1 seed=none",
+    "playback.spec.ts": "drift<1/fps arrow-threshold=0.001 clock=video.currentTime seed=none",
+    "e2e/timeline.spec.ts": "visual-ratio<0.001 fixture=wide.mp4 baseline=previous-journey-shot seed=none",
+    "sequence.spec.ts": "ssim>0.9 gap<100ms clock=sequence-input seed=none",
+    "test_ffmpeg_extract_aac": "wav=22050 channels=1",
+}
 
 
 def _one_line(s: str, limit: int = 900) -> str:
@@ -52,10 +64,34 @@ def _params(tc: ET.Element, name: str) -> str:
     return ",".join(parts)
 
 
+def _context() -> str:
+    platform = os.environ.get("RUNNER_OS", "unknown")
+    sha = os.environ.get("GITHUB_SHA", "unknown")
+    run = os.environ.get("GITHUB_RUN_ID", "unknown")
+    return f"platform={platform} sha={sha} run={run}"
+
+
+def _required() -> tuple[str, ...]:
+    raw = os.environ.get("CE_EVIDENCE_REQUIRE", "")
+    return tuple(part.strip() for part in raw.split(",") if part.strip())
+
+
+def _evidence(tc: ET.Element) -> str:
+    chunks: list[str] = []
+    for tag in ("system-out", "system-err"):
+        node = tc.find(tag)
+        if node is not None and node.text:
+            chunks.append(node.text)
+    lines = [part.strip() for part in " ".join(chunks).splitlines() if "EVIDENCE " in part]
+    return " | ".join(lines)
+
+
 def main(paths: list[str]) -> int:
     emitted = 0
     total = failed = 0
     named = {gap: [0, 0] for gap in NAMED_GAPS}
+    details: dict[str, list[str]] = {gap: [] for gap in NAMED_GAPS}
+    context = _context()
     for raw in paths:
         p = Path(raw)
         if not p.exists():
@@ -67,10 +103,14 @@ def main(paths: list[str]) -> int:
             problems = list(tc.findall("failure")) + list(tc.findall("error"))
             identity = f"{tc.get('classname', '')} {tc.get('file', '')} {tc.get('name', '')}"
             gap = next((item for item in NAMED_GAPS if item in identity), "")
+            evidence = _evidence(tc) or "measured=not-in-junit"
             if problems:
                 failed += 1
                 if gap:
                     named[gap][1] += 1
+                    details[gap].append(
+                        f"suite={tc.get('classname', '')} name={tc.get('name', '')} result=failed {evidence}"
+                    )
                 if emitted >= MAX_ANNOTATIONS:
                     continue
                 name = f"{tc.get('classname', '')}::{tc.get('name', '')}"
@@ -81,10 +121,30 @@ def main(paths: list[str]) -> int:
                 continue
             if gap:
                 named[gap][0] += 1
+                details[gap].append(
+                    f"suite={tc.get('classname', '')} name={tc.get('name', '')} result=passed {evidence}"
+                )
+    required = _required()
     for gap, (passed, broken) in named.items():
-        if passed or broken:
-            print(f"::notice title=named result::{gap}: {passed} passed, {broken} failed")
-    print(f"::notice title=junit summary::{failed} failed / {total} total across {len(paths)} report(s)")
+        if gap not in required and not passed and not broken:
+            continue
+        if not passed and not broken:
+            print(f"::notice title=named result::{gap}: 0 passed, 0 failed result=not-run {context}")
+            continue
+        print(f"::notice title=named result::{gap}: {passed} passed, {broken} failed {context}")
+        threshold = THRESHOLDS.get(gap, "threshold=see-spec")
+        for line in details[gap]:
+            print(f"::notice title=named result::{_one_line(context + ' ' + line + ' ' + threshold)}")
+    if "sequence.spec.ts" in required:
+        print(
+            "::notice title=historical failure::"
+            "run=36194558289 sequence.spec.ts sequence-text not found expected عنوان; "
+            "historical only; this run is the named result line; absence is not a pass"
+        )
+    print(
+        "::notice title=junit summary::"
+        f"{failed} failed / {total} total across {len(paths)} report(s); count is not a named pass"
+    )
     return 0
 
 

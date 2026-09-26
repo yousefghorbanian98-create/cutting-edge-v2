@@ -57,6 +57,9 @@ test('scrolling 200 clips stays inside the frame budget', async ({ page }) => {
   expect(events.length).toBeGreaterThan(0);
   expect(longTasks).toHaveLength(0);
   expect(frames.seen).toBeGreaterThan(10);
+  console.info(
+    `EVIDENCE fixture=bench-200 rendered=${rendered} rendered-threshold=<40 frames-seen=${frames.seen} dropped=${frames.dropped} drop-ratio=${frames.dropped / frames.seen} cdp-drop-ratio=${cdpDroppedRatio} threshold=0.05 seed=none`
+  );
   expect(frames.dropped / frames.seen).toBeLessThan(0.05);
   expect(cdpDroppedRatio).toBeLessThan(0.05);
 });

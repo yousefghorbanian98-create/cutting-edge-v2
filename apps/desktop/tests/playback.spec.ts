@@ -51,6 +51,9 @@ test('playhead stays within one frame, and ten arrow steps match fps', async ({ 
         lane.scrollLeft;
       return Math.abs(x / 100 - video.currentTime);
     });
+    console.info(
+      `EVIDENCE clock=video.currentTime fixture=${fixture.name} fps=${fixture.fps} duration-s=>=3 drift=${drift} threshold=${1 / fixture.fps} seed=none`
+    );
     expect(drift).toBeLessThan(1 / fixture.fps);
 
     await page.keyboard.press('k');
@@ -63,6 +66,9 @@ test('playhead stays within one frame, and ten arrow steps match fps', async ({ 
     const current = await page
       .getByTestId('preview-video')
       .evaluate((node) => (node instanceof HTMLVideoElement ? node.currentTime : -1));
+    console.info(
+      `EVIDENCE clock=video.currentTime fixture=${fixture.name} arrow-steps=10 measured=${current} expected=${10 / fixture.fps} threshold=0.001 seed=none`
+    );
     expect(Math.abs(current - 10 / fixture.fps)).toBeLessThan(0.001);
   }
 });

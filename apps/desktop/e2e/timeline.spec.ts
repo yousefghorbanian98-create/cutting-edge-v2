@@ -57,6 +57,11 @@ test('import, arrange, trim, split, undo, and preview stay within 0.1% three tim
     });
     shots.push(await page.getByTestId('timeline-scroll').screenshot());
   }
-  expect(pixelDiffRatio(shots[0] ?? Buffer.alloc(0), shots[1] ?? Buffer.alloc(0))).toBeLessThan(0.001);
-  expect(pixelDiffRatio(shots[1] ?? Buffer.alloc(0), shots[2] ?? Buffer.alloc(0))).toBeLessThan(0.001);
+  const undoRatio = pixelDiffRatio(shots[0] ?? Buffer.alloc(0), shots[1] ?? Buffer.alloc(0));
+  const splitRatio = pixelDiffRatio(shots[1] ?? Buffer.alloc(0), shots[2] ?? Buffer.alloc(0));
+  console.info(
+    `EVIDENCE fixture=wide.mp4 baseline=previous-journey-shot threshold=0.001 undo-ratio=${undoRatio} split-ratio=${splitRatio} seed=none`
+  );
+  expect(undoRatio).toBeLessThan(0.001);
+  expect(splitRatio).toBeLessThan(0.001);
 });

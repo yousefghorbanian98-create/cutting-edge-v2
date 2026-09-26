@@ -83,6 +83,8 @@ jobs:
 
       - name: Annotate unit failures (public annotations, no token needed)
         if: always()
+        env:
+          CE_EVIDENCE_REQUIRE: test_ffmpeg_overwrite.py
         run: python scripts/ci/junit_annotate.py reports/junit-unit.xml
 
       - name: Frontend build (Turbo → next build, output export)
@@ -106,7 +108,25 @@ jobs:
 
       - name: Annotate Playwright failures
         if: always()
+        env:
+          CE_EVIDENCE_REQUIRE: timeline-canvas.spec.ts,zoom.spec.ts,playback.spec.ts,e2e/timeline.spec.ts,sequence.spec.ts
         run: python scripts/ci/junit_annotate.py apps/desktop/playwright-report/junit.xml
+
+      - name: Publish evidence manifest (public annotations)
+        if: always()
+        run: |
+          pwv=$(pnpm --filter cutting-edge-desktop exec playwright --version || echo unverified)
+          chrome=$(ls -d "$HOME/.cache/ms-playwright"/chromium-* 2>/dev/null | head -1 || true)
+          python scripts/ci/evidence_manifest.py \
+            --out reports/evidence-manifest.txt \
+            --require reports/junit-unit.xml \
+            --require apps/desktop/playwright-report/junit.xml \
+            --require gate-static.log \
+            --note "node=$(node -v)" \
+            --note "python=$(python -V 2>&1)" \
+            --note "playwright=${pwv}" \
+            --note "chromium-cache=${chrome:-unverified}" \
+            --note "seed=none"
 
       - name: Upload ubuntu evidence (junit, playwright-report, gate log, screenshot)
         if: always()
@@ -117,6 +137,7 @@ jobs:
           retention-days: 14
           path: |
             reports/junit-unit.xml
+            reports/evidence-manifest.txt
             gate-static.log
             apps/desktop/playwright-report/
             docs/loop/evidence/S-007/home-1440x900.png
@@ -178,6 +199,7 @@ jobs:
 
       # Contract probe only. A real GPU pass is the user machine (S-027), not this runner.
       - name: smoke-gpu.ps1 dry-run (contract only, not a GPU pass)
+        id: smoke-gpu
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path reports | Out-Null
@@ -189,8 +211,10 @@ jobs:
           }
           if (-not $doc.dry_run) { throw "dry-run must set dry_run=true" }
           if ($doc.ok) { throw "dry-run must not claim the machine passed" }
+          Write-Output "::notice title=user-gpu::unverified dry-run is not a GPU pass"
 
       - name: pytest (real media + live server, no GPU) → junit
+        id: pytest
         shell: pwsh
         env:
           CE_TEST_VENV: ${{ github.workspace }}\ai-engine\.venv
@@ -199,6 +223,8 @@ jobs:
       - name: Annotate pytest failures (public annotations, no token needed)
         if: always()
         shell: pwsh
+        env:
+          CE_EVIDENCE_REQUIRE: test_ffmpeg_extract_aac
         run: python scripts/ci/junit_annotate.py reports/junit-windows.xml
 
       # S-010: the crate compiles → fmt/clippy/tests are hard checks (BUG-16 closed).
@@ -208,16 +234,19 @@ jobs:
         run: pnpm run build
 
       - name: cargo fmt --check (src-tauri)
+        id: cargo-fmt
         working-directory: apps/desktop/src-tauri
         shell: pwsh
         run: cargo fmt --all --check
 
       - name: cargo clippy -D warnings (src-tauri, all targets)
+        id: cargo-clippy
         working-directory: apps/desktop/src-tauri
         shell: pwsh
         run: cargo clippy --locked --all-targets -- -D warnings
 
       - name: cargo test (src-tauri, health rules)
+        id: cargo-test
         working-directory: apps/desktop/src-tauri
         shell: pwsh
         run: cargo test --locked -- --nocapture
@@ -229,6 +258,7 @@ jobs:
       # `tauri build` runs `pnpm build` (next export → apps/desktop/out) itself via
       # beforeBuildCommand, then compiles release and packs the NSIS installer.
       - name: tauri build → NSIS installer (*_x64-setup.exe)
+        id: tauri
         working-directory: apps/desktop
         shell: pwsh
         env:
@@ -255,6 +285,7 @@ jobs:
           $summary -join "`n" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
       - name: Installer smoke — silent install, launch, window title, silent uninstall
+        id: installer-smoke
         shell: pwsh
         run: pwsh -NoProfile -File scripts/ci/installer_smoke.ps1 -Report reports/installer-smoke.jsonl
 
@@ -271,6 +302,26 @@ jobs:
           $bundle = Join-Path "apps/desktop/src-tauri" "target/release/bundle/nsis"
           $setup = Get-ChildItem -Path $bundle -Filter "*_x64-setup.exe" | Select-Object -First 1
           if ($setup) { Write-Output "::notice title=installer::$($setup.Name) $([math]::Round($setup.Length / 1MB, 2)) MB sha256 $((Get-FileHash $setup.FullName).Hash)" }
+
+      - name: Name windows step results
+        if: always()
+        env:
+          CE_NOTE_USER_GPU: unverified
+          CE_NAMED_STEPS: |
+            pytest real media not gpu|${{ steps.pytest.outcome }}
+            cargo fmt --check|${{ steps.cargo-fmt.outcome }}
+            cargo clippy -D warnings|${{ steps.cargo-clippy.outcome }}
+            cargo test|${{ steps.cargo-test.outcome }}
+            tauri build NSIS|${{ steps.tauri.outcome }}
+            installer smoke|${{ steps.installer-smoke.outcome }}
+            smoke-gpu.ps1 dry-run|${{ steps.smoke-gpu.outcome }}
+        run: python scripts/ci/name_steps.py
+
+      - name: Publish evidence manifest (public annotations)
+        if: always()
+        shell: pwsh
+        run: |
+          python scripts/ci/evidence_manifest.py --out reports/evidence-manifest.txt --require reports/junit-windows.xml --optional reports/installer-smoke.jsonl --optional reports/smoke-gpu-dry.json --optional apps/desktop/src-tauri/Cargo.lock --require-glob "apps/desktop/src-tauri/target/release/bundle/nsis/*_x64-setup.exe" --glob-outcome "${{ steps.tauri.outcome }}" --note "node=$(node -v)" --note "python=$(python -V 2>&1)" --note "user-gpu=unverified" --note "seed=none"
 
       - name: Upload installer (downloadable .exe on every push)
         if: always()
@@ -291,6 +342,8 @@ jobs:
           path: |
             reports/junit-windows.xml
             reports/installer-smoke.jsonl
+            reports/evidence-manifest.txt
+            reports/smoke-gpu-dry.json
             apps/desktop/src-tauri/Cargo.lock
 
       # After artifacts, so a publish failure still leaves the .exe and junit.

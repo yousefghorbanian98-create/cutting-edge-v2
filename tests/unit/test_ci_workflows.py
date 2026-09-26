@@ -77,6 +77,7 @@ def test_ubuntu_job_steps():
     assert re.search(r"pnpm (run )?build", runs)
     assert "playwright install" in runs and "chromium" in runs
     assert "playwright test" in runs
+    assert "scripts/ci/evidence_manifest.py" in runs
     assert "tests/tracks.spec.ts" in runs
     for spec in (
         "tests/zoom.spec.ts",
@@ -119,6 +120,9 @@ def test_windows_job_steps():
     assert "tauri build" in runs
     assert "scripts/ci/installer_smoke.ps1" in runs
     assert "scripts/smoke-gpu.ps1 -DryRun" in runs, "S-011: windows must execute the smoke contract"
+    assert "scripts/ci/name_steps.py" in runs
+    assert "scripts/ci/evidence_manifest.py" in runs
+    assert "unverified" in dump
     assert "scripts/ci/publish_cargo_lock.ps1" in runs
     assert "make_icons.py --check" in runs
     # BUG-17: only this job may write, and only to commit the runner lockfile.
