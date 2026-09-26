@@ -89,7 +89,7 @@ jobs:
       - name: Annotate unit failures (public annotations, no token needed)
         if: always()
         env:
-          CE_EVIDENCE_REQUIRE: test_existing_output_without_consent_is_refused,test_failed_consented_replace_rolls_back,test_consented_replace_publishes_only_after_success,refusal,no-overwrite,explicit-consent,staging,rollback
+          CE_EVIDENCE_REQUIRE: tests.unit.test_ffmpeg_overwrite::test_existing_output_without_consent_is_refused,tests.unit.test_ffmpeg_overwrite::test_failed_consented_replace_rolls_back,tests.unit.test_ffmpeg_overwrite::test_consented_replace_publishes_only_after_success,refusal,no-overwrite,explicit-consent,staging,rollback
         run: python scripts/ci/junit_annotate.py reports/junit-unit.xml
 
       - name: Frontend build (Turbo → next build, output export)
@@ -119,6 +119,8 @@ jobs:
 
       - name: Publish evidence manifest (public annotations)
         if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           pwv=$(pnpm --filter cutting-edge-desktop exec playwright --version || echo unverified)
           chrome=$(ls -d "$HOME/.cache/ms-playwright"/chromium-* 2>/dev/null | head -1 || true)
@@ -130,9 +132,9 @@ jobs:
             --require gate-static.log \
             --junit reports/junit-unit.xml \
             --junit apps/desktop/playwright-report/junit.xml \
-            --name test_existing_output_without_consent_is_refused \
-            --name test_failed_consented_replace_rolls_back \
-            --name test_consented_replace_publishes_only_after_success \
+            --name tests.unit.test_ffmpeg_overwrite::test_existing_output_without_consent_is_refused \
+            --name tests.unit.test_ffmpeg_overwrite::test_failed_consented_replace_rolls_back \
+            --name tests.unit.test_ffmpeg_overwrite::test_consented_replace_publishes_only_after_success \
             --name refusal \
             --name no-overwrite \
             --name explicit-consent \
@@ -248,7 +250,7 @@ jobs:
         if: always()
         shell: pwsh
         env:
-          CE_EVIDENCE_REQUIRE: test_ffmpeg_extract_aac,test_existing_output_without_consent_is_refused,test_failed_consented_replace_rolls_back,test_consented_replace_publishes_only_after_success,refusal,no-overwrite,explicit-consent,staging,rollback
+          CE_EVIDENCE_REQUIRE: test_ffmpeg_extract_aac,tests.unit.test_ffmpeg_overwrite::test_existing_output_without_consent_is_refused,tests.unit.test_ffmpeg_overwrite::test_failed_consented_replace_rolls_back,tests.unit.test_ffmpeg_overwrite::test_consented_replace_publishes_only_after_success,refusal,no-overwrite,explicit-consent,staging,rollback
         run: python scripts/ci/junit_annotate.py reports/junit-windows.xml
 
       # S-010: the crate compiles → fmt/clippy/tests are hard checks (BUG-16 closed).
@@ -345,9 +347,10 @@ jobs:
         if: always()
         shell: pwsh
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           CE_INSTALLER_GLOB: apps/desktop/src-tauri/target/release/bundle/nsis/*_x64-setup.exe
         run: |
-          python scripts/ci/evidence_manifest.py --out reports/evidence-manifest.txt --job windows --require reports/junit-windows.xml --optional reports/installer-smoke.jsonl --optional reports/smoke-gpu-dry.json --optional apps/desktop/src-tauri/Cargo.lock --require-glob $env:CE_INSTALLER_GLOB --glob-outcome "${{ steps.tauri.outcome }}" --junit reports/junit-windows.xml --name test_ffmpeg_extract_aac --name test_existing_output_without_consent_is_refused --name test_failed_consented_replace_rolls_back --name test_consented_replace_publishes_only_after_success --name refusal --name no-overwrite --name explicit-consent --name staging --name rollback --note "node=$(node -v)" --note "python=$(python --version)" --note "user-gpu=unverified" --note "seed=none" --note "BUG-18=open"
+          python scripts/ci/evidence_manifest.py --out reports/evidence-manifest.txt --job windows --require reports/junit-windows.xml --optional reports/installer-smoke.jsonl --optional reports/smoke-gpu-dry.json --optional apps/desktop/src-tauri/Cargo.lock --require-glob $env:CE_INSTALLER_GLOB --glob-outcome "${{ steps.tauri.outcome }}" --junit reports/junit-windows.xml --name test_ffmpeg_extract_aac --name tests.unit.test_ffmpeg_overwrite::test_existing_output_without_consent_is_refused --name tests.unit.test_ffmpeg_overwrite::test_failed_consented_replace_rolls_back --name tests.unit.test_ffmpeg_overwrite::test_consented_replace_publishes_only_after_success --name refusal --name no-overwrite --name explicit-consent --name staging --name rollback --note "node=$(node -v)" --note "python=$(python --version)" --note "user-gpu=unverified" --note "seed=none" --note "BUG-18=open"
 
       - name: Upload installer (downloadable .exe on every push)
         if: always()

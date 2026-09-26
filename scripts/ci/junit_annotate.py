@@ -48,13 +48,13 @@ THRESHOLDS = {
 # A passing owner without the token is not a concept pass. Running these
 # tests does not close BUG-18.
 CONCEPT_SOURCES = {
-    "refusal": ("test_existing_output_without_consent_is_refused",),
-    "no-overwrite": ("test_existing_output_without_consent_is_refused",),
-    "rollback": ("test_failed_consented_replace_rolls_back",),
-    "staging": ("test_consented_replace_publishes_only_after_success",),
+    "refusal": ("tests.unit.test_ffmpeg_overwrite::test_existing_output_without_consent_is_refused",),
+    "no-overwrite": ("tests.unit.test_ffmpeg_overwrite::test_existing_output_without_consent_is_refused",),
+    "rollback": ("tests.unit.test_ffmpeg_overwrite::test_failed_consented_replace_rolls_back",),
+    "staging": ("tests.unit.test_ffmpeg_overwrite::test_consented_replace_publishes_only_after_success",),
     "explicit-consent": (
-        "test_failed_consented_replace_rolls_back",
-        "test_consented_replace_publishes_only_after_success",
+        "tests.unit.test_ffmpeg_overwrite::test_failed_consented_replace_rolls_back",
+        "tests.unit.test_ffmpeg_overwrite::test_consented_replace_publishes_only_after_success",
     ),
 }
 
@@ -147,14 +147,22 @@ def collect_cases(paths: list[str]) -> tuple[list[dict[str, str]], list[str], in
     return cases, missing, failed, total
 
 
+def _qualified(case: dict[str, str], key: str) -> bool:
+    """Match `suite::function` so a same-named test in another file is not counted."""
+    if "::" not in key:
+        return key == case["name"] or key in case["identity"]
+    suite, func = key.split("::", 1)
+    return suite in case["identity"] and case["name"] == func
+
+
 def _owns(case: dict[str, str], source: str) -> bool:
-    return case["name"] == source or source in case["identity"]
+    return _qualified(case, source)
 
 
 def _identity_match(case: dict[str, str], key: str) -> bool:
     if key in CONCEPT_SOURCES:
         return False
-    return key == case["name"] or key in case["identity"]
+    return _qualified(case, key)
 
 
 def named_records(paths: list[str], required: tuple[str, ...]) -> list[dict[str, str]]:

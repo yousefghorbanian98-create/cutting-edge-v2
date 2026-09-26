@@ -116,8 +116,9 @@ def _publish_check_run(name: str, conclusion: str, summary: str, text: str) -> s
     if os.environ.get("GITHUB_ACTIONS") != "true":
         _notice("evidence check-run", "result=not-run reason=outside-github-actions")
         return "not-run"
-    if not repo or not token or not sha:
-        _error("evidence check-run", "result=failed reason=token-or-sha-missing")
+    missing = [name for name, value in (("repository", repo), ("token", token), ("sha", sha)) if not value]
+    if missing:
+        _error("evidence check-run", "result=failed reason=missing-" + "-".join(missing))
         return "failed"
     now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     payload = {

@@ -145,6 +145,10 @@ def test_overwrite_concepts_and_extract_measurement_come_from_junit(tmp_path: Pa
     junit = tmp_path / "j.xml"
     junit.write_text(
         "<testsuites><testsuite name='s'>"
+        "<testcase classname='tests.unit.test_export_plan' "
+        "name='test_existing_output_without_consent_is_refused'>"
+        "<system-out>not evidence</system-out>"
+        "</testcase>"
         "<testcase classname='tests.unit.test_ffmpeg_overwrite' "
         "name='test_existing_output_without_consent_is_refused'>"
         "<system-out>EVIDENCE concept=refusal concept=no-overwrite ffmpeg-called=false</system-out>"
@@ -171,8 +175,9 @@ def test_overwrite_concepts_and_extract_measurement_come_from_junit(tmp_path: Pa
         env={
             **os.environ,
             "CE_EVIDENCE_REQUIRE": (
-                "test_existing_output_without_consent_is_refused,refusal,no-overwrite,"
-                "explicit-consent,staging,rollback,test_ffmpeg_extract_aac,sequence.spec.ts"
+                "tests.unit.test_ffmpeg_overwrite::test_existing_output_without_consent_is_refused,"
+                "refusal,no-overwrite,explicit-consent,staging,rollback,"
+                "test_ffmpeg_extract_aac,sequence.spec.ts"
             ),
             "GITHUB_SHA": "abc",
             "RUNNER_OS": "Windows",
@@ -182,7 +187,10 @@ def test_overwrite_concepts_and_extract_measurement_come_from_junit(tmp_path: Pa
     )
     assert proc.returncode == 0, proc.stderr
     out = proc.stdout
-    assert "test_existing_output_without_consent_is_refused: 1 passed, 0 failed" in out
+    assert (
+        "tests.unit.test_ffmpeg_overwrite::test_existing_output_without_consent_is_refused: 1 passed, 0 failed" in out
+    )
+    assert "test_export_plan" not in out
     assert "refusal: 1 passed, 0 failed" in out
     assert "no-overwrite: 1 passed, 0 failed" in out
     assert "explicit-consent: 2 passed, 0 failed" in out
