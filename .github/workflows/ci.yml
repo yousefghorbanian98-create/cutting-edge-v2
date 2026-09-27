@@ -153,6 +153,7 @@ jobs:
             --note "BUG-18=open"
 
       - name: Upload ubuntu evidence (junit, playwright-report, gate log, screenshot)
+        id: upload_ubuntu_evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -166,6 +167,13 @@ jobs:
             gate-static.log
             apps/desktop/playwright-report/
             docs/loop/evidence/S-007/home-1440x900.png
+
+      - name: Name ubuntu evidence zip readability
+        if: always()
+        env:
+          UPLOAD_OUTCOME: ${{ steps.upload_ubuntu_evidence.outcome }}
+          ARTIFACT_NAME: ubuntu-evidence
+        run: python scripts/ci/name_artifact_upload.py
 
   # ───────────────────────────────────────────────────────────────────────────
   windows:
@@ -353,6 +361,7 @@ jobs:
           python scripts/ci/evidence_manifest.py --out reports/evidence-manifest.txt --job windows --require reports/junit-windows.xml --optional reports/installer-smoke.jsonl --optional reports/smoke-gpu-dry.json --optional apps/desktop/src-tauri/Cargo.lock --require-glob $env:CE_INSTALLER_GLOB --glob-outcome "${{ steps.tauri.outcome }}" --junit reports/junit-windows.xml --name test_ffmpeg_extract_aac --name tests.unit.test_ffmpeg_overwrite::test_existing_output_without_consent_is_refused --name tests.unit.test_ffmpeg_overwrite::test_failed_consented_replace_rolls_back --name tests.unit.test_ffmpeg_overwrite::test_consented_replace_publishes_only_after_success --name refusal --name no-overwrite --name explicit-consent --name staging --name rollback --note "node=$(node -v)" --note "python=$(python --version)" --note "user-gpu=unverified" --note "seed=none" --note "BUG-18=open"
 
       - name: Upload installer (downloadable .exe on every push)
+        id: upload_windows_installer
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -361,7 +370,16 @@ jobs:
           retention-days: 30
           path: apps/desktop/src-tauri/target/release/bundle/nsis/*_x64-setup.exe
 
+      - name: Name installer zip readability
+        if: always()
+        shell: pwsh
+        env:
+          UPLOAD_OUTCOME: ${{ steps.upload_windows_installer.outcome }}
+          ARTIFACT_NAME: cutting-edge-windows-x64-setup
+        run: python scripts/ci/name_artifact_upload.py
+
       - name: Upload windows evidence (junit)
+        id: upload_windows_evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -375,6 +393,14 @@ jobs:
             reports/evidence-manifest.sha256
             reports/smoke-gpu-dry.json
             apps/desktop/src-tauri/Cargo.lock
+
+      - name: Name windows evidence zip readability
+        if: always()
+        shell: pwsh
+        env:
+          UPLOAD_OUTCOME: ${{ steps.upload_windows_evidence.outcome }}
+          ARTIFACT_NAME: windows-evidence
+        run: python scripts/ci/name_artifact_upload.py
 
       # After artifacts, so a publish failure still leaves the .exe and junit.
       # No-ops once Cargo.lock is tracked (the --locked follow-up).

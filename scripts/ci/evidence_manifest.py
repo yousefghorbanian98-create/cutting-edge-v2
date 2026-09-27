@@ -182,7 +182,16 @@ def main(argv: list[str]) -> int:
         "sidecar-note=sidecar-bytes-are-not-part-of-canonical-bytes",
         f"job={args.job}",
         _meta(),
-        "readable-channel=check-run-annotation",
+        "readable-channel=check-run-output.text",
+        "annotation-body-is-not-the-hashed-bytes",
+        "zip-readability=unverified",
+        "upload-success-is-not-a-client-read",
+        "artifact-digest-is-not-file-sha256",
+        "file-checksum-source=runner-local-read",
+        "archive-checksum=not-substituted-for-file-sha256",
+        "gh-jq-method=drop-exactly-one-trailing-lf-from-gh-jq-output.text-no-other-normalization",
+        "official-playback-drift=lt-1/60",
+        "printed-threshold-1/fps-is-not-official-when-fps-is-not-60",
         "user-gpu=unverified",
         "BUG-18=open",
         "S-033=not-started",
@@ -258,11 +267,25 @@ def main(argv: list[str]) -> int:
         "circular=false sidecar-is-not-in-canonical-bytes\n"
         "verify=sha256(output.text) == this sha256, after confirming LF and one trailing newline\n"
     )
-    published = _publish_check_run(
-        f"evidence-manifest-{args.job}",
-        "failure" if failed else "success",
-        summary,
-        data.decode("utf-8"),
+    body = data.decode("utf-8")
+    if len(data) > 65535:
+        _error(
+            "evidence check-run",
+            f"{prefix} result=failed reason=canonical-body-exceeds-check-run-text bytes={len(data)} limit=65535",
+        )
+        failed += 1
+        published = "not-published"
+    else:
+        published = _publish_check_run(
+            f"evidence-manifest-{args.job}",
+            "failure" if failed else "success",
+            summary,
+            body,
+        )
+    _notice(
+        "artifact zip",
+        f"{prefix} result=unverified reason=runner-upload-does-not-prove-client-read "
+        "artifact-digest-is-not-file-sha256 file-checksum-source=runner-local-read",
     )
     if published == "failed":
         failed += 1
