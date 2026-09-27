@@ -109,6 +109,56 @@ anti-slop is a reference for process/design quality: purpose before decoration, 
 
 HotClip is an external reference for a local-first clipping workflow: ffprobe-backed media discovery, reference-clip pacing, measurable caption/clip quality fixtures, processing receipts, and a platform-agnostic API seam. Additional useful patterns are review-first highlight candidates, word-aligned speech-safe cuts, private atomic export staging, cancel cleanup, resumable checkpoints, bounded local cache, source relinking, stream-consistent analysis, and evidence-gated HDR/SDR handling. These principles fit future Style Match/export planning, but HotClip is AGPL-3.0 and must not be vendored, copied, or added as a runtime dependency without a separate legal and architecture decision. Its local-first and receipt ideas do not replace our typed executor, capability states, verification, provenance, or CI evidence.
 
+### brag (`latent-spaces/brag`) — K-015, dated 2026-09-27
+
+brag is an MIT-licensed workflow reference for turning a real project into a short, source-backed launch video. Cutting Edge may adopt the workflow ideas below. It must not install the skill, vendor its scripts, depend on Hyperframes, run unpinned `npx`, or import its music, SFX, or provider adapters.
+
+Adopted as future-stage principles only:
+
+- inspect the real source before writing claims;
+- reuse the product's real UI and assets instead of inventing a look;
+- plan the user flow as entry, action, then result;
+- keep the storyboard and edit plan typed and reviewable;
+- every claim must point at a source surface;
+- text must fit a readability budget;
+- visual QA includes a settled frame and a mid-transition frame;
+- the poster and frame zero are validated, not assumed;
+- each run writes to a timestamped, bounded output directory;
+- a processing receipt, manifest, and checksum travel with the output;
+- secrets, PII, credentials, and internal hostnames are excluded;
+- voice is opt-in and never implied by a default provider;
+- audio and SFX need source, license, and checksum before use;
+- an optional adapter exposes capability state and may be absent.
+
+Rejected from this reference: Hyperframes as runtime or exporter, `/brag-slim` as an unbounded model executor, remote unpinned `npx`, `ffmpeg -y`, direct overwrite, implicit Kokoro or other voice providers, and any claim that a dry-run or software render is a GPU pass.
+
+These principles do not start `S-033` and do not close `BUG-18`.
+
+### Concat (`jub0t/Concat`) — K-016, dated 2026-09-27
+
+Concat is AGPL-3.0-or-later. It is a reference for editor architecture only. No crate, shader, MCP server, runtime, asset, or source file from Concat or HotClip may be vendored or copied.
+
+Adopted as independently redesigned principles only:
+
+- dependencies point one way: core does not know the window, and core does not link the media backend;
+- one document model and one command path serve UI, CLI, API, and agent;
+- a pure frame plan exists before decode or composite;
+- preview and export share timeline semantics;
+- time is exact and quantised to the frame grid; hidden float equality is not a clock;
+- a reference compositor can check GPU output, but a software path is not a GPU pass;
+- cache size, worker count, and prefetch are bounded;
+- scheduler priority is explicit;
+- hardware capability is detected, and software fallback is named;
+- a stale async result is discarded when the project or session closes;
+- effects and plugins enter only through a validated manifest, with limits and a deterministic failure;
+- models carry version, digest, license, and offline state;
+- per-run logs have a retention bound and do not store secrets or private media without consent;
+- performance claims come from a measured table, not a generic success check;
+- the default capability state is local and offline;
+- HDR/SDR claims stay evidence-gated.
+
+These principles do not replace the existing probe, typed operation, capability, safe execute, verify, and provenance chain. They do not authorize a schema migration in this batch.
+
 ## FFmpeg execution direction (reference from `ffmpeg-skill`)
 
 The project may adopt the following execution principles, but must keep its own Python/Tauri implementation rather than vendor the external repository:

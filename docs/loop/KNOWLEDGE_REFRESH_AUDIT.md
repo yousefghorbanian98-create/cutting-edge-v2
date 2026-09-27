@@ -12,7 +12,7 @@ Run this audit before starting the next implementation batch after any accepted 
 
 - architecture or execution contracts;
 - media, browser, UI, security, or evidence workflow;
-- external reference such as `ffmpeg-skill`, `iris`, or `anti-slop`;
+- external reference such as `ffmpeg-skill`, `iris`, `anti-slop`, `brag`, or `Concat`;
 - a newly discovered CI, Windows, Playwright, installer, or provenance failure.
 
 For the current roadmap, this audit is required before continuing S-023 and must cover S-001 through the current stage.
@@ -78,3 +78,11 @@ Use only as an optional visual camera/reference for stable screenshots, selector
 ### anti-slop
 
 Use only as a design/process reference: purpose before decoration, real interaction evidence, responsive/accessibility review, no fake metrics, and explicit delivery gates. Do not install its plugin system or copy its rules wholesale into runtime. Adapt selected principles into project contracts and `DESIGN.md` only through review.
+
+### brag (K-015, 2026-09-27)
+
+Use only as a workflow lens: source-first inspection, real UI reuse, entry→action→result, typed storyboard, source-backed claims, readability, settled-frame and frame-zero checks, isolated output, receipt, manifest, checksum, redaction, and opt-in voice. Do not install the skill, Hyperframes, bundled audio, or an unpinned remote renderer. `ffmpeg -y` and implicit voice providers stay rejected.
+
+### Concat (K-016, 2026-09-27)
+
+Use only as an architecture lens: one-way layers, one document and command path, a pure frame plan, shared preview/export semantics, exact time, bounded cache and workers, explicit fallback, stale-result discard, and evidence-gated color and performance claims. Concat is AGPL-3.0-or-later. Do not copy code, crates, shaders, MCP, or runtime. Do not treat K-016 as implementation proof.
