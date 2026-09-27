@@ -7,7 +7,6 @@ not the SHA-256 of a file inside the archive. A failed upload is not silent.
 from __future__ import annotations
 
 import os
-import sys
 
 
 def main() -> int:
