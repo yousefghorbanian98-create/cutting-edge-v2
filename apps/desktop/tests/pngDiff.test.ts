@@ -36,10 +36,12 @@ function rgbaPng(width: number, height: number, pixels: Buffer): Buffer {
 function report(name: string, fixture: string, baseline: string, measured: number): void {
   const condition = measured < THRESHOLD ? 'passed' : 'failed';
   console.info(
-    `EVIDENCE test=${name} metric=visual-diff fixture=${fixture} baseline=${baseline} ` +
-      `measured=${measured} threshold=<0.001 condition-result=${condition} ` +
-      'alpha-policy=count-any-channel-including-alpha resize=none color-conversion=none ' +
-      'tolerance=none pixelDiffRatio-is-not-this-metric=true ssim-is-not-this-metric=true seed=none'
+    [
+      `EVIDENCE test=${name} metric=visual-diff fixture=${fixture} baseline=${baseline}`,
+      `measured=${measured} threshold=<0.001 condition-result=${condition}`,
+      'alpha-policy=count-any-channel-including-alpha resize=none color-conversion=none',
+      'tolerance=none pixelDiffRatio-is-not-this-metric=true ssim-is-not-this-metric=true seed=none',
+    ].join(' ')
   );
 }
 
@@ -79,8 +81,10 @@ describe('direct visual diff', () => {
       measured
     );
     console.info(
-      `EVIDENCE metric=channel-byte-ratio measured=${bytes} ` +
-        'channel-byte-ratio-is-not-visual-diff=true seed=none'
+      [
+        `EVIDENCE metric=channel-byte-ratio measured=${bytes}`,
+        'channel-byte-ratio-is-not-visual-diff=true seed=none',
+      ].join(' ')
     );
     expect(measured).toBe(0.001);
     expect(measured < THRESHOLD).toBe(false);
