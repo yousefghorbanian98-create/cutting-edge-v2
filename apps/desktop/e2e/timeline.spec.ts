@@ -59,11 +59,15 @@ test('import, arrange, trim, split, undo, and preview stay within 0.1% three tim
   }
   const undoDiff = visualDiffRatio(shots[0] ?? Buffer.alloc(0), shots[1] ?? Buffer.alloc(0));
   const splitDiff = visualDiffRatio(shots[1] ?? Buffer.alloc(0), shots[2] ?? Buffer.alloc(0));
+  const undoCondition = undoDiff < 0.001 ? 'passed' : 'failed';
+  const splitCondition = splitDiff < 0.001 ? 'passed' : 'failed';
   console.info(
     'EVIDENCE fixture=wide.mp4 baseline=previous-journey-shot metric=visual-diff ' +
-      `pixel-inequality=any-channel threshold=0.001 undo-visual-diff=${undoDiff} ` +
-      `split-visual-diff=${splitDiff} pixelDiffRatio-is-not-this-metric=true ` +
-      'ssim-is-not-this-metric=true seed=none'
+      'pixel-inequality=any-channel threshold=<0.001 ' +
+      `undo-visual-diff=${undoDiff} undo-condition-result=${undoCondition} ` +
+      `split-visual-diff=${splitDiff} split-condition-result=${splitCondition} ` +
+      'alpha-policy=count-any-channel-including-alpha resize=none color-conversion=none tolerance=none ' +
+      'pixelDiffRatio-is-not-this-metric=true ssim-is-not-this-metric=true seed=none'
   );
   expect(undoDiff).toBeLessThan(0.001);
   expect(splitDiff).toBeLessThan(0.001);

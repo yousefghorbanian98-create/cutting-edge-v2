@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
+import { STRICT_PLAYHEAD_FPS } from '../src/domain/playbackSync';
 
 interface PlaybackFixture {
   name: string;
@@ -25,7 +26,7 @@ async function load(page: import('@playwright/test').Page, fixture: PlaybackFixt
   await expect(page.getByTestId('preview-video')).toHaveAttribute('data-fps', String(fixture.fps));
 }
 
-test('playhead stays within one frame, and ten arrow steps match fps', async ({ page }) => {
+test('playhead drift stays under 1/60 and ten arrow steps follow file fps', async ({ page }) => {
   for (const fixture of fixtures) {
     await load(page, fixture);
     await page.getByRole('button', { name: 'پخش', exact: true }).click();
@@ -51,13 +52,13 @@ test('playhead stays within one frame, and ten arrow steps match fps', async ({ 
         lane.scrollLeft;
       return Math.abs(x / 100 - video.currentTime);
     });
-    // Official acceptance remains drift < 1/60. Printing 1/fps (1/30 at 30fps) was a reporting defect.
-    // This expect is unchanged. drift is still measured here and is not rewritten.
+    // Drift clock is video.currentTime. No fallback clock and no predicted transform.
+    // Official bound is < 1/60 via STRICT_PLAYHEAD_FPS. Arrow steps stay on file fps.
     console.info(
       `EVIDENCE clock=video.currentTime fixture=${fixture.name} fps=${fixture.fps} ` +
-        `duration-s=>=3 drift=${drift} official-threshold=<1/60 seed=none`
+        `duration-s=>=3 drift=${drift} assertion-bound=<1/60 official-threshold=<1/60 seed=none`
     );
-    expect(drift).toBeLessThan(1 / fixture.fps);
+    expect(drift).toBeLessThan(1 / STRICT_PLAYHEAD_FPS);
 
     await page.keyboard.press('k');
     await page.evaluate(() => {
@@ -70,7 +71,8 @@ test('playhead stays within one frame, and ten arrow steps match fps', async ({ 
       .getByTestId('preview-video')
       .evaluate((node) => (node instanceof HTMLVideoElement ? node.currentTime : -1));
     console.info(
-      `EVIDENCE clock=video.currentTime fixture=${fixture.name} arrow-steps=10 measured=${current} expected=${10 / fixture.fps} threshold=0.001 seed=none`
+      `EVIDENCE clock=video.currentTime fixture=${fixture.name} arrow-steps=10 arrow-interval=file-fps ` +
+        `measured=${current} expected=${10 / fixture.fps} arrow-threshold=0.001 seed=none`
     );
     expect(Math.abs(current - 10 / fixture.fps)).toBeLessThan(0.001);
   }

@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { maxPlayheadLeadSeconds, playheadTranslate } from '../playbackSync';
+import { STRICT_PLAYHEAD_FPS, maxPlayheadLeadSeconds, playheadTranslate } from '../playbackSync';
 
 describe('playhead lead stays inside one frame', () => {
   it('caps 60fps lead strictly under 1/60', () => {
+    expect(STRICT_PLAYHEAD_FPS).toBe(60);
     const lead = maxPlayheadLeadSeconds(60);
-    expect(lead).toBeLessThan(1 / 60);
+    expect(lead).toBeLessThan(1 / STRICT_PLAYHEAD_FPS);
     expect(lead).toBeGreaterThan(0);
   });
 

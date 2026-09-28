@@ -39,6 +39,9 @@ def test_manifest_prints_sha256_and_names_a_missing_file(tmp_path: Path) -> None
     assert "user-gpu=unverified" in text
     assert "official-playback-drift=lt-1/60" in text
     assert "historical-printed-1/30-was-reporting-defect" in text
+    assert "playback-drift-assertion=lt-1/60" in text
+    assert "S-024=open" in text
+    assert "playback-expect-not-rewritten" not in text
     assert "S-026=open" in text
     assert "pixelDiffRatio-is-not-visual-diff" in text
     assert "printed-threshold-1/fps-is-not-official-when-fps-is-not-60" not in text
@@ -213,9 +216,15 @@ def test_overwrite_concepts_and_extract_measurement_come_from_junit(tmp_path: Pa
 def test_playback_annotation_names_official_drift_not_one_over_fps(tmp_path: Path) -> None:
     spec = (ROOT / "apps/desktop/tests/playback.spec.ts").read_text(encoding="utf-8")
     assert "official-threshold=<1/60" in spec
+    assert "assertion-bound=<1/60" in spec
+    assert "STRICT_PLAYHEAD_FPS" in spec
+    assert "const STRICT_PLAYHEAD_FPS" not in spec
     assert "threshold=${1 / fixture.fps}" not in spec
-    assert "toBeLessThan(1 / fixture.fps)" in spec
+    assert "toBeLessThan(1 / fixture.fps)" not in spec
+    assert "toBeLessThan(1 / STRICT_PLAYHEAD_FPS)" in spec
     assert "toBeLessThan(0.001)" in spec
+    assert "arrow-interval=file-fps" in spec
+    assert "test.skip" not in spec
     junit = tmp_path / "j.xml"
     junit.write_text(
         "<testsuites><testsuite name='s'>"
@@ -241,9 +250,10 @@ def test_playback_annotation_names_official_drift_not_one_over_fps(tmp_path: Pat
     assert proc.returncode == 0, proc.stderr
     out = proc.stdout
     assert "expected=official-drift<1/60" in out
+    assert "assertion-bound=<1/60" in out
     assert "historical-printed-1/30-was-reporting-defect" in out
-    assert "expect-not-rewritten" in out
     assert "measured-values-not-rewritten" in out
+    assert "expect-not-rewritten" not in out
     assert "drift<1/fps" not in out
     assert "threshold=0.03333333333333333" not in out
 
@@ -283,3 +293,49 @@ def test_s026_annotation_names_visual_diff_not_byte_ratio(tmp_path: Path) -> Non
     assert "pixelDiffRatio-is-not-visual-diff" in out
     assert "ssim-is-not-visual-diff" in out
     assert "visual-ratio<0.001" not in out
+
+
+def test_visual_diff_names_are_not_a_count(tmp_path: Path) -> None:
+    junit = tmp_path / "j.xml"
+    junit.write_text(
+        "<testsuites><testsuite name='s'>"
+        "<testcase classname='tests/pngDiff.test.ts' "
+        "name='direct visual diff &gt; visual-diff one changed pixel among 1000 fails lt 0.001'>"
+        "<system-out>EVIDENCE metric=visual-diff fixture=synthetic-rgba-40x25 "
+        "baseline=one-channel-of-one-pixel measured=0.001 threshold=&lt;0.001 "
+        "condition-result=failed</system-out></testcase>"
+        "<testcase classname='tests/pngDiff.test.ts' "
+        "name='direct visual diff &gt; visual-diff identical images is 0'>"
+        "<system-out>EVIDENCE metric=visual-diff measured=0 condition-result=passed</system-out>"
+        "</testcase></testsuite></testsuites>",
+        encoding="utf-8",
+    )
+    proc = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "ci" / "junit_annotate.py"), str(junit)],
+        capture_output=True,
+        text=True,
+        check=False,
+        env={
+            **os.environ,
+            "CE_EVIDENCE_REQUIRE": (
+                "visual-diff one changed pixel among 1000 fails lt 0.001,"
+                "visual-diff identical images is 0,"
+                "visual-diff alpha-only change"
+            ),
+            "GITHUB_SHA": "abc",
+            "RUNNER_OS": "Linux",
+            "GITHUB_RUN_ID": "9",
+            "PYTHONUTF8": "1",
+        },
+    )
+    assert proc.returncode == 0, proc.stderr
+    out = proc.stdout
+    assert "visual-diff one changed pixel among 1000 fails lt 0.001: 1 passed, 0 failed" in out
+    assert "measured=0.001" in out
+    assert "condition-result=failed" in out
+    assert "junit-pass-is-not-threshold-pass" in out
+    assert "visual-diff identical images is 0: 1 passed, 0 failed" in out
+    assert "measured=0" in out
+    assert "visual-diff alpha-only change: 0 passed, 0 failed result=not-run" in out
+    assert "0 failed / 2 total" in out
+    assert "count is not a named pass" in out

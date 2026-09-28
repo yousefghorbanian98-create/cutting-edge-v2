@@ -39,13 +39,26 @@ THRESHOLDS = {
     "timeline-canvas.spec.ts": "drop-ratio<0.05 rendered<40 seed=none",
     "zoom.spec.ts": "cursor-lock<=1px fit=scrollWidth<=clientWidth+1 seed=none",
     "playback.spec.ts": (
-        "official-drift<1/60 arrow-threshold=0.001 clock=video.currentTime seed=none "
-        "historical-printed-1/30-was-reporting-defect expect-not-rewritten measured-values-not-rewritten"
+        "official-drift<1/60 assertion-bound=<1/60 arrow-threshold=0.001 arrow-interval=file-fps "
+        "clock=video.currentTime seed=none historical-printed-1/30-was-reporting-defect "
+        "measured-values-not-rewritten"
     ),
     "e2e/timeline.spec.ts": (
         "visual-diff<0.001 pixel-inequality=any-channel fixture=wide.mp4 "
         "baseline=previous-journey-shot seed=none pixelDiffRatio-is-not-visual-diff ssim-is-not-visual-diff"
     ),
+    "visual-diff identical images is 0": "visual-diff<0.001 condition-result=passed fixture=synthetic-rgba-2x1",
+    "visual-diff one changed channel among 2 pixels": (
+        "visual-diff<0.001 condition-result=failed measured=0.5 fixture=synthetic-rgba-2x1"
+    ),
+    "visual-diff one changed pixel among 1000 fails lt 0.001": (
+        "visual-diff<0.001 condition-result=failed measured=0.001 junit-pass-is-not-threshold-pass "
+        "fixture=synthetic-rgba-40x25"
+    ),
+    "visual-diff alpha-only change": "visual-diff<0.001 condition-result=failed fixture=synthetic-rgba-2x1",
+    "visual-diff one-byte difference": "visual-diff<0.001 condition-result=failed tolerance=none",
+    "visual-diff dimension mismatch": "visual-diff<0.001 condition-result=failed resize=none",
+    "visual-diff empty or unreadable input": "visual-diff<0.001 condition-result=failed deterministic-failure=1",
     "sequence.spec.ts": "ssim>0.9 gap<100ms clock=sequence-input seed=none",
     "test_ffmpeg_extract_aac": "wav=22050 channels=1",
 }

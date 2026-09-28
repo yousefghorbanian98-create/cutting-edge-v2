@@ -84,13 +84,13 @@ jobs:
 
       - name: Timeline domain (vitest + line coverage)
         working-directory: apps/desktop
-        run: pnpm exec vitest run --coverage
+        run: mkdir -p ../../reports && pnpm exec vitest run --coverage
 
       - name: Annotate unit failures (public annotations, no token needed)
         if: always()
         env:
-          CE_EVIDENCE_REQUIRE: tests.unit.test_ffmpeg_overwrite::test_existing_output_without_consent_is_refused,tests.unit.test_ffmpeg_overwrite::test_failed_consented_replace_rolls_back,tests.unit.test_ffmpeg_overwrite::test_consented_replace_publishes_only_after_success,refusal,no-overwrite,explicit-consent,staging,rollback
-        run: python scripts/ci/junit_annotate.py reports/junit-unit.xml
+          CE_EVIDENCE_REQUIRE: tests.unit.test_ffmpeg_overwrite::test_existing_output_without_consent_is_refused,tests.unit.test_ffmpeg_overwrite::test_failed_consented_replace_rolls_back,tests.unit.test_ffmpeg_overwrite::test_consented_replace_publishes_only_after_success,refusal,no-overwrite,explicit-consent,staging,rollback,visual-diff identical images is 0,visual-diff one changed channel among 2 pixels,visual-diff one changed pixel among 1000 fails lt 0.001,visual-diff alpha-only change,visual-diff one-byte difference,visual-diff dimension mismatch,visual-diff empty or unreadable input
+        run: python scripts/ci/junit_annotate.py reports/junit-unit.xml reports/junit-visual.xml
 
       - name: Frontend build (Turbo → next build, output export)
         run: pnpm run build
@@ -128,9 +128,11 @@ jobs:
             --out reports/evidence-manifest.txt \
             --job ubuntu \
             --require reports/junit-unit.xml \
+            --require reports/junit-visual.xml \
             --require apps/desktop/playwright-report/junit.xml \
             --require gate-static.log \
             --junit reports/junit-unit.xml \
+            --junit reports/junit-visual.xml \
             --junit apps/desktop/playwright-report/junit.xml \
             --name tests.unit.test_ffmpeg_overwrite::test_existing_output_without_consent_is_refused \
             --name tests.unit.test_ffmpeg_overwrite::test_failed_consented_replace_rolls_back \
@@ -145,6 +147,13 @@ jobs:
             --name playback.spec.ts \
             --name e2e/timeline.spec.ts \
             --name sequence.spec.ts \
+            --name "visual-diff identical images is 0" \
+            --name "visual-diff one changed channel among 2 pixels" \
+            --name "visual-diff one changed pixel among 1000 fails lt 0.001" \
+            --name "visual-diff alpha-only change" \
+            --name "visual-diff one-byte difference" \
+            --name "visual-diff dimension mismatch" \
+            --name "visual-diff empty or unreadable input" \
             --note "node=$(node -v)" \
             --note "python=$(python -V 2>&1)" \
             --note "playwright=${pwv}" \
@@ -162,6 +171,7 @@ jobs:
           retention-days: 14
           path: |
             reports/junit-unit.xml
+            reports/junit-visual.xml
             reports/evidence-manifest.txt
             reports/evidence-manifest.sha256
             gate-static.log

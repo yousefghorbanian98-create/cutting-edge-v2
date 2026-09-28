@@ -8,6 +8,10 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts', 'tests/pngDiff.test.ts'],
+    reporters: [
+      'default',
+      ['junit', { outputFile: path.resolve(__dirname, '../../reports/junit-visual.xml') }],
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text'],
