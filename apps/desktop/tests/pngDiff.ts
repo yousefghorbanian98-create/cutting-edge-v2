@@ -21,6 +21,40 @@ export function pixelDiffRatio(left: Buffer, right: Buffer): number {
   return changed / a.data.length;
 }
 
+/**
+ * Changed pixels / pixels.
+ * Any decoded channel byte that differs marks the pixel, including alpha.
+ * No resize, no color-space conversion, and no tolerance.
+ * A dimension mismatch, an empty image, or an unreadable image returns 1.
+ * That 1 is a failure, not a pass. Not pixelDiffRatio and not SSIM.
+ */
+export function visualDiffRatio(left: Buffer, right: Buffer): number {
+  let a: { width: number; height: number; data: Buffer };
+  let b: { width: number; height: number; data: Buffer };
+  try {
+    a = decode(left);
+    b = decode(right);
+  } catch {
+    return 1;
+  }
+  if (a.width !== b.width || a.height !== b.height || a.width < 1 || a.height < 1) return 1;
+  if (a.data.length !== b.data.length || a.data.length === 0) return 1;
+  const pixels = a.width * a.height;
+  if (a.data.length % pixels !== 0) return 1;
+  const channels = a.data.length / pixels;
+  let changed = 0;
+  for (let pixel = 0; pixel < pixels; pixel += 1) {
+    const start = pixel * channels;
+    for (let channel = 0; channel < channels; channel += 1) {
+      if (a.data[start + channel] !== b.data[start + channel]) {
+        changed += 1;
+        break;
+      }
+    }
+  }
+  return changed / pixels;
+}
+
 function decode(buf: Buffer): { width: number; height: number; data: Buffer } {
   let offset = 8;
   let width = 0;

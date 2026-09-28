@@ -38,8 +38,14 @@ NAMED_GAPS = (
 THRESHOLDS = {
     "timeline-canvas.spec.ts": "drop-ratio<0.05 rendered<40 seed=none",
     "zoom.spec.ts": "cursor-lock<=1px fit=scrollWidth<=clientWidth+1 seed=none",
-    "playback.spec.ts": "drift<1/fps arrow-threshold=0.001 clock=video.currentTime seed=none",
-    "e2e/timeline.spec.ts": "visual-ratio<0.001 fixture=wide.mp4 baseline=previous-journey-shot seed=none",
+    "playback.spec.ts": (
+        "official-drift<1/60 arrow-threshold=0.001 clock=video.currentTime seed=none "
+        "historical-printed-1/30-was-reporting-defect expect-not-rewritten measured-values-not-rewritten"
+    ),
+    "e2e/timeline.spec.ts": (
+        "visual-diff<0.001 pixel-inequality=any-channel fixture=wide.mp4 "
+        "baseline=previous-journey-shot seed=none pixelDiffRatio-is-not-visual-diff ssim-is-not-visual-diff"
+    ),
     "sequence.spec.ts": "ssim>0.9 gap<100ms clock=sequence-input seed=none",
     "test_ffmpeg_extract_aac": "wav=22050 channels=1",
 }

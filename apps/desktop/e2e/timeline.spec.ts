@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
-import { pixelDiffRatio } from '../tests/pngDiff';
+import { visualDiffRatio } from '../tests/pngDiff';
 
 interface ClipFixture {
   name: string;
@@ -57,11 +57,14 @@ test('import, arrange, trim, split, undo, and preview stay within 0.1% three tim
     });
     shots.push(await page.getByTestId('timeline-scroll').screenshot());
   }
-  const undoRatio = pixelDiffRatio(shots[0] ?? Buffer.alloc(0), shots[1] ?? Buffer.alloc(0));
-  const splitRatio = pixelDiffRatio(shots[1] ?? Buffer.alloc(0), shots[2] ?? Buffer.alloc(0));
+  const undoDiff = visualDiffRatio(shots[0] ?? Buffer.alloc(0), shots[1] ?? Buffer.alloc(0));
+  const splitDiff = visualDiffRatio(shots[1] ?? Buffer.alloc(0), shots[2] ?? Buffer.alloc(0));
   console.info(
-    `EVIDENCE fixture=wide.mp4 baseline=previous-journey-shot threshold=0.001 undo-ratio=${undoRatio} split-ratio=${splitRatio} seed=none`
+    'EVIDENCE fixture=wide.mp4 baseline=previous-journey-shot metric=visual-diff ' +
+      `pixel-inequality=any-channel threshold=0.001 undo-visual-diff=${undoDiff} ` +
+      `split-visual-diff=${splitDiff} pixelDiffRatio-is-not-this-metric=true ` +
+      'ssim-is-not-this-metric=true seed=none'
   );
-  expect(undoRatio).toBeLessThan(0.001);
-  expect(splitRatio).toBeLessThan(0.001);
+  expect(undoDiff).toBeLessThan(0.001);
+  expect(splitDiff).toBeLessThan(0.001);
 });
