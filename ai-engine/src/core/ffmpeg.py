@@ -8,10 +8,12 @@ binary found in the standard places.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import shutil
 import subprocess
+import uuid
 from pathlib import Path
 
 
@@ -50,8 +52,24 @@ def find_ffmpeg() -> str:
 
 
 def staged_output(dest: Path) -> Path:
-    """Sibling partial that keeps the media suffix so ffmpeg can pick a muxer."""
-    return dest.with_name(f"{dest.stem}.partial{dest.suffix}")
+    """Unique sibling partial. The token keeps two runs from sharing one file."""
+    token = uuid.uuid4().hex
+    return dest.with_name(f"{dest.stem}.{token}.partial{dest.suffix}")
+
+
+def file_sha256(path: Path) -> str:
+    """SHA-256 of bytes actually read from `path`. Not an archive digest."""
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(65_536), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _refuse_raw_overwrite_flag(args: list[str]) -> None:
+    """Consent is the keyword, not a raw `-y` hidden in args."""
+    if "-y" in args:
+        raise OverwriteRefused("raw -y is not consent")
 
 
 def output_path(args: list[str]) -> Path | None:
@@ -72,6 +90,7 @@ def run_ffmpeg(args: list[str], *, overwrite: bool = False) -> subprocess.Comple
     absent. A consented replace is written to a sibling partial and moved only
     after ffmpeg exits 0; a failed run deletes the partial and keeps the original.
     """
+    _refuse_raw_overwrite_flag(args)
     dest = output_path(args)
     if dest is not None and dest.exists() and not overwrite:
         raise OverwriteRefused(str(dest))
@@ -87,13 +106,16 @@ def run_ffmpeg(args: list[str], *, overwrite: bool = False) -> subprocess.Comple
     staged = [*args[:-1], str(partial)]
     try:
         proc = subprocess.run([ff, *staged], capture_output=True, text=True)
-    except Exception:
+    except BaseException:
         partial.unlink(missing_ok=True)
         raise
     if proc.returncode != 0:
         partial.unlink(missing_ok=True)
         tail = (proc.stderr or "").strip()[-800:]
         raise RuntimeError(f"ffmpeg failed (rc={proc.returncode}): {tail}")
+    if not partial.is_file() or partial.stat().st_size <= 0:
+        partial.unlink(missing_ok=True)
+        raise RuntimeError("staged output failed validation")
     os.replace(partial, dest)
     return proc
 

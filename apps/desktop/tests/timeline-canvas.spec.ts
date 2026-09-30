@@ -5,13 +5,44 @@ interface TraceEvent {
   dur?: number;
 }
 
-test('scrolling 200 clips stays inside the frame budget', async ({ page }) => {
+test('scrolling 200 clips names RunTask ruler and waveform inside the frame budget', async ({ page }) => {
   await page.goto('/editor');
   await page.getByRole('button', { name: 'نمونه ۲۰۰ کلیپ' }).click();
   await expect(page.getByTestId('timeline-scroll')).toHaveAttribute('data-total', '200');
   const rendered = Number(await page.getByTestId('timeline-scroll').getAttribute('data-rendered'));
   expect(rendered).toBeGreaterThan(0);
   expect(rendered).toBeLessThan(40);
+
+  const ruler = await page.getByTestId('timeline-ruler').evaluate((node) => {
+    const ticks = [...node.querySelectorAll('span')];
+    const translated = ticks.filter((tick) =>
+      (tick.getAttribute('style') ?? '').includes('translate3d')
+    ).length;
+    return { ticks: ticks.length, translated };
+  });
+  console.info(
+    [
+      'EVIDENCE metric=ruler fixture=bench-200',
+      `tick-count=${ruler.ticks} translated=${ruler.translated}`,
+      'threshold=tick-count>0 seed=none',
+    ].join(' ')
+  );
+  expect(ruler.ticks).toBeGreaterThan(0);
+  expect(ruler.translated).toBe(ruler.ticks);
+
+  const waveform = await page.getByTestId('waveform-bars').evaluateAll((nodes) =>
+    nodes.map((node) => Number(node.getAttribute('data-count')))
+  );
+  const bars = waveform.reduce((sum, count) => sum + count, 0);
+  console.info(
+    [
+      'EVIDENCE metric=waveform fixture=bench-200',
+      `rendered-clips=${waveform.length} bars=${bars} bars-per-clip=16`,
+      'threshold=count=16 seed=none',
+    ].join(' ')
+  );
+  expect(waveform.length).toBeGreaterThan(0);
+  expect(waveform.every((count) => count === 16)).toBe(true);
 
   const session = await page.context().newCDPSession(page);
   const events: TraceEvent[] = [];
@@ -48,14 +79,24 @@ test('scrolling 200 clips stays inside the frame budget', async ({ page }) => {
     void session.send('Tracing.end');
   });
 
-  const longTasks = events.filter((event) => event.name === 'RunTask' && (event.dur ?? 0) > 50_000);
+  const runTasks = events.filter((event) => event.name === 'RunTask');
+  const longTasks = runTasks.filter((event) => (event.dur ?? 0) > 50_000);
+  const maxDurUs = runTasks.reduce((max, event) => Math.max(max, event.dur ?? 0), 0);
   const droppedFrames = events.filter((event) => event.name === 'DroppedFrame' || event.name === 'DropFrame');
   const drawn = events.filter((event) => event.name === 'DrawFrame' || event.name === 'BeginFrame');
   const cdpDroppedRatio =
     drawn.length === 0 ? frames.dropped / frames.seen : droppedFrames.length / drawn.length;
 
   expect(events.length).toBeGreaterThan(0);
+  console.info(
+    [
+      'EVIDENCE metric=runtask fixture=bench-200',
+      `measured-long-count=${longTasks.length} max-dur-us=${maxDurUs}`,
+      'threshold=<=50ms threshold-us=<=50000 seed=none',
+    ].join(' ')
+  );
   expect(longTasks).toHaveLength(0);
+  expect(maxDurUs).toBeLessThanOrEqual(50_000);
   expect(frames.seen).toBeGreaterThan(10);
   console.info(
     `EVIDENCE fixture=bench-200 rendered=${rendered} rendered-threshold=<40 frames-seen=${frames.seen} dropped=${frames.dropped} drop-ratio=${frames.dropped / frames.seen} cdp-drop-ratio=${cdpDroppedRatio} threshold=0.05 seed=none`

@@ -32,7 +32,12 @@ export function ClipView({ clip, pxPerSecond = PX_PER_SECOND }: { clip: Clip; px
       ) : null}
       <TrimHandle clipId={clip.id} edge="in" />
       <TrimHandle clipId={clip.id} edge="out" />
-      <div className="flex h-8 items-end gap-px px-1" aria-hidden>
+      <div
+        className="flex h-8 items-end gap-px px-1"
+        aria-hidden
+        data-testid="waveform-bars"
+        data-count={bars.length}
+      >
         {bars.map((height, index) => (
           <span
             key={`${clip.id}-${index}`}

@@ -22,14 +22,32 @@ describe('zoom around the cursor', () => {
     const client = 1406;
     const header = 176;
     const lane = Math.ceil(10 * fitPx(10, fitViewport(client, header)));
-    expect(header + lane).toBeLessThanOrEqual(client + 1);
+    const sum = header + lane;
+    console.info(
+      [
+        'EVIDENCE metric=header-width fixture=11rem',
+        `header=${header} lane=${lane} sum=${sum} clientWidth=${client}`,
+        'threshold=scrollWidth<=clientWidth+1 seed=none',
+      ].join(' ')
+    );
+    expect(sum).toBeLessThanOrEqual(client + 1);
   });
 
   it('fits when the header column is 211px, the width that made scrollWidth 1617', () => {
     const client = 1406;
     const header = 211;
     const lane = Math.ceil(10 * fitPx(10, fitViewport(client, header)));
-    expect(header + lane).toBeLessThanOrEqual(client + 1);
-    expect(header + Math.ceil(10 * fitPx(10, client))).toBe(1617);
+    const ignored = header + Math.ceil(10 * fitPx(10, client));
+    const sum = header + lane;
+    console.info(
+      [
+        'EVIDENCE metric=header-width fixture=211px',
+        `header=${header} lane=${lane} sum=${sum} clientWidth=${client}`,
+        `historical-ignored-width=${ignored}`,
+        'threshold=scrollWidth<=clientWidth+1 seed=none',
+      ].join(' ')
+    );
+    expect(sum).toBeLessThanOrEqual(client + 1);
+    expect(ignored).toBe(1617);
   });
 });

@@ -69,6 +69,36 @@ test('sequence frame at 3.2s matches clip B at 5.2s and the cut gap stays under 
   expect(gap).toBeLessThan(100);
   await page.getByLabel('زمان سکانس').fill('1');
   await expect(page.getByTestId('sequence-text')).toHaveText('عنوان');
+  const player = page.getByTestId('sequence-player');
+  await expect
+    .poll(async () => player.getAttribute('data-capability'), { timeout: 2_000 })
+    .not.toBe('unknown');
+  const capability = await player.getAttribute('data-capability');
+  const audioCount = await player.getAttribute('data-audio-count');
+  console.info(
+    [
+      'EVIDENCE metric=audio clock=sequence-input fixture=sequenceFixture',
+      `capability=${capability} audio-count=${audioCount}`,
+      'missing-is-not-a-pass=true unknown-is-not-a-pass=true seed=none',
+    ].join(' ')
+  );
+  expect(capability).toBe('available');
+  expect(Number(audioCount)).toBeGreaterThan(0);
+  const cpu = await page.evaluate(() => {
+    const candidate = performance as Performance & { memory?: { usedJSHeapSize?: number } };
+    return {
+      heap: candidate.memory?.usedJSHeapSize ?? null,
+      processCpu: null,
+    };
+  });
+  console.info(
+    [
+      'EVIDENCE metric=cpu clock=sequence-input',
+      `result=unverified cause=process-cpu-not-readable-in-browser heap=${cpu.heap ?? 'unread'}`,
+      'unverified-is-not-a-pass=true seed=none',
+    ].join(' ')
+  );
+  expect(cpu.processCpu).toBeNull();
   await page.getByRole('button', { name: 'فشار کیفیت' }).click();
   await expect(page.getByTestId('sequence-player')).toHaveAttribute('data-quality', 'low');
   await expect(page.getByTestId('sequence-frame')).toBeVisible();

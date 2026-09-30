@@ -36,7 +36,15 @@ NAMED_GAPS = (
 # Real thresholds already in the specs. This map does not change them.
 # These strings are expected contracts, never a substitute for a measured value.
 THRESHOLDS = {
-    "timeline-canvas.spec.ts": "drop-ratio<0.05 rendered<40 seed=none",
+    "timeline-canvas.spec.ts": "drop-ratio<0.05 rendered<40 runtask<=50ms ruler tick-count>0 waveform=16 seed=none",
+    "names RunTask ruler and waveform": (
+        "drop-ratio<0.05 rendered<40 runtask<=50ms ruler tick-count>0 waveform=16 seed=none"
+    ),
+    "names fit minimap and slider-domain": (
+        "cursor-lock<=1px fit=scrollWidth<=clientWidth+1 minimap-width>0 slider-domain=exact seed=none"
+    ),
+    "fits a 10s lane plus an 11rem header inside a 1406px scroller": "scrollWidth<=clientWidth+1 header=176 seed=none",
+    "fits when the header column is 211px": "scrollWidth<=clientWidth+1 historical-ignored-width=1617 seed=none",
     "zoom.spec.ts": "cursor-lock<=1px fit=scrollWidth<=clientWidth+1 seed=none",
     "playback.spec.ts": (
         "official-drift<1/60 assertion-bound=<1/60 arrow-threshold=0.001 arrow-interval=file-fps "

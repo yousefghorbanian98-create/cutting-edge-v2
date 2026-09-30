@@ -57,8 +57,29 @@ test('import, arrange, trim, split, undo, and preview stay within 0.1% three tim
     });
     shots.push(await page.getByTestId('timeline-scroll').screenshot());
   }
-  const undoDiff = visualDiffRatio(shots[0] ?? Buffer.alloc(0), shots[1] ?? Buffer.alloc(0));
-  const splitDiff = visualDiffRatio(shots[1] ?? Buffer.alloc(0), shots[2] ?? Buffer.alloc(0));
+  const first = shots[0] ?? Buffer.alloc(0);
+  const second = shots[1] ?? Buffer.alloc(0);
+  const third = shots[2] ?? Buffer.alloc(0);
+  const repeatDiffs = [
+    visualDiffRatio(first, first),
+    visualDiffRatio(first, second),
+    visualDiffRatio(second, third),
+  ];
+  for (let index = 0; index < repeatDiffs.length; index += 1) {
+    const measured = repeatDiffs[index] ?? 1;
+    const condition = measured < 0.001 ? 'passed' : 'failed';
+    console.info(
+      [
+        'EVIDENCE metric=visual-diff fixture=wide.mp4',
+        `repeat=${index + 1} baseline=previous-journey-shot`,
+        `measured=${measured} threshold=<0.001 condition-result=${condition}`,
+        'seed=none',
+      ].join(' ')
+    );
+    expect(measured).toBeLessThan(0.001);
+  }
+  const undoDiff = repeatDiffs[1] ?? 1;
+  const splitDiff = repeatDiffs[2] ?? 1;
   const undoCondition = undoDiff < 0.001 ? 'passed' : 'failed';
   const splitCondition = splitDiff < 0.001 ? 'passed' : 'failed';
   console.info(

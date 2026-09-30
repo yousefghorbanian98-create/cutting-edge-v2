@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('Ctrl+wheel at x=400 keeps the time, and fit shows the sequence', async ({ page }) => {
+test('Ctrl+wheel at x=400 keeps the time and names fit minimap and slider-domain', async ({ page }) => {
   await page.goto('/editor');
   await page.getByRole('button', { name: 'نمونه برش' }).click();
   const scroller = page.getByTestId('timeline-scroll');
@@ -53,6 +53,28 @@ test('Ctrl+wheel at x=400 keeps the time, and fit shows the sequence', async ({ 
     `EVIDENCE scrollWidth=${fitted.scrollWidth} clientWidth=${fitted.clientWidth} fit-threshold=clientWidth+1 seed=none`
   );
   expect(fitted.scrollWidth).toBeLessThanOrEqual(fitted.clientWidth + 1);
-  await expect(page.getByTestId('timeline-minimap')).toBeVisible();
-  await expect(page.getByRole('slider', { name: 'زوم' })).toBeVisible();
+  const minimap = page.getByTestId('timeline-minimap').locator('span');
+  const viewportLeft = Number(await minimap.getAttribute('data-viewport-left'));
+  const viewportWidth = Number(await minimap.getAttribute('data-viewport-width'));
+  console.info(
+    [
+      'EVIDENCE metric=minimap fixture=sequence-sample',
+      `viewport-left=${viewportLeft} viewport-width=${viewportWidth}`,
+      'threshold=width>0 seed=none',
+    ].join(' ')
+  );
+  expect(viewportWidth).toBeGreaterThan(0);
+  const beforePx = Number(await scroller.getAttribute('data-px'));
+  await page.getByRole('slider', { name: 'زوم' }).fill('200');
+  await expect(scroller).toHaveAttribute('data-px', '200');
+  const afterPx = Number(await scroller.getAttribute('data-px'));
+  console.info(
+    [
+      'EVIDENCE metric=slider-domain fixture=sequence-sample',
+      `before-px=${beforePx} after-px=${afterPx} target=200`,
+      'threshold=exact seed=none',
+    ].join(' ')
+  );
+  expect(afterPx).toBe(200);
+  expect(afterPx).not.toBe(beforePx);
 });
