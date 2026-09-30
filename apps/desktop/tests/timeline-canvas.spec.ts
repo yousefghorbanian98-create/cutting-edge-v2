@@ -30,9 +30,9 @@ test('scrolling 200 clips names RunTask ruler and waveform inside the frame budg
   expect(ruler.ticks).toBeGreaterThan(0);
   expect(ruler.translated).toBe(ruler.ticks);
 
-  const waveform = await page.getByTestId('waveform-bars').evaluateAll((nodes) =>
-    nodes.map((node) => Number(node.getAttribute('data-count')))
-  );
+  const waveform = await page
+    .getByTestId('waveform-bars')
+    .evaluateAll((nodes) => nodes.map((node) => Number(node.getAttribute('data-count'))));
   const bars = waveform.reduce((sum, count) => sum + count, 0);
   console.info(
     [
