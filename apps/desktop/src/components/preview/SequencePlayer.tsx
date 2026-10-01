@@ -1,5 +1,6 @@
 'use client';
 
+import { advanceSequenceClock } from '@/domain/sequenceClock';
 import type { Sequence } from '@/domain/timeline';
 import { usePlayback } from '@/hooks/usePlayback';
 import { hitAt, paintFrame } from '@/lib/compositor';
@@ -33,7 +34,7 @@ export function SequencePlayer() {
   const thumb = useRef<HTMLCanvasElement>(null);
   const ahead = useRef<HTMLCanvasElement>(null);
   const lastId = useRef<string | null>(null);
-  const editingTime = useRef(false);
+  const timeInput = useRef<HTMLInputElement>(null);
   const clock = useRef(0);
   const timeRef = useRef(time);
   timeRef.current = time;
@@ -97,10 +98,15 @@ export function SequencePlayer() {
     let frame = 0;
     let previous = performance.now();
     const tick = (now: number) => {
-      if (!editingTime.current) {
+      const field = timeInput.current;
+      const nextTime = advanceSequenceClock(
+        clock.current,
+        field !== null && document.activeElement === field
+      );
+      if (nextTime !== clock.current) {
         if (now - previous > 40) setQuality('low');
-        clock.current += 1 / 30;
-        setTime(clock.current);
+        clock.current = nextTime;
+        setTime(nextTime);
       }
       previous = now;
       frame = window.requestAnimationFrame(tick);
@@ -142,15 +148,10 @@ export function SequencePlayer() {
         <label className="text-sm">
           زمان
           <input
+            ref={timeInput}
             aria-label="زمان سکانس"
             className="ms-2 w-20 rounded-md border border-surface-border bg-surface-base px-2 py-1"
             value={time}
-            onFocus={() => {
-              editingTime.current = true;
-            }}
-            onBlur={() => {
-              editingTime.current = false;
-            }}
             onChange={(event) => {
               const next = Number(event.target.value);
               if (!Number.isFinite(next)) return;

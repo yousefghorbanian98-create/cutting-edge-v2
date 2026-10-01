@@ -67,7 +67,10 @@ test('sequence frame at 3.2s matches clip B at 5.2s and the cut gap stays under 
   const gap = Number(await page.getByTestId('sequence-player').getAttribute('data-cut-gap-ms'));
   console.info(`EVIDENCE clock=sequence-input gap-ms=${gap} gap-threshold-ms=100 seed=none`);
   expect(gap).toBeLessThan(100);
-  await page.getByLabel('زمان سکانس').fill('1');
+  const sequenceTime = page.getByLabel('زمان سکانس');
+  await sequenceTime.fill('1');
+  await expect(sequenceTime).toHaveValue('1');
+  await expect(sequenceTime).toBeFocused();
   await expect(page.getByTestId('sequence-text')).toHaveText('عنوان');
   const player = page.getByTestId('sequence-player');
   await expect
