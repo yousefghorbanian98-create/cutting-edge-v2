@@ -12,8 +12,8 @@ based on evidence in git, the ledger, evidence dirs and CI — never on chat cla
 Checks (each yields PASS / WARN / FAIL):
   C1  ledger integrity            verify_ledger.py exit code
   C2  clean tree                  git status --porcelain empty
-  C3  commit↔ledger consistency   every commit mentioning S-xxx has a ledger row not TODO;
-                                  every non-TODO row has ≥1 commit mentioning it
+  C3  commit↔ledger consistency   implementation/closure claims for S-xxx have a ledger row not TODO;
+                                  explicit blocker/non-closure references are not stage claims
   C4  one step per commit         a commit must not change status of >1 ledger row
   C5  evidence completeness       REVIEW/GREEN rows have evidence/S-xxx/CONTRACT.md; GREEN also REVIEW.md approved
   C6  scope ledger in commits     commits for a step carry "AC-" and "Other behavior changes"
@@ -42,6 +42,105 @@ LEDGER = LOOP / "04_LEDGER.md"
 CHECKPOINT = LOOP / "evidence" / "SUPERVISOR" / "checkpoint.json"
 ROW = re.compile(r"^\|\s*(S-\d{3})\s*\|(.*?)\|\s*(\w+)\s*\|\s*(\d*)\s*\|(.*?)\|(.*?)\|(.*?)\|\s*$")
 STEP_RE = re.compile(r"\bS-\d{3}\b")
+
+# A stage mention is excluded from C3 only when its own clause explicitly marks
+# it as a blocker/non-closure reference. A positive implementation/closure claim
+# in that clause always wins. Stage IDs remain case-sensitive; claim language is
+# case-insensitive. Do not treat a bare "pre-S-xxx" as an exemption.
+CLOSURE_WORD = r"(?:complete(?:d)?|clos(?:e|ed)|green|implement(?:ed|ation)?|pass(?:ed)?)"
+
+
+def c3_is_meta(subject: str) -> bool:
+    return subject.startswith(("docs", "review", "chore(loop)", "supervisor", "fix(ai-engine): S-002 round"))
+
+
+def _c3_has_closure_claim(clause: str, sid: str) -> bool:
+    stage = re.escape(sid)
+    after_stage = re.compile(
+        rf"\b{stage}\b(?:\s*(?:[:=—-])\s*|\s+(?:(?:is|was|now|marked|declared)\s+)?)" rf"{CLOSURE_WORD}\b",
+        re.IGNORECASE,
+    )
+    before_stage = re.compile(rf"\b{CLOSURE_WORD}\b[^.;!?\n]{{0,24}}\b{stage}\b", re.IGNORECASE)
+    for match in (*after_stage.finditer(clause), *before_stage.finditer(clause)):
+        prefix = clause[max(0, match.start() - 20) : match.start()].lower()
+        if re.search(r"\b(?:not|never|without)\s+(?:yet\s+)?$", prefix):
+            continue
+        return True
+    return False
+
+
+def _c3_is_nonclosure_reference(clause: str, sid: str) -> bool:
+    stage = re.escape(sid)
+    patterns = (
+        # "pre-S-033 blockers" is explicit context; "pre-S-033" alone is not.
+        rf"\bpre-{stage}\b[^.;!?\n]{{0,40}}\bblockers?\b",
+        rf"\b{stage}\b\s*(?::|=)?\s*(?:is\s+)?(?:TODO|not[\s-]+(?:started|closed|complete|green|implemented|passed))\b",
+        rf"\bopen\b[^.;!?\n]{{0,24}}\b{stage}\b[^.;!?\n]{{0,24}}\bblockers?\b",
+        rf"\bwithout\s+(?:closing|starting|implementing|claiming)\b[^.;!?\n]{{0,40}}\b{stage}\b",
+        rf"\b{stage}\b[^.;!?\n]{{0,40}}\bwithout\s+(?:closing|starting|implementing|claiming)\b"
+        rf"(?:\s+(?:it|them|this stage))?",
+        rf"\b(?:remains?|stays?)\s+open\s+for\b[^.;!?\n]{{0,40}}\b{stage}\b",
+        # Existing explicit non-goal, bug-owner, and parenthetical citation forms.
+        rf"\bNG-\d+\s*:[^.;!?\n]{{0,120}}\b{stage}\b",
+        rf"\bBUG-\d+\b[^.;!?\n]{{0,120}}\btrack(?:s|ed|ing)?\b[^.;!?\n]{{0,120}}\bfor\b"
+        rf"[^.;!?\n]{{0,60}}\b{stage}\b",
+        rf"\([^()]*\b{stage}\b[^()]*\)",
+    )
+    return any(re.search(pattern, clause, re.IGNORECASE) for pattern in patterns)
+
+
+def _c3_clauses(text: str) -> list[str]:
+    """Split commit text without mistaking wrapped lines for new statements."""
+    clauses = []
+    for paragraph in re.split(r"\n\s*\n+", text):
+        lines = []
+        current = []
+        for line in paragraph.splitlines():
+            stripped = line.strip()
+            if not stripped:
+                continue
+            if stripped.startswith(("- ", "* ", "+ ", "|")) and current:
+                lines.append(" ".join(current))
+                current = []
+            current.append(stripped)
+        if current:
+            lines.append(" ".join(current))
+        for line in lines:
+            clauses.extend(part for part in re.split(r"[.;!?]+", line) if part.strip())
+    return clauses
+
+
+def c3_referenced_steps(subject: str, body: str) -> list[str]:
+    """Return stage references C3 must reconcile with the ledger.
+
+    Subject and body are scanned by sentence/clause. Only an explicit local
+    blocker/non-closure phrase exempts a reference, and an implementation or
+    closure claim in the same clause overrides that exemption.
+    """
+    refs: set[str] = set()
+    for field in (subject, body):
+        for clause in _c3_clauses(field):
+            for sid in set(STEP_RE.findall(clause)):
+                if _c3_has_closure_claim(clause, sid) or not _c3_is_nonclosure_reference(clause, sid):
+                    refs.add(sid)
+    return sorted(refs)
+
+
+def c3_todo_reference_errors(commits: list[dict], rows: dict[str, dict]) -> list[str]:
+    mentioned = {
+        sid
+        for commit in commits
+        if not c3_is_meta(commit["subject"])
+        for sid in c3_referenced_steps(commit["subject"], commit.get("body", ""))
+    }
+    errors = []
+    for sid in sorted(mentioned):
+        if sid not in rows:
+            errors.append(f"{sid} referenced in commits but missing from ledger")
+        elif rows[sid]["status"] == "TODO":
+            errors.append(f"{sid} has commits but ledger still TODO")
+    return errors
+
 
 FORBIDDEN_JS = [
     "redux",
@@ -182,18 +281,8 @@ def main() -> int:
             h, s, b = (chunk.strip("\n").split("\x1f") + ["", ""])[:3]
             commits.append({"sha": h, "subject": s, "body": b, "steps": sorted(set(STEP_RE.findall(s)))})
 
-    # C3 commit↔ledger
-    det = []
-
-    def is_meta(c):
-        return c["subject"].startswith(("docs", "review", "chore(loop)", "supervisor", "fix(ai-engine): S-002 round"))
-
-    mentioned = {s for c in commits if not is_meta(c) for s in c["steps"]}
-    for s in sorted(mentioned):
-        if s not in rows:
-            det.append(f"{s} referenced in commits but missing from ledger")
-        elif rows[s]["status"] == "TODO":
-            det.append(f"{s} has commits but ledger still TODO")
+    # C3 commit↔ledger: only explicit non-closure references are exempt.
+    det = c3_todo_reference_errors(commits, rows)
     all_log = sh("git", "log", "--format=%s")
     for s, row in rows.items():
         if row["status"] not in ("TODO", "BLOCKED") and s not in all_log:
@@ -213,7 +302,7 @@ def main() -> int:
             changed = [s for s in after if before.get(s, "TODO") != after[s] and s in before]
             if len(changed) > 1:
                 det4.append(f"{c['sha'][:8]} changed status of {len(changed)} rows: {', '.join(changed)}")
-        if c["steps"] and not is_meta(c):
+        if c["steps"] and not c3_is_meta(c["subject"]):
             body = c["body"]
             if "AC-" not in body or "Other behavior changes" not in body:
                 det6.append(
@@ -377,7 +466,7 @@ def main() -> int:
 
     # C13 learnings entry per builder session (ECC "remember"; enforced from S-101)
     det = []
-    step_commits = [c for c in commits if c["steps"] and not is_meta(c)]
+    step_commits = [c for c in commits if c["steps"] and not c3_is_meta(c["subject"])]
     if step_commits:
         touched = sh("git", "diff", "--name-only", f"{since}..{head}").splitlines()
         new_learn = [
