@@ -7,7 +7,7 @@
 | id | معیار | ابزار سنجش | تست اثبات |
 |----|-------|-----------|-----------|
 | AC-1 | سفر import، چیدن روی تایم‌لاین، trim، split، undo و preview سه بار پشت سر هم پاس می‌شود. | Playwright | `apps/desktop/e2e/timeline.spec.ts` |
-| AC-2 | اختلاف پیکسلی snapshotهای بصری همان سفر کمتر از `0.1%` است. | Playwright | همان فایل، `maxDiffPixelRatio` برابر `0.001` |
+| AC-2 | اختلاف پیکسلی snapshotهای بصری همان سفر کمتر از `0.1%` است. | Playwright | همان فایل، `visualDiffRatio` در `apps/desktop/tests/pngDiff.ts` (changed pixels / total pixels, any channel including alpha) برابر `0.001`، مقایسه در همان اجرا |
 
 ## Non-Goals
 
