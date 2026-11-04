@@ -1,0 +1,16 @@
+# Delivery Package (LOCK-16: ~3.0GB installer)
+# LOCK-17: 13 GREEN CRITERIA
+# LOCK-18: 11 AUTO-FAILURE CONDITIONS
+
+# 📦 1. Installer Package (CuttingEdgeV2-Setup-v1.0.0.exe)
+# 📦 2. Verification Files (SHA-256.txt)
+# 📦 3. Documentation (RELEASE_NOTES_FA.md, RELEASE_NOTES_EN.md, INSTALL_GUIDE_FA.md, INSTALL_GUIDE_EN.md)
+# 📦 4. Handoff Package (BUILDER-PROTOCOL-v2.4-FINAL.md)
+
+# LOCK-00: OSS-FIRST - ONLY IMPORT LIBRARIES (Tauri v2, NSIS)
+# LOCK-05: OFFLINE AFTER INSTALL (UPDATER OPT-IN)
+# LOCK-15: HARDWARE (GTX 1650 + i5-12400 + 16GB RAM)
+
+# STATUS: PREPARATION STARTED
+# BRANCH: arena/05d863cc-cutting-edge-v2
+# DATE: 2026-11-04
